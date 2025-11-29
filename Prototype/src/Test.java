@@ -4,6 +4,6 @@ public class Test {
         System.out.println("Test from Computer A");
         System.out.println("Check number 3");
         System.out.println("Check number 4");
-        System.out.println("Check number 5");
+        System.out.println("Code from Computer B");
     }
 }
