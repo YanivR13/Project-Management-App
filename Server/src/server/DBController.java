@@ -47,12 +47,6 @@ public class DBController {
 	      ps.setInt(4, Integer.parseInt(list.get(3))); // confirmation_code
 	      ps.setInt(5, Integer.parseInt(list.get(4))); // subscriber_id (FK)
 	      ps.setString(6, list.get(5));                // date_of_placing_order
-//		  ps.setString(1,list.get(0));
-//		  ps.setString(2,list.get(1));
-//		  ps.setString(3,list.get(2));
-//		  ps.setString(4,list.get(3));
-//		  ps.setString(5,list.get(4));
-//		  ps.setString(6,list.get(5));
 		  
 		  ps.executeUpdate();
 		  System.out.println("Order inserted.");
