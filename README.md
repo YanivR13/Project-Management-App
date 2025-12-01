@@ -1,3 +1,5 @@
+***After cloning the project, you must re-add the MySQL Connector/J JAR manually (the driver is not included in the repository).***
+
 How to Run the Project and Initialize the Database
 1. Create the database schema
 
