@@ -7,6 +7,6 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/OCSF"/>
-	<classpathentry kind="lib" path="C:/EclipseWorkSpaces/BistroPrototypelocal/Server/lib/mysql-connector-j-9.5.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Eden Sabag/Desktop/לימודים/שנה ג/סמסטר 5/שיטות הנדסיות לפיתוח מערכות/פרוייקט/mysql-connector-j-9.5.0/mysql-connector-j-9.5.0/mysql-connector-j-9.5.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

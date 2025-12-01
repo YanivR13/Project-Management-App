@@ -1,5 +1,8 @@
 package server;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import ocsf.server.*;
 
 
@@ -8,6 +11,9 @@ import ocsf.server.*;
  * superclass in order to give more functionality to the server.
  */
 public class ServerController extends AbstractServer{
+	
+	// Variable for storing the database connection
+	private static Connection conn;
 
 	  /**
 	   * The default port to listen on.
@@ -49,6 +55,14 @@ public class ServerController extends AbstractServer{
 	protected void serverStopped()
 	{
 	  System.out.println("Server has stopped listening for connections.");
+      try {
+          // Close the database connection if it is open
+          if (conn != null) {
+              conn.close();
+          }
+      } catch (SQLException e) {
+          e.printStackTrace();
+      }
 	}
 	
 	
