@@ -15,14 +15,12 @@ import common.ChatIF;
  */
 public class ClientConsole implements ChatIF {
 	
-	  /**
-	   * The default port to connect on.
-	   */
+	  
+	//The default port to connect on.
 	final public static int DEFAULT_PORT = 5555;
 	
-	  /**
-	   * The instance of the client that created this ConsoleChat.
-	   */
+	  
+	//The instance of the client that created this ConsoleChat.
 	ChatClient client;
 	
 	

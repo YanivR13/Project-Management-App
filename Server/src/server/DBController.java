@@ -42,11 +42,11 @@ public class DBController {
 		  try {
 		  PreparedStatement ps = conn.prepareStatement("insert into orders values(?,?,?,?,?,?)");
 	      ps.setInt(1, Integer.parseInt(list.get(0))); // order_number (PK)
-	      ps.setString(2, list.get(1));                // order_date
+	      ps.setDate(2, java.sql.Date.valueOf(list.get(1)));                // order_date
 	      ps.setInt(3, Integer.parseInt(list.get(2))); // number_of_guests
 	      ps.setInt(4, Integer.parseInt(list.get(3))); // confirmation_code
 	      ps.setInt(5, Integer.parseInt(list.get(4))); // subscriber_id (FK)
-	      ps.setString(6, list.get(5));                // date_of_placing_order
+	      ps.setDate(6, java.sql.Date.valueOf(list.get(5)));;                // date_of_placing_order
 		  
 		  ps.executeUpdate();
 		  System.out.println("Order inserted.");
@@ -54,6 +54,10 @@ public class DBController {
 		  catch(SQLException e) {
 			  e.printStackTrace();
 		  }
+	  }
+	  
+	  public static void getOrdersFromDB(Object msg) {
+		  
 	  }
 
 }
