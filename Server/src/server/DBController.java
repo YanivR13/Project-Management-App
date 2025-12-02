@@ -3,7 +3,9 @@ package server;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 
 public class DBController {
@@ -37,7 +39,7 @@ public class DBController {
 	   *
 	   * Uses PreparedStatement to safely insert the data into the database.
 	   */
-	  public static void insertOrderToDB( Object msg) {
+	  public static void insertOrderToDB(Object msg) {
 		  ArrayList<String> list = (ArrayList<String>) msg;
 		  try {
 		  PreparedStatement ps = conn.prepareStatement("insert into orders values(?,?,?,?,?,?)");
@@ -56,7 +58,34 @@ public class DBController {
 		  }
 	  }
 	  
-	  public static void getOrdersFromDB(Object msg) {
+	  public static ArrayList<ArrayList<String>> getOrdersFromDB() {
+		  
+		  ArrayList<ArrayList<String>> orders = new ArrayList<>();
+		  
+		  try {
+		        Statement stmt = conn.createStatement();
+		        ResultSet rs = stmt.executeQuery("SELECT * FROM orders");
+		        
+		        while(rs.next()) {
+		            ArrayList<String> row = new ArrayList<>();
+		            row.add(String.valueOf(rs.getInt("order_number")));
+		            row.add(String.valueOf(rs.getDate("order_date")));
+		            row.add(String.valueOf(rs.getInt("number_of_guests")));
+		            row.add(String.valueOf(rs.getInt("confirmation_code")));
+		            row.add(String.valueOf(rs.getInt("subscriber_id")));
+		            row.add(String.valueOf(rs.getDate("date_of_placing_order")));
+
+		            orders.add(row);
+		        }
+		        rs.close();
+		        stmt.close();
+		        
+		  }
+		  catch(SQLException e) {
+			  e.printStackTrace();
+		  }
+		  
+		  return orders;
 		  
 	  }
 

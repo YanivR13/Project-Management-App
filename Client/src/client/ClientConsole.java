@@ -52,22 +52,49 @@ public class ClientConsole implements ChatIF {
 	    {
 	      BufferedReader fromConsole = new BufferedReader(new InputStreamReader(System.in));
 	      String message;
-	      ArrayList<String> list = new ArrayList<>();
 
 	      while (true) 
 	      {
+	    	System.out.print("Enter command (insert/display): ");
 	        message = fromConsole.readLine();
-	        if (message.equals("send")) {
-	        	 client.handleMessageFromClientUI(list);
-	        	 list.clear();
-	        }
-	        else {
-	         	list.add(message);
-	        }
+	        
+            if (message.equalsIgnoreCase("display")) {
+                client.handleMessageFromClientUI("display");
+                continue;
+            }
+            
+            
+            else if (message.equalsIgnoreCase("insert")) {
+
+                ArrayList<String> order = new ArrayList<>();
+
+                System.out.print("Enter order number: ");
+                order.add(fromConsole.readLine());
+
+                System.out.print("Enter order date: ");
+                order.add(fromConsole.readLine());
+
+                System.out.print("Enter number of guests: ");
+                order.add(fromConsole.readLine());
+                
+                System.out.print("Enter confirmation code: ");
+                order.add(fromConsole.readLine());
+                
+                System.out.print("Enter subscriber id: ");
+                order.add(fromConsole.readLine());
+                
+                System.out.print("Enter date of placing order: ");
+                order.add(fromConsole.readLine());
+
+                // שליחת ההזמנה לשרת
+                client.handleMessageFromClientUI(order);
+                continue;
+            }
+            
+            System.out.println("Unknown command.");
 	      }
-	    } 
-	    catch (Exception ex) 
-	    {
+	      
+	    } catch (Exception ex){
 	      System.out.println
 	        ("Unexpected error while reading from console!");
 	    }

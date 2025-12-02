@@ -1,9 +1,10 @@
 package client;
 
 import java.io.IOException;
-
 import common.ChatIF;
 import ocsf.client.AbstractClient;
+import java.util.ArrayList;
+
 
 
 /**
@@ -40,16 +41,31 @@ public class ChatClient extends AbstractClient {
 	   */
 	  @Override
 	  protected void handleMessageFromServer(Object msg) {
-	        // אנחנו לא מדפיסים פה כלום! אנחנו מעבירים את זה ל-UI.
-	      clientUI.display(msg.toString());
+		    if (msg instanceof java.util.ArrayList) {
+
+		    	System.out.println("");
+		        System.out.println("----- ORDERS -----");
+
+		        ArrayList<ArrayList<String>> orders = (ArrayList<ArrayList<String>>) msg;
+
+		        for (ArrayList<String>  row : orders) {
+		            //System.out.println(row);
+		            clientUI.display(row.toString());
+		        }
+
+		        System.out.println("------------------------");
+		    }
+		    else {
+		        clientUI.display(msg.toString());
+		    }
 	  }
 	
 	  
 	  /**
-	   * This method handles all data coming from the UI            
-	   *
-	   * @param message The message from the UI.    
-	   */
+	  * This method handles all data coming from the UI            
+	  *
+	  * @param message The message from the UI.    
+	  */
 	  public void handleMessageFromClientUI(Object message) {
 	      try {
            sendToServer(message); // שליחה פיזית לשרת דרך OCSF

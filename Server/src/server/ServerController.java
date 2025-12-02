@@ -2,6 +2,7 @@ package server;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import ocsf.server.*;
 
@@ -33,9 +34,37 @@ public class ServerController extends AbstractServer{
 	   */
 	@Override
 	protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
-	    System.out.println("Message received: " + msg + " from " + client);
-	    DBController.insertOrderToDB(msg);
-	    this.sendToAllClients(msg);
+		try {
+
+	        // ----- פקודת תצוגה DISPLAY -----
+	        if (msg instanceof String && ((String)msg).equalsIgnoreCase("display")) {
+
+	            // קריאה מהמסד
+	        	ArrayList<ArrayList<String>> orders = DBController.getOrdersFromDB();
+
+	            // שליחה ללקוח
+	            client.sendToClient(orders);
+	            return;
+	        }
+
+	        // ----- פקודת הכנסה INSERT -----
+	        if (msg instanceof ArrayList) {
+
+	            ArrayList<String> orderData = (ArrayList<String>) msg;
+
+	            // הכנסת נתונים למסד
+	            DBController.insertOrderToDB(orderData);
+
+	            client.sendToClient("Order inserted successfully.");
+	            return;
+	        }
+
+	        // כל דבר אחר – הדפסה רגילה
+	        System.out.println("Message received: " + msg + " from " + client);
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
 	}
 	
 	  /**
