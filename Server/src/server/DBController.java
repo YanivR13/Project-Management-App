@@ -19,7 +19,7 @@ public class DBController {
 	   */
 	  public static void connectToDB() {
 			 try {
-				  conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false", "root", "Eden2701@");
+				  conn = DriverManager.getConnection("jdbc:mysql://localhost:3307/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false", "root", "Rochlin99!");
 				 System.out.println("SQL connection succeed");
 			 }
 			 catch(SQLException ex){
