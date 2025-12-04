@@ -117,6 +117,15 @@ public class ClientConsole implements ChatIF {
 	   *
 	   * @param args[0] The host to connect to.
 	   */
+	
+	@Override
+    public void displayOrders(ArrayList<ArrayList<String>> orders) {
+        // מימוש פשוט לקונסול
+        for (ArrayList<String> row : orders) {
+            System.out.println(row);
+        }
+    }
+	
 	public static void main(String[] args) {
 	    String host = "";
 	    int port = 0;  //The port number

@@ -1,129 +1,116 @@
 package server;
 
-import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import ocsf.server.*;
+import gui.ServerPortFrameController;
+import ocsf.server.AbstractServer;
+import ocsf.server.ConnectionToClient;
 
+public class ServerController extends AbstractServer {
 
-/**
- * This class overrides some of the methods in the abstract 
- * superclass in order to give more functionality to the server.
- */
-public class ServerController extends AbstractServer{
-	
-	// Variable for storing the database connection
-	private static Connection conn;
+    // מחקתי מכאן את private static Connection conn - אנחנו נשתמש בזה של DBController
 
-	  /**
-	   * The default port to listen on.
-	   */
-	  final public static int DEFAULT_PORT = 5555;
-	
-	public ServerController(int port) {
-		super(port);
-	}
+    private ServerPortFrameController serverUI;
 
-	
-	  /**
-	   * This method handles any messages received from the client.
-	   *
-	   * @param msg The message received from the client.
-	   * @param client The connection from which the message originated.
-	   */
-	@Override
-	protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
-		try {
+    public ServerController(int port, ServerPortFrameController serverUI) {
+        super(port);
+        this.serverUI = serverUI;
+    }
 
-	        // ----- פקודת תצוגה DISPLAY -----
-	        if (msg instanceof String && ((String)msg).equalsIgnoreCase("display")) {
+    @Override
+    protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
+        serverUI.appendLog("Message received: " + msg + " from " + client);
 
-	            // קריאה מהמסד
-	        	ArrayList<ArrayList<String>> orders = DBController.getOrdersFromDB();
+        if (msg instanceof String && ((String)msg).equals("display")) {
+            
+            // עטפתי ב-try-catch כדי לתפוס שגיאות שליפה (כמו NullPointer)
+            try {
+                // 1. שליפת הנתונים מה-DB
+                ArrayList<ArrayList<String>> orders = DBController.getOrdersFromDB();
+                
+                // בדיקה אם חזר null (למניעת קריסה)
+                if (orders == null) {
+                    serverUI.appendLog("Error: DB returned null orders!");
+                    return;
+                }
 
-	            // שליחה ללקוח
-	            client.sendToClient(orders);
-	            return;
-	        }
+                // 2. שליחה ללקוח
+                client.sendToClient(orders);
+                serverUI.appendLog("Sent " + orders.size() + " orders to client.");
+                
+            } catch (Exception e) {
+                serverUI.appendLog("CRITICAL ERROR in display: " + e.toString());
+                e.printStackTrace(); // ידפיס גם לקונסולה למטה ליתר ביטחון
+            }
+        }
+        else if (msg instanceof ArrayList) {
+            ArrayList<String> data = (ArrayList<String>) msg;
+            
+            if (data.get(0).equals("update")) {
+                 data.remove(0); 
+                 updateOrderInDB(data);
+                 try {
+                    client.sendToClient("Server: Order updated successfully!");
+                } catch (Exception e) { e.printStackTrace(); }
+            }
+        }
+    }
 
-	        // ----- פקודת הכנסה INSERT -----
-	        if (msg instanceof ArrayList) {
+    private void updateOrderInDB(ArrayList<String> data) {
+        // גם כאן - נשתמש ב-DBController.conn ישירות אם צריך, 
+        // אבל עדיף להעביר את כל הלוגיקה של ה-SQL לתוך DBController בעתיד.
+        // כרגע נשאיר את זה פשוט:
+        try {
+            if (DBController.conn == null) connectToDB(); // שימוש במשתנה הנכון
+            
+            String query = "UPDATE `orders` SET order_date = ?, number_of_guests = ? WHERE order_number = ?";
+            java.sql.PreparedStatement pstmt = DBController.conn.prepareStatement(query);
+            
+            pstmt.setString(1, data.get(1)); 
+            pstmt.setInt(2, Integer.parseInt(data.get(2))); 
+            pstmt.setInt(3, Integer.parseInt(data.get(0))); 
+            
+            pstmt.executeUpdate();
+            serverUI.appendLog("Database updated via SQL.");
+            
+        } catch (Exception e) {
+            serverUI.appendLog("DB Error: " + e.getMessage());
+        }
+    }
 
-	            ArrayList<String> orderData = (ArrayList<String>) msg;
+    @Override
+    protected void clientConnected(ConnectionToClient client) {
+        String clientInfo = "Client connected: " + client.getInetAddress().getHostAddress() 
+                          + " (" + client.getInetAddress().getHostName() + ")";
+        serverUI.appendLog(clientInfo);
+    }
 
-	            // הכנסת נתונים למסד
-	            DBController.insertOrderToDB(orderData);
+    @Override
+    protected void serverStarted() {
+        serverUI.appendLog("Server listening for connections on port " + getPort());
+        connectToDB();
+    }
 
-	            client.sendToClient("Order inserted successfully.");
-	            return;
-	        }
+    @Override
+    protected void serverStopped() {
+        serverUI.appendLog("Server has stopped listening for connections.");
+        try {
+            if (DBController.conn != null) DBController.conn.close();
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
 
-	        // כל דבר אחר – הדפסה רגילה
-	        System.out.println("Message received: " + msg + " from " + client);
-
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-	}
-	
-	  /**
-	   * This method overrides the one in the superclass.  Called
-	   * when the server starts listening for connections.
-	   */
-	protected void serverStarted()
-	{
-	  DBController.connectToDB();
-	  System.out.println("Server listening for connections on port " + getPort());
-	}
-	
-	  /**
-	   * This method overrides the one in the superclass.  Called
-	   * when the server stops listening for connections.
-	   */
-	protected void serverStopped()
-	{
-	  System.out.println("Server has stopped listening for connections.");
-      try {
-          // Close the database connection if it is open
-          if (conn != null) {
-              conn.close();
-          }
-      } catch (SQLException e) {
-          e.printStackTrace();
-      }
-	}
-	
-	
-	
-	  /**
-	   * This method is responsible for the creation of 
-	   * the server instance (there is no UI in this phase).
-	   *
-	   * @param args[0] The port number to listen on.  Defaults to 5555 
-	   *          if no argument is entered.
-	   */
-    public static void main(String[] args) {
-	  int port = 0; //Port to listen on
-
-	  try
-	  {
-	    port = Integer.parseInt(args[0]); //Get port from command line
-	  }
-	  catch(Throwable t)
-	  {
-	    port = DEFAULT_PORT; //Set port to 5555
-	  }
-		
-	  ServerController sv = new ServerController(port);
-	    
-	  try 
-	  {
-	    sv.listen(); //Start listening for connections
-	  } 
-	  catch (Exception ex) 
-	  {
-	    System.out.println("ERROR - Could not listen for clients!");
-	  }
-	}
+    public void connectToDB() {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
+            // *** התיקון הקריטי: שים לב שאני מכניס את החיבור לתוך DBController.conn ***
+            DBController.conn = DriverManager.getConnection("jdbc:mysql://localhost:3307/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false", "root", "Rochlin99!");
+            
+            serverUI.appendLog("SQL connection succeed");
+            
+        } catch (Exception ex) {
+            serverUI.appendLog("DB Connection Failed! " + ex.getMessage());
+        }
+    }
 }

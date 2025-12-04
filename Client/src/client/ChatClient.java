@@ -40,25 +40,17 @@ public class ChatClient extends AbstractClient {
 	   * @param msg The message from the server.
 	   */
 	  @Override
-	  protected void handleMessageFromServer(Object msg) {
-		    if (msg instanceof java.util.ArrayList) {
-
-		    	System.out.println("");
-		        System.out.println("----- ORDERS -----");
-
-		        ArrayList<ArrayList<String>> orders = (ArrayList<ArrayList<String>>) msg;
-
-		        for (ArrayList<String>  row : orders) {
-		            //System.out.println(row);
-		            clientUI.display(row.toString());
-		        }
-
-		        System.out.println("------------------------");
-		    }
-		    else {
-		        clientUI.display(msg.toString());
-		    }
-	  }
+	    protected void handleMessageFromServer(Object msg) {
+	        // אם קיבלנו רשימה - נקרא לפונקציה המיוחדת
+	        if (msg instanceof ArrayList) {
+	            ArrayList<ArrayList<String>> orders = (ArrayList<ArrayList<String>>) msg;
+	            clientUI.displayOrders(orders); // הנה השינוי!
+	        }
+	        else {
+	            // הודעה רגילה
+	            clientUI.display(msg.toString());
+	        }
+	    }
 	
 	  
 	  /**
