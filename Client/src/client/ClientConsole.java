@@ -107,9 +107,10 @@ public class ClientConsole implements ChatIF {
 	   *
 	   * @param message The string to be displayed.
 	   */
-	public void display(String message) {
-		System.out.println("> " + message);
-	}
+	// שינוי מ-String ל-Object
+    public void display(Object message) {
+        System.out.println("> " + message.toString());
+    }
 	
 	
 	  /**
@@ -117,14 +118,6 @@ public class ClientConsole implements ChatIF {
 	   *
 	   * @param args[0] The host to connect to.
 	   */
-	
-	@Override
-    public void displayOrders(ArrayList<ArrayList<String>> orders) {
-        // מימוש פשוט לקונסול
-        for (ArrayList<String> row : orders) {
-            System.out.println(row);
-        }
-    }
 	
 	public static void main(String[] args) {
 	    String host = "";

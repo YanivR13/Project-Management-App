@@ -11,7 +11,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane nodeOrientation="LEFT_TO_RIGHT" prefHeight="627.0" prefWidth="582.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gui.OrderFrameController">
+<AnchorPane nodeOrientation="LEFT_TO_RIGHT" prefHeight="627.0" prefWidth="582.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.OrderFrameController">
    <children>
       <Button fx:id="btnUpdate" layoutX="257.0" layoutY="210.0" mnemonicParsing="false" onAction="#clickUpdate" text="Update" />
       <Button fx:id="btnLoad" layoutX="20.0" layoutY="288.0" mnemonicParsing="false" onAction="#clickLoad" text="Load Orders" />

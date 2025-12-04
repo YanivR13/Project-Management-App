@@ -1,4 +1,4 @@
-package gui;
+package clientGUI;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,12 +41,11 @@ public class OrderFrameController implements ChatIF, Initializable {
     // --- מתודה לאתחול ראשוני (רצה כשהמסך עולה) ---
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        txtResult.setEditable(false); // שלא יוכלו להקליד בתוצאות
+        txtResult.setEditable(false); 
         txtResult.setText("Welcome! Connect to server to start...\n");
         
         // --- ניסיון חיבור אוטומטי לשרת ---
         try {
-            // יוצר חיבור לשרת (מקומי, פורט 5555), ומעביר את 'this' כמי שיקבל את התשובות
             this.client = new ChatClient("localhost", 5555, this);
             display("Client connected successfully!");
         } catch (Exception e) {
@@ -66,20 +65,17 @@ public class OrderFrameController implements ChatIF, Initializable {
         String date = txtDate.getText();
         String guests = txtGuests.getText();
 
-        // בדיקה שכל השדות מלאים
         if (id.isEmpty() || date.isEmpty() || guests.isEmpty()) {
             display("Error: Please fill all fields (ID, Date, Guests).");
             return;
         }
 
-        // יצירת הרשימה לשליחה
         ArrayList<String> msg = new ArrayList<>();
-        msg.add("update"); // פקודה לשרת
+        msg.add("update"); 
         msg.add(id);
         msg.add(date);
         msg.add(guests);
 
-        // שליחה לשרת
         if (client != null) {
             client.handleMessageFromClientUI(msg);
             display("Sent update request for Order ID: " + id);
@@ -98,46 +94,28 @@ public class OrderFrameController implements ChatIF, Initializable {
             display("Error: Client not connected.");
         }
     }
-
-    // --- מימוש ממשק ChatIF: הצגת רשימת הזמנות ---
+    
+ // --- מימוש ממשק ChatIF המעודכן ---
     @Override
-    public void displayOrders(ArrayList<ArrayList<String>> orders) {
-        StringBuilder sb = new StringBuilder();
-        
-        // כותרת כללית
-        sb.append("=== Orders List (" + orders.size() + ") ===\n\n");
-
-        for (ArrayList<String> row : orders) {
-            // פירוק הנתונים לפי האינדקסים (בהנחה שזה הסדר ב-DB)
-            String orderId = row.get(0);
-            String orderDate = row.get(1);
-            String guests = row.get(2);
-            String confirmCode = row.get(3);
-            String subId = row.get(4);
-            String createdDate = row.get(5);
-
-            // בניית תצוגה יפה
-            sb.append("Order ID:       ").append(orderId).append("\n");
-            sb.append("Date:           ").append(orderDate).append("\n");
-            sb.append("Num of Guests:  ").append(guests).append("\n");
-            sb.append("Subscriber ID:  ").append(subId).append("\n");
-            sb.append("Confirm Code:   ").append(confirmCode).append("\n");
-            sb.append("Created On:     ").append(createdDate).append("\n");
-            sb.append("--------------------------------------\n");
-        }
-        
-        // עדכון המסך בתוך התהליך הגרפי
+    public void display(Object message) {
         Platform.runLater(() -> {
-            txtResult.setText(sb.toString()); 
+            // בדיקה 1: האם קיבלנו רשימה של הזמנות מהשרת?
+            if (message instanceof ArrayList) {
+                ArrayList<String> orders = (ArrayList<String>) message;
+                txtResult.appendText("\n=== Orders List (" + orders.size() + ") ===\n");
+                
+                // השרת כבר שולח מחרוזות מעוצבות, אז פשוט נדפיס אותן
+                for (String order : orders) {
+                    txtResult.appendText(order + "\n");
+                }
+                txtResult.appendText("======================\n");
+            }
+            // בדיקה 2: האם זו סתם הודעת טקסט רגילה?
+            else {
+                txtResult.appendText(message.toString() + "\n");
+            }
         });
     }
 
-    // --- מימוש ממשק ChatIF: הצגת הודעות כלליות ---
-    @Override
-    public void display(String message) {
-        Platform.runLater(() -> {
-             // appendText מוסיף לסוף הטקסט הקיים (טוב ללוגים)
-             txtResult.appendText(message + "\n");
-        });
-    }
+
 }

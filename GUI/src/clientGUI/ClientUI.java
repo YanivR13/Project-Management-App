@@ -1,4 +1,4 @@
-package gui;
+package clientGUI;
 
 import client.ChatClient;
 import javafx.application.Application;
