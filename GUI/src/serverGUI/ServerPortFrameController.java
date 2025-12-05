@@ -24,7 +24,7 @@ public class ServerPortFrameController implements ServerIF {
 
     @FXML
     public void clickStart(ActionEvent event) {
-        // מונע יצירה כפולה של השרת
+        // מניעת יצירת שרת כפול
         if (server != null) {
             appendLog("Server is already running!");
             return;
@@ -32,18 +32,17 @@ public class ServerPortFrameController implements ServerIF {
 
         appendLog("Attempting to start server...");
 
-        // יצירת השרת והעברת 'this' (המחלקה הזו) כדי שיוכל להדפיס לוגים
+        // יצירת השרת והעברת ה-GUI
         server = new ServerController(5555, this);
-        
-        // חיבור למסד הנתונים
-        // הערה: ייתכן שהמסך יקפא לחצי שנייה בזמן החיבור - זה תקין
-        server.connectToDB();
-        
+
         try {
-            // הפקודה הזו של OCSF מריצה את השרת ברקע לבד
-            server.listen(); 
+            // הפעלת השרת - מפעיל thread פנימי של OCSF
+            server.listen();
             appendLog("Server started listening on port 5555");
-            
+
+            // *** אין חיבור ל-DB כאן! ***
+            // החיבור יתבצע אוטומטית ב-serverStarted()
+
         } catch (Exception e) {
             appendLog("Error starting server: " + e.getMessage());
         }
@@ -52,15 +51,24 @@ public class ServerPortFrameController implements ServerIF {
     @FXML
     public void clickExit(ActionEvent event) {
         appendLog("Exiting...");
-        
-        // אם השרת רץ, נסגור אותו לפני היציאה
-        if(server != null) {
+
+        // אם השרת פעיל - נסגור אותו בצורה מסודרת
+        if (server != null) {
             try {
+                appendLog("Stopping server...");
+                
+                // קודם מפסיקים האזנה
+                server.stopListening();
+                
+                // סוגרים את השרת (יקרא אוטומטית serverStopped())
                 server.close();
-            } catch(Exception e) {
-                // לא קריטי ביציאה
+
+            } catch (Exception e) {
+                appendLog("Error while closing server: " + e.getMessage());
             }
         }
+
+        // יציאה מהתוכנית
         System.exit(0);
     }
 

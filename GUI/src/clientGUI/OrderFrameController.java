@@ -14,9 +14,14 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 
+/**
+ * Controller for the Order Management GUI.
+ * Responsible for handling user actions, sending requests to the server,
+ * and updating the UI based on server responses.
+ */
 public class OrderFrameController implements ChatIF, Initializable {
 
-    // --- חיבור לרכיבים ב-SceneBuilder ---
+    // --- UI Components injected from FXML ---
     @FXML
     private TextField txtId;
 
@@ -34,31 +39,40 @@ public class OrderFrameController implements ChatIF, Initializable {
 
     @FXML
     private TextArea txtResult;
-    
-    // משתנה להחזקת המנוע הלוגי
+
+    /**
+     * The client responsible for communication with the server.
+     * Set by ClientUI when the application starts.
+     */
     private ChatClient client;
 
-    // --- מתודה לאתחול ראשוני (רצה כשהמסך עולה) ---
+    /**
+     * Initializes the controller when the FXML screen is loaded.
+     * This runs before any interaction occurs.
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        txtResult.setEditable(false); 
+        txtResult.setEditable(false);
         txtResult.setText("Welcome! Connect to server to start...\n");
-        
-        // --- ניסיון חיבור אוטומטי לשרת ---
-        try {
-            this.client = new ChatClient("localhost", 5555, this);
-            display("Client connected successfully!");
-        } catch (Exception e) {
-            display("Error: Could not connect to server. Make sure Server is running.");
-        }
     }
 
-    // --- פונקציה לחיבור הלוגיקה (במידה ורוצים לחבר ידנית מבחוץ) ---
+    /**
+     * Injects the ChatClient instance created in ClientUI.
+     * This allows the controller to send messages to the server.
+     *
+     * @param client the connected ChatClient
+     */
     public void setClient(ChatClient client) {
         this.client = client;
     }
 
-    // --- לחיצה על כפתור Update ---
+    /**
+     * Triggered when the Update button is pressed.
+     * Validates input, constructs an update request, and sends it to the server.
+     *
+     * Expected message format:
+     * ["update", id, date, guests]
+     */
     @FXML
     void clickUpdate(ActionEvent event) {
         String id = txtId.getText();
@@ -71,7 +85,7 @@ public class OrderFrameController implements ChatIF, Initializable {
         }
 
         ArrayList<String> msg = new ArrayList<>();
-        msg.add("update"); 
+        msg.add("update");
         msg.add(id);
         msg.add(date);
         msg.add(guests);
@@ -84,7 +98,10 @@ public class OrderFrameController implements ChatIF, Initializable {
         }
     }
 
-    // --- לחיצה על כפתור Load Orders ---
+    /**
+     * Triggered when the Load Orders button is pressed.
+     * Sends a "display" request to the server to fetch all orders.
+     */
     @FXML
     void clickLoad(ActionEvent event) {
         if (client != null) {
@@ -94,28 +111,33 @@ public class OrderFrameController implements ChatIF, Initializable {
             display("Error: Client not connected.");
         }
     }
-    
- // --- מימוש ממשק ChatIF המעודכן ---
+
+    /**
+     * Displays messages in the TextArea.
+     * Handles both String messages and ArrayList messages (orders list).
+     * Uses Platform.runLater because messages arrive from a background thread.
+     *
+     * @param message the message received from the server or UI
+     */
     @Override
     public void display(Object message) {
         Platform.runLater(() -> {
-            // בדיקה 1: האם קיבלנו רשימה של הזמנות מהשרת?
+
+            // Case 1: Server sent a list of orders
             if (message instanceof ArrayList) {
                 ArrayList<String> orders = (ArrayList<String>) message;
+
                 txtResult.appendText("\n=== Orders List (" + orders.size() + ") ===\n");
-                
-                // השרת כבר שולח מחרוזות מעוצבות, אז פשוט נדפיס אותן
                 for (String order : orders) {
                     txtResult.appendText(order + "\n");
                 }
                 txtResult.appendText("======================\n");
             }
-            // בדיקה 2: האם זו סתם הודעת טקסט רגילה?
+
+            // Case 2: Normal text message
             else {
                 txtResult.appendText(message.toString() + "\n");
             }
         });
     }
-
-
 }
