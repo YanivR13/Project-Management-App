@@ -114,29 +114,27 @@ public class OrderFrameController implements ChatIF, Initializable {
 
     /**
      * Displays messages in the TextArea.
-     * Handles both String messages and ArrayList messages (orders list).
-     * Uses Platform.runLater because messages arrive from a background thread.
-     *
-     * @param message the message received from the server or UI
+     * Uses Platform.runLater with a standard anonymous Runnable.
      */
     @Override
     public void display(Object message) {
-        Platform.runLater(() -> {
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                // Case 1: Server sent a list of orders
+                if (message instanceof ArrayList) {
+                    ArrayList<String> orders = (ArrayList<String>) message;
 
-            // Case 1: Server sent a list of orders
-            if (message instanceof ArrayList) {
-                ArrayList<String> orders = (ArrayList<String>) message;
-
-                txtResult.appendText("\n=== Orders List (" + orders.size() + ") ===\n");
-                for (String order : orders) {
-                    txtResult.appendText(order + "\n");
+                    txtResult.appendText("\n=== Orders List (" + orders.size() + ") ===\n");
+                    for (String order : orders) {
+                        txtResult.appendText(order + "\n");
+                    }
+                    txtResult.appendText("======================\n");
                 }
-                txtResult.appendText("======================\n");
-            }
-
-            // Case 2: Normal text message
-            else {
-                txtResult.appendText(message.toString() + "\n");
+                // Case 2: Normal text message
+                else {
+                    txtResult.appendText(message.toString() + "\n");
+                }
             }
         });
     }

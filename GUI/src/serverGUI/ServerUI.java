@@ -14,16 +14,12 @@ public class ServerUI extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        // טעינת המסך שיצרנו ב-SceneBuilder
         FXMLLoader loader = new FXMLLoader(getClass().getResource("ServerPortFrame.fxml"));
         Parent root = loader.load();
         
-        // השגת הבקר (כדי שנוכל לדבר איתו בעתיד אם נרצה)
         ServerPortFrameController controller = loader.getController();
         
         Scene scene = new Scene(root);
-        // (אופציונלי) תוכל להוסיף כאן CSS כמו בלקוח
-        // scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
 
         primaryStage.setTitle("Server Management");
         primaryStage.setScene(scene);

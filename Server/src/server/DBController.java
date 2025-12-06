@@ -33,33 +33,7 @@ public class DBController {
         );
         System.out.println("SQL connection succeed");
     }
-
-    /**
-     * Inserts a new order into the database.
-     * Expects an ArrayList<String> containing all fields in the correct order.
-     *
-     * @param msg data received from the client, representing the order fields
-     */
-    public static void insertOrderToDB(Object msg) {
-        ArrayList<String> list = (ArrayList<String>) msg;
-
-        try {
-            PreparedStatement ps = conn.prepareStatement("INSERT INTO orders VALUES (?,?,?,?,?,?)");
-
-            ps.setInt(1, Integer.parseInt(list.get(0)));                 // order_number (PK)
-            ps.setDate(2, java.sql.Date.valueOf(list.get(1)));           // order_date
-            ps.setInt(3, Integer.parseInt(list.get(2)));                 // number_of_guests
-            ps.setInt(4, Integer.parseInt(list.get(3)));                 // confirmation_code
-            ps.setInt(5, Integer.parseInt(list.get(4)));                 // subscriber_id (FK)
-            ps.setDate(6, java.sql.Date.valueOf(list.get(5)));           // date_of_placing_order
-
-            ps.executeUpdate();
-            System.out.println("Order inserted.");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
+    
     /**
      * Retrieves all orders from the database and formats them into readable strings.
      *
