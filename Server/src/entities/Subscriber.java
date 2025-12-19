@@ -3,19 +3,23 @@ package entities;
 import java.util.ArrayList;
 import java.util.List;
 
+import status.SubscriberStatus;
+
 public class Subscriber extends User{
 	
 	private long subscriberId; 
     private String username;     
-    private String qrCode;      
+    private String qrCode;
+    private SubscriberStatus status;
     private List<Visit> visitHistory; 
     private List<Reservation> reservationHistory; 
 
-    public Subscriber(long phone, String email, long subId, String username, String qr) {
+    public Subscriber(String phone, String email, long subId, String username, String qr, SubscriberStatus status) {
         super(email, phone);
         this.subscriberId = subId;
         this.username = username;
         this.qrCode = qr;
+        this.status=status;
         this.visitHistory = new ArrayList<>();
         this.reservationHistory = new ArrayList<>();
         

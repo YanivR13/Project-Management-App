@@ -2,19 +2,19 @@ package entities;
 
 public abstract class User {
 	
-	protected long phoneNumber;
+	protected String phoneNumber;
     protected String email;
     
-    public User(String email, long phoneNumber) {
+    public User(String email, String phoneNumber) {
         this.phoneNumber = phoneNumber;
         this.email = email;
     }
      
-    public long getPhoneNumber() {
+    public String getPhoneNumber() {
     	return phoneNumber; 
     }
     
-    public void setPhoneNumber(long phoneNumber) {
+    public void setPhoneNumber(String phoneNumber) {
     	this.phoneNumber = phoneNumber; 
     }
     

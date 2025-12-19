@@ -28,7 +28,7 @@ public class DBController {
      */
     public static void connectToDB() throws SQLException {
         conn = DriverManager.getConnection(
-            "jdbc:mysql://localhost:3307/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
+            "jdbc:mysql://localhost:3307/bistrodb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
             "root",
             "Rochlin99!"
         );

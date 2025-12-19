@@ -6,7 +6,7 @@ import status.ReservationStatus;
 
 public class Reservation {
 	
-	private final long confirmationCode; 
+	private  long confirmationCode; 
     private LocalDateTime dateTime;        
     private int numberOfGuests;            
     private User customer;                 

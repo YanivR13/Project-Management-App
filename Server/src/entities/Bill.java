@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class Bill {
 	
+	private int billId;
 	private double baseAmount;      
     private double discountPercent; 
     private double finalAmount;     
