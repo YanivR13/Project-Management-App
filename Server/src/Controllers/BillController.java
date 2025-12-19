@@ -1,4 +1,4 @@
-package DB;
+package Controllers;
 
 import entities.Bill;
 

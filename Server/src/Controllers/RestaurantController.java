@@ -1,4 +1,4 @@
-package server;
+package Controllers;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;

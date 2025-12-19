@@ -1,4 +1,4 @@
-package server;
+package Controllers;
 
 import java.sql.SQLException;
 import java.util.ArrayList;

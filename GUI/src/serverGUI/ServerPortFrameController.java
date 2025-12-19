@@ -4,9 +4,8 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
-import javafx.application.Platform; 
-
-import server.ServerController;
+import javafx.application.Platform;
+import Controllers.ServerController;
 import common.ServerIF;
 
 public class ServerPortFrameController implements ServerIF {
