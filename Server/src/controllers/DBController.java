@@ -9,6 +9,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import entities.OccasionalCustomer;
+
 /**
  * Handles all database operations for the server.
  * Responsible for connecting to MySQL and executing CRUD operations on the 'orders' table.
@@ -66,6 +68,46 @@ public class DBController {
         // Logic to identify the object type and add it to the corresponding list
         return false;
     }
+    
+    
+    /**
+     * Retrieves all occasional customers from the database.
+     *
+     * Joins the `user` and `occasional_customer` tables and creates
+     * OccasionalCustomer objects using the user's email and phone number.
+     *
+     * @return a list of all occasional customers
+     */
+    public List<OccasionalCustomer> getAllOccasionalCustomers() {
+        List<OccasionalCustomer> customers = new ArrayList<>();
+
+        String query = """
+            SELECT u.email, u.phone_number
+            FROM user u
+            JOIN occasional_customer oc ON u.user_id = oc.user_id
+        """;
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(query)) {
+
+            while (rs.next()) {
+                String email = rs.getString("email");
+                String phone = rs.getString("phone_number");
+
+                OccasionalCustomer customer =
+                        new OccasionalCustomer(email, phone);
+
+                customers.add(customer);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("SQL Error in getAllOccasionalCustomers: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return customers;
+    }
+
     
     /**
     * Purpose: Retrieves all stored entities of a specific type.
