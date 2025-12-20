@@ -110,8 +110,12 @@ public class ViewReservationController implements ChatIF {
             scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
-        } catch (Exception e) { 
+        } catch (Exception e) {
+            // 1. מדפיס את כל ה-Stack Trace ל-Console (טקסט אדום מפורט)
             e.printStackTrace(); 
+            
+            // 2. מציג הודעה קצרה למשתמש על גבי ה-UI (ב-TextArea)
+            appendLog("Error: " + e.getMessage());
         }
     }
 

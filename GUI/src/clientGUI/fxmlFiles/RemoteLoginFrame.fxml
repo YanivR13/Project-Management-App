@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="500.0" prefWidth="400.0" stylesheets="@../cssStyle/style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.Controllers.RemoteLoginController">
+   <children>
+      <VBox alignment="CENTER" layoutX="50.0" layoutY="40.0" prefWidth="300.0" spacing="30.0">
+         <children>
+            <Label styleClass="header-label" text="Bistro Portal">
+               <font>
+                  <Font name="System Bold" size="28.0" />
+               </font>
+            </Label>
+            
+            <Label text="Please select your login type:" textFill="#ecf0f1" />
+            
+            <VBox spacing="15.0">
+               <children>
+                  <Button fx:id="btnSubscriber" maxWidth="Infinity" onAction="#clickSubscriber" prefHeight="60.0" text="Subscriber Login" />
+                  <Button fx:id="btnOccasional" maxWidth="Infinity" onAction="#clickOccasional" prefHeight="60.0" style="-fx-background-color: #34495e;" text="Occasional Guest" />
+               </children>
+            </VBox>
+         </children>
+      </VBox>
+      <TextArea fx:id="txtLog" editable="false" layoutX="25.0" layoutY="350.0" prefHeight="120.0" prefWidth="350.0" wrapText="true" />
+   </children>
+</AnchorPane>

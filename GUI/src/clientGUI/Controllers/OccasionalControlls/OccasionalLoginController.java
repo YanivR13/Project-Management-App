@@ -48,7 +48,7 @@ public class OccasionalLoginController implements ChatIF {
         if (client != null) {
             appendLog("Verifying guest details for: " + username);
             client.handleMessageFromClientUI(message);
-            // Temporary navigation for UI testing
+            // ניווט לתפריט (במצב טסט)
             navigateToMenu(event);
         }
     }
@@ -66,24 +66,33 @@ public class OccasionalLoginController implements ChatIF {
 
     private void navigateToMenu(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasinalFXML/OccasionalMenuFrame.fxml"));
+            // תיקון נתיב: הוספת תיקיית OccasionalFXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"));
             Parent root = loader.load();
+            
             OccasionalMenuController controller = loader.getController();
             controller.setClient(client);
+            
             switchScene(event, root, "Guest Dashboard");
         } catch (Exception e) {
+            // הדפסת השגיאה המלאה ל-Console
+            e.printStackTrace(); 
             appendLog("Navigation Error: " + e.getMessage());
         }
     }
 
     private void navigateToPortal(ActionEvent event) {
         try {
+            // הנחת עבודה: ה-Portal נמצא ישירות תחת fxmlFiles
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
             Parent root = loader.load();
+            
             RemoteLoginController controller = loader.getController();
             controller.setClient(client);
+            
             switchScene(event, root, "Bistro - Remote Access Portal");
         } catch (Exception e) {
+            e.printStackTrace(); 
             appendLog("Navigation Error: " + e.getMessage());
         }
     }
@@ -91,7 +100,14 @@ public class OccasionalLoginController implements ChatIF {
     private void switchScene(ActionEvent event, Parent root, String title) {
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+        
+        // וודא שהנתיב ל-CSS תקין אצלך בפרויקט
+        try {
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+        } catch (Exception e) {
+            System.out.println("CSS not found, skipping style.");
+        }
+        
         stage.setTitle(title);
         stage.setScene(scene);
         stage.show();

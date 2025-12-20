@@ -112,7 +112,11 @@ public class CancelReservationController implements ChatIF {
             stage.setScene(scene);
             stage.show();
         } catch (Exception e) {
-            e.printStackTrace();
+            // 1. מדפיס את כל ה-Stack Trace ל-Console (טקסט אדום מפורט)
+            e.printStackTrace(); 
+            
+            // 2. מציג הודעה קצרה למשתמש על גבי ה-UI (ב-TextArea)
+            appendLog("Error: " + e.getMessage());
         }
     }
 

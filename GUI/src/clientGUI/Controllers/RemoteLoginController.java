@@ -37,12 +37,14 @@ public class RemoteLoginController implements ChatIF {
 
     @FXML
     void clickOccasional(ActionEvent event) {
-        loadScreen(event, "OccasionalLoginFrame.fxml", "Occasional Customer Login");
+        // וודא שהאיות כאן תואם בדיוק לשם התיקייה בדיסק
+        loadScreen(event, "OccasionalFXML/OccasionalLoginFrame.fxml", "Occasional Customer Login");
     }
 
     @FXML
     void clickSubscriber(ActionEvent event) {
-        loadScreen(event, "SubscriberLoginFrame.fxml", "Subscriber Login");
+        // הוספת הנתיב המלא כולל תיקיית המשנה
+        loadScreen(event, "SubscriberFXML/SubscriberLoginFrame.fxml", "Subscriber Login");
     }
 
     private void loadScreen(ActionEvent event, String fxmlFile, String title) {
@@ -64,7 +66,9 @@ public class RemoteLoginController implements ChatIF {
             stage.setTitle(title);
             stage.setScene(scene);
             stage.show();
+            
         } catch (Exception e) {
+            e.printStackTrace(); // זה ידפיס ל-Console באדום את כל הנתיב של השגיאה
             appendLog("Error: " + e.getMessage());
         }
     }

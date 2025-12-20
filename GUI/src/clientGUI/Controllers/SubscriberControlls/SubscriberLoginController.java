@@ -65,9 +65,10 @@ public class SubscriberLoginController implements ChatIF {
         if (client != null) {
             appendLog("Attempting to verify Subscriber ID: " + subID);
             client.handleMessageFromClientUI(message);
-            
-            // Temporary navigation for UI testing until server validation logic is finalized
             navigateToMenu(event);
+        } else {
+            // אם תראה את ההודעה הזו בתיבה הלבנה, סימן שה-client לא הועבר כמו שצריך
+            appendLog("Critical Error: ChatClient is NOT initialized!");
         }
     }
 
