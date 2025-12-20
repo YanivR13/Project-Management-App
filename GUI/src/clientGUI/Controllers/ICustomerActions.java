@@ -12,10 +12,25 @@ public interface ICustomerActions {
     /**
      * Shared logic for initiating a new reservation.
      */
-    default void createNewReservation(ChatClient client) {
-        // Logic to transition to the reservation form will be added here
-        System.out.println("Switching to New Reservation Screen...");
-    }
+	default void createNewReservation(ChatClient client, ActionEvent event, String userType) {
+	    try {
+	        FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/ReservationFXML/NewReservationFrame.fxml"));
+	        Parent root = loader.load();
+
+	        // Injecting both the client and the user type into the shared controller
+	        clientGUI.Controllers.ReservationControlls.NewReservationController controller = loader.getController();
+	        controller.setClient(client, userType);
+
+	        Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+	        Scene scene = new Scene(root);
+	        scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+	        stage.setTitle("Bistro - New Reservation");
+	        stage.setScene(scene);
+	        stage.show();
+	    } catch (Exception e) {
+	        System.out.println("Navigation error: " + e.getMessage());
+	    }
+	}
 
     /**
      * Shared logic for canceling an existing reservation via server communication.

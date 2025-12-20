@@ -39,8 +39,7 @@ public class SubscriberMenuController implements ChatIF, ICustomerActions {
 
     @FXML
     void clickNewRes(ActionEvent event) {
-        appendLog("Launching Reservation Wizard...");
-        createNewReservation(client);
+        createNewReservation(client, event, "Subscriber");
     }
 
     @FXML

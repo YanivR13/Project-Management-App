@@ -15,4 +15,6 @@ public interface ChatIF {
      * @param message The message object to display.
      */
     public abstract void display(Object message);
+
+	void display(String message);
 }

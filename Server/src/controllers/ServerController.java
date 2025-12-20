@@ -1,6 +1,7 @@
 package controllers;
 
 import java.sql.SQLException;
+import common.Reservation;
 import java.util.ArrayList;
 
 import common.ServerIF;

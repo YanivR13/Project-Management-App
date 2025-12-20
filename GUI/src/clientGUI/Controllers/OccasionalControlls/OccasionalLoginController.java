@@ -144,11 +144,11 @@ public class OccasionalLoginController implements ChatIF {
     }
 
     @Override
-    public void display(String message) {
+    public void display(Object message) {
         appendLog(message);
     }
 
-    public void appendLog(String message) {
+    public void appendLog(Object message) {
         Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));
     }
 }

@@ -1,6 +1,7 @@
 package client;
 
 import java.io.IOException;
+import common.Reservation;
 import common.ChatIF;
 import ocsf.client.AbstractClient;
 

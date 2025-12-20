@@ -3,6 +3,7 @@ package entities;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.Reservation;
 import status.SubscriberStatus;
 
 public class Subscriber extends User{

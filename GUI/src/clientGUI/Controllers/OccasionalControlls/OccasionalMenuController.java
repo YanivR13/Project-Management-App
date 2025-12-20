@@ -36,8 +36,7 @@ public class OccasionalMenuController implements ChatIF, ICustomerActions {
 
     @FXML
     void clickNewReservation(ActionEvent event) {
-        appendLog("Navigating to Reservation System...");
-        createNewReservation(client);
+        createNewReservation(client, event, "Occasional");
     }
 
     @FXML
