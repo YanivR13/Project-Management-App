@@ -8,6 +8,7 @@ import java.util.List;
 
 import entities.Restaurant;
 import entities.Table;
+import entities.TimeRange;
 
 public class RestaurantController {
 	
@@ -91,6 +92,17 @@ public class RestaurantController {
      */
     public List<Table> getAllTables() {
         return restaurant.getTables();
+    }
+    
+    public LocalTime getOpeningHour(LocalDate date) {
+        TimeRange range = restaurant.getHoursForDate(date);       
+        return (range != null) ? range.getOpenTime() : null;
+    }
+
+  
+    public LocalTime getClosingHour(LocalDate date) {
+        TimeRange range = restaurant.getHoursForDate(date);
+        return (range != null) ? range.getCloseTime() : null;
     }
 	
 }
