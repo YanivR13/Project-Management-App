@@ -11,56 +11,32 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
 /**
- * Boundary class for occasional customers (guests).
- * Handles both login and registration requests by sending data to the Client (Control).
+ * Controller for the Occasional (Guest) login screen.
+ * Handles temporary identification and registration navigation.
  */
 public class OccasionalLoginController implements ChatIF {
 
     private ChatClient client;
 
-    @FXML
-    private TextField txtUsername;
+    @FXML private TextField txtUsername, txtContact;
+    @FXML private TextArea txtLog;
 
-    @FXML
-    private TextField txtContact;
-
-    @FXML
-    private Button btnLogin;
-
-    @FXML
-    private Button btnRegister;
-
-    @FXML
-    private Button btnBack;
-
-    @FXML
-    private TextArea txtLog;
-
-    /**
-     * Injects the communication client into this controller.
-     * @param client The active ChatClient instance.
-     */
     public void setClient(ChatClient client) {
         this.client = client;
     }
 
-    /**
-     * Sends a login request to the server using username and contact info.
-     * Format: ["LOGIN_OCCASIONAL", username, contact]
-     */
     @FXML
     void clickLogin(ActionEvent event) {
         String username = txtUsername.getText();
         String contact = txtContact.getText();
 
         if (username.isEmpty() || contact.isEmpty()) {
-            appendLog("Error: Username and Contact info (Phone/Email) are required.");
+            appendLog("Error: All fields are mandatory.");
             return;
         }
 
@@ -70,39 +46,17 @@ public class OccasionalLoginController implements ChatIF {
         message.add(contact);
 
         if (client != null) {
-            appendLog("Sending login request for user: " + username);
+            appendLog("Verifying guest details for: " + username);
             client.handleMessageFromClientUI(message);
-            
-            // Temporary for UI Testing: Transition to menu
-            // In final version, this happens after server confirmation
+            // Temporary navigation for UI testing
             navigateToMenu(event);
-        } else {
-            appendLog("System Error: Client connection not initialized.");
         }
     }
 
-    /**
-     * Sends a registration request for a new occasional customer.
-     */
     @FXML
     void clickRegister(ActionEvent event) {
-        String username = txtUsername.getText();
-        String contact = txtContact.getText();
-
-        if (username.isEmpty() || contact.isEmpty()) {
-            appendLog("Error: Username and Contact info are required for registration.");
-            return;
-        }
-
-        ArrayList<String> message = new ArrayList<>();
-        message.add("REGISTER_OCCASIONAL");
-        message.add(username);
-        message.add(contact);
-
-        if (client != null) {
-            appendLog("Sending registration request for: " + username);
-            client.handleMessageFromClientUI(message);
-        }
+        appendLog("Navigating to Registration Module...");
+        // Placeholder for future Registration screen
     }
 
     @FXML
@@ -116,7 +70,7 @@ public class OccasionalLoginController implements ChatIF {
             Parent root = loader.load();
             OccasionalMenuController controller = loader.getController();
             controller.setClient(client);
-            switchScene(event, root, "Guest Menu");
+            switchScene(event, root, "Guest Dashboard");
         } catch (Exception e) {
             appendLog("Navigation Error: " + e.getMessage());
         }
@@ -145,10 +99,12 @@ public class OccasionalLoginController implements ChatIF {
 
     @Override
     public void display(Object message) {
-        appendLog(message);
+        if (message != null) {
+            appendLog(message.toString());
+        }
     }
 
-    public void appendLog(Object message) {
+    public void appendLog(String message) {
         Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));
     }
 }

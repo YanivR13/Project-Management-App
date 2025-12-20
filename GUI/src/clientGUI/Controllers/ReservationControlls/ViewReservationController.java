@@ -16,72 +16,71 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
 /**
- * Controller for the shared Cancellation screen.
- * Displays active reservations in a table and handles cancellation requests.
+ * Controller for the View & Pay screen.
+ * Allows users to view active unpaid reservations and process payments.
  */
-public class CancelReservationController implements ChatIF {
+public class ViewReservationController implements ChatIF {
 
     private ChatClient client;
-    private String userType; // Distinguishes between Subscriber and Occasional guest
+    private String userType;
 
     @FXML private TableView<Reservation> tableReservations;
-    @FXML private TableColumn<Reservation, Long> colID;
+    @FXML private TableColumn<Reservation, Long> colCode;
     @FXML private TableColumn<Reservation, String> colDate, colTime;
     @FXML private TableColumn<Reservation, Integer> colGuests;
     @FXML private TextArea txtLog;
 
     /**
-     * Initializes the controller with necessary dependencies.
+     * Initializes the UI and requests data from the server.
      */
     public void setClient(ChatClient client, String userType) {
         this.client = client;
         this.userType = userType;
-        setupTableColumns();
-        fetchActiveReservations(); 
+        setupTable();
+        requestUnpaidReservations();
     }
 
     /**
-     * Maps TableView columns to Reservation property names/getters.
+     * Maps table columns to Reservation entity getters.
      */
-    private void setupTableColumns() {
-        colID.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
-        colDate.setCellValueFactory(new PropertyValueFactory<>("dateString"));
+    private void setupTable() {
+        colCode.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
+        colDate.setCellValueFactory(new PropertyValueFactory<>("dateString")); 
         colTime.setCellValueFactory(new PropertyValueFactory<>("timeString"));
         colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests"));
     }
 
     /**
-     * Requests active reservations from the server to populate the table.
+     * Asks the server for all active reservations with unpaid status.
      */
-    private void fetchActiveReservations() {
-        appendLog("System: Fetching your active reservations...");
+    private void requestUnpaidReservations() {
+        appendLog("System: Requesting your unpaid active orders...");
         ArrayList<String> message = new ArrayList<>();
-        message.add("GET_ACTIVE_RESERVATIONS");
+        message.add("GET_UNPAID_RESERVATIONS");
         client.handleMessageFromClientUI(message);
     }
 
     /**
-     * Handles the cancellation of the selected reservation in the table.
+     * Sends a payment command for the selected reservation.
      */
     @FXML
-    void clickCancelSelected(ActionEvent event) {
+    void clickPayNow(ActionEvent event) {
         Reservation selected = tableReservations.getSelectionModel().getSelectedItem();
-        
         if (selected == null) {
-            appendLog("Error: No reservation selected. Please pick an order from the table.");
+            appendLog("Error: Please select an order from the table first.");
             return;
         }
 
         ArrayList<String> message = new ArrayList<>();
-        message.add("CANCEL_RESERVATION");
+        message.add("PAY_RESERVATION");
         message.add(String.valueOf(selected.getConfirmationCode()));
 
-        appendLog("Requesting cancellation for Order ID: " + selected.getConfirmationCode());
+        appendLog("System: Processing payment for code: " + selected.getConfirmationCode());
         client.handleMessageFromClientUI(message);
     }
 
     /**
-     * Navigates back to the appropriate menu based on the user type.
+     * Returns the user to the dashboard.
      */
     @FXML
     void clickBack(ActionEvent event) {
@@ -92,18 +91,18 @@ public class CancelReservationController implements ChatIF {
     }
 
     /**
-     * Helper method to load the previous menu and re-inject the client.
+     * Navigation helper with client re-injection.
      */
     private void navigateToMenu(ActionEvent event, String path) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
             Parent root = loader.load();
-            Object controller = loader.getController();
+            Object ctrl = loader.getController();
             
-            if (controller instanceof clientGUI.Controllers.SubscriberControlls.SubscriberMenuController) {
-                ((clientGUI.Controllers.SubscriberControlls.SubscriberMenuController) controller).setClient(client);
+            if (ctrl instanceof clientGUI.Controllers.SubscriberControlls.SubscriberMenuController) {
+                ((clientGUI.Controllers.SubscriberControlls.SubscriberMenuController) ctrl).setClient(client);
             } else {
-                ((clientGUI.Controllers.OccasionalControlls.OccasionalMenuController) controller).setClient(client);
+                ((clientGUI.Controllers.OccasionalControlls.OccasionalMenuController) ctrl).setClient(client);
             }
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
@@ -111,13 +110,13 @@ public class CancelReservationController implements ChatIF {
             scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) { 
+            e.printStackTrace(); 
         }
     }
 
     /**
-     * Implements ChatIF to display server messages.
+     * Implements ChatIF for server feedback.
      */
     @Override
     public void display(Object message) {
@@ -127,7 +126,7 @@ public class CancelReservationController implements ChatIF {
     }
 
     /**
-     * Appends text to the GUI log area in a thread-safe manner.
+     * Safe UI logger.
      */
     public void appendLog(String message) {
         Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));

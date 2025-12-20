@@ -7,11 +7,10 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-// 1
 
 /**
- * Interface defining the behavioral contract for all customer types.
- * Standard restaurant actions are provided as default methods to handle navigation to shared screens.
+ * Final Interface for all customer types.
+ * Standardizes navigation to shared reservation screens across the GUI project.
  */
 public interface ICustomerActions {
 
@@ -38,7 +37,7 @@ public interface ICustomerActions {
     }
 
     /**
-     * Navigates to the shared Cancellation screen (showing the TableView).
+     * Navigates to the shared Cancellation screen (using TableView).
      */
     default void cancelReservation(ChatClient client, ActionEvent event, String userType) {
         try {
@@ -60,7 +59,7 @@ public interface ICustomerActions {
     }
 
     /**
-     * Navigates to the shared View Reservation details screen.
+     * Navigates to the shared View & Pay screen.
      */
     default void viewReservation(ChatClient client, ActionEvent event, String userType) {
         try {
@@ -73,16 +72,16 @@ public interface ICustomerActions {
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
             scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
-            stage.setTitle("Bistro - View Details");
+            stage.setTitle("Bistro - View & Pay");
             stage.setScene(scene);
             stage.show();
         } catch (Exception e) {
-            System.out.println("Navigation error (View): " + e.getMessage());
+            System.out.println("Navigation error (View/Pay): " + e.getMessage());
         }
     }
 
     /**
-     * Shared logic for removing a customer from a waiting list (Action only, no new screen).
+     * Shared logic for removing a customer from a waiting list.
      */
     default void exitWaitingList(ChatClient client, String confirmationCode) {
         java.util.ArrayList<String> message = new java.util.ArrayList<>();
@@ -93,6 +92,7 @@ public interface ICustomerActions {
         }
     }
 
+    // Abstract methods to be implemented by specific controllers (Subscriber vs Occasional)
     void viewOrderHistory(ChatClient client);
     void editPersonalDetails(ChatClient client);
 }
