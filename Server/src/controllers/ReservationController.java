@@ -17,13 +17,43 @@ public class ReservationController {
     }
 
     /**
-     * Purpose: Validates if the requested time is between 1 hour and 1 month from now.
-     * Receives: LocalDateTime requestedTime.
-     * Returns: boolean (true if the time window is valid).
+     * Purpose: Validates the requested time against restaurant policies:
+     * 1. Must be between 1 hour and 1 month from now.
+     * 2. Must be on the hour (:00) or half-hour (:30).
+     * 3. The restaurant must be open at that time.
      */
     public boolean isTimeWindowValid(LocalDateTime requestedTime) {
-        // Implementation logic: Compare now() with requestedTime
-        return false;
+    	if (requestedTime == null) {
+            return false;
+        }
+    	
+    	//ignore seconds and nanoseconds for the validation
+        LocalDateTime cleanRequested = requestedTime.withSecond(0).withNano(0);
+    	
+        //Time Range Validation
+        LocalDateTime now = LocalDateTime.now();
+        // We add a 1-minute buffer to 'minAllowed' to prevent rejection 
+        // due to the few milliseconds it takes for the code to run.
+        LocalDateTime minAllowed = now.plusHours(1).minusMinutes(1);
+        LocalDateTime maxAllowed = now.plusMonths(1);
+        
+        if (cleanRequested.isBefore(minAllowed) || cleanRequested.isAfter(maxAllowed)) {
+            return false;
+        }
+        
+        //Interval Validation (Must be XX:00 or XX:30)
+        int minutes = cleanRequested.getMinute();
+        if (minutes != 0 && minutes != 30) {
+            return false;
+        }
+        
+        //Restaurant Opening Hours Validation
+        if (restaurantController == null || !restaurantController.isRestaurantOpen(cleanRequested)) {
+            return false;
+        }
+
+        // All checks passed
+        return true;
     }
 
     /**
