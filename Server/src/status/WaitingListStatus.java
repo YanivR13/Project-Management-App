@@ -2,7 +2,7 @@ package status;
 
 public enum WaitingListStatus {
 	WAITING,
-	NITIFIED,
+	NOTIFIED,
 	SEATED,
 	CANCELLED
 }
