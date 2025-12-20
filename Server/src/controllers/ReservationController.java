@@ -70,17 +70,12 @@ public class ReservationController {
      * 3. Simulates seating everyone to see if a suitable physical table remains.
      */
     public boolean checkAvailability(LocalDateTime dateTime, int guests) {
-        // Validation - Is the time window allowed?
-        if (!isTimeWindowValid(dateTime)) {
-            return false;
-        }
-
         //Define the overlap window (119 minutes before and after)
         LocalDateTime startTimeWindow = dateTime.minusMinutes(119);
         LocalDateTime endTimeWindow = dateTime.plusMinutes(119);
 
         // Fetch overlapping reservations from DB
-        List<Reservation> overlappingRes = dbController.getReservatiosnByDateRange(startTimeWindow, endTimeWindow);
+        List<Reservation> overlappingRes = dbController.getReservatiosnByTimeRange(startTimeWindow, endTimeWindow);
 
         //Get all physical tables
         List<Table> availableTables = dbController.getAll(Table.class);
@@ -131,7 +126,7 @@ public class ReservationController {
         //Fetch all daily reservations from DB
         LocalDateTime fetchStart = LocalDateTime.of(date, openTime);
         LocalDateTime fetchEnd = LocalDateTime.of(date, closeTime);
-        List<Reservation> dailyReservations = dbController.getReservatiosnByDateRange(fetchStart, fetchEnd);
+        List<Reservation> dailyReservations = dbController.getReservatiosnByTimeRange(fetchStart, fetchEnd);
 
         //We create a map where each key is a 30-min interval and the value is the list of active reservations.
         Map<LocalTime, List<Reservation>> timeBuckets = new HashMap<>();

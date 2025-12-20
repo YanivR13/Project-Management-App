@@ -14,39 +14,44 @@ import status.WaitingListStatus;
 
 /**
  * Controller responsible for managing the immediate waiting list for walk-in
- * customers. 
- * Handles the queue, notifications, and timeout cancellations.
+ * customers. Handles the queue, notifications, and timeout cancellations.
  */
 
 public class WaitingListController {
 	private DBController dbController;
 	private RestaurantController restaurantController;
-	public WaitingListController(DBController dbController, RestaurantController restaurantController) {
+	private ReservationController resController;
+
+	public WaitingListController(DBController dbController, RestaurantController restaurantController, ReservationController resController) {
 		this.dbController = dbController;
 		this.restaurantController = restaurantController;
+		this.resController = resController;
 	}
 
 	/**
 	 * Purpose: Adds a customer to the waiting list when no immediate tables are
-	 * available.
-	 * Receives: User user, int guests.
-	 * Returns: long (the confirmation code for the waiting list entry).
+	 * available. Receives: User user, int guests. Returns: long (the confirmation
+	 * code for the waiting list entry).
 	 */
 
 	public long addToWaitingList(User user, int guests) {
-
 		// need to fix confirmation code method
 		long confirmationCode = 2;
+        if (resController.checkAvailability(LocalDateTime.now(), guests)) {
+        	//do we want to save in DB?
+        	seatCustomer(long confirmationCode);
+        	break;
+        }    
 		WaitingListEntry waiter = new WaitingListEntry(confirmationCode, guests, user);
 		dbController.save(waiter);
 		return confirmationCode;
 	}
 
-	/** 
+	
+	/**
 	 * Scans the waiting list and notifies the next customer if a table is truly
-	 * available. 
-	 * It performs a seating simulation to ensure future reservations (next 2 hours) 
-	 * are not compromised by walk-in customers.
+	 * available. It performs a seating simulation to ensure future reservations
+	 * (next 2 hours) are not compromised by walk-in customers.
 	 */
 	public void notifyNextInLine() {
 		// Fetch all active waiting list entries, sorted by their arrival time (FIFO)
@@ -106,13 +111,10 @@ public class WaitingListController {
 			}
 		}
 	}
-	
-	
-	/** 
+
+	/**
 	 * Purpose: Scans for notified customers who failed to check in within the
-	 * 15-minute grace period.
-	 * Receives: None.
-	 * Returns: void.
+	 * 15-minute grace period. Receives: None. Returns: void.
 	 */
 	public void handleExpiredWaiters() {
 		// Calculate the cutoff time (current time minus 15 minutes)
@@ -137,17 +139,17 @@ public class WaitingListController {
 		if (wasAnyCancelled)
 			notifyNextInLine();
 	}
-	/** 
+
+	/**
 	 * Purpose: Removes a customer from the waiting list if they choose to leave
-	 * voluntarily. 
-	 * Receives: long confirmationCode.
-	 * Returns: boolean (true if the entry was found and cancelled).
+	 * voluntarily. Receives: long confirmationCode. Returns: boolean (true if the
+	 * entry was found and cancelled).
 	 */
 	public boolean leaveWaitingList(long confirmationCode) {
 		WaitingListEntry entry = dbController.findById(WaitingListEntry.class, confirmationCode);
 		// If the entry exists and isn't already processed (e.g., SEATED or CANCELLED)
-		if (entry != null && (entry.getStatus() == WaitingListStatus.WAITING ||
-				entry.getStatus() == WaitingListStatus.NOTIFIED)) {
+		if (entry != null && (entry.getStatus() == WaitingListStatus.WAITING
+				|| entry.getStatus() == WaitingListStatus.NOTIFIED)) {
 			// Save the previous status to decide if we need to trigger a re-scan
 			WaitingListStatus previousStatus = entry.getStatus();
 			// Update status locally
