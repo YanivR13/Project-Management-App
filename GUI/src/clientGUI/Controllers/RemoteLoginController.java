@@ -3,8 +3,8 @@ package clientGUI.Controllers;
 import client.ChatClient;
 import clientGUI.Controllers.OccasionalControlls.OccasionalLoginController;
 import clientGUI.Controllers.SubscriberControlls.SubscriberLoginController;
-import common.ChatIF;
 import javafx.event.ActionEvent;
+import common.ChatIF;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -25,8 +25,10 @@ public class RemoteLoginController implements ChatIF {
     }
 
     @Override
-    public void display(String message) {
-        appendLog(message);
+    public void display(Object message) {
+        if (message != null) {
+            appendLog(message.toString());
+        }
     }
 
     public void appendLog(String message) {

@@ -1,20 +1,12 @@
 package common;
 
 /**
- * A simple interface used by client-side UIs (GUI or console)
- * to receive messages sent from the server.
- *
- * Any class implementing this interface must define how to
- * display the incoming message to the user.
+ * Interface used by client-side UIs to receive messages from the server.
  */
 public interface ChatIF {
-
     /**
      * Displays a message sent from the server.
-     *
-     * @param message The message object to display.
+     * We use Object to allow flexibility in the types of messages received.
      */
-    public abstract void display(Object message);
-
-	void display(String message);
+    void display(Object message);
 }

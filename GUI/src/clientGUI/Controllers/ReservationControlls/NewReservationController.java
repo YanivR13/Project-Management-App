@@ -15,26 +15,39 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 
+/**
+ * Controller for the New Reservation screen.
+ * Handles availability checks and initial reservation data entry.
+ */
 public class NewReservationController implements ChatIF {
 
     private ChatClient client;
-    private String userType; // To know where to go back (Subscriber or Guest)
+    private String userType;
 
     @FXML private DatePicker datePicker;
     @FXML private ComboBox<String> comboTime;
     @FXML private TextField txtGuests;
     @FXML private TextArea txtLog;
 
+    /**
+     * Sets up the client and initializes UI components.
+     */
     public void setClient(ChatClient client, String userType) {
         this.client = client;
         this.userType = userType;
         initTimeSlots();
     }
 
+    /**
+     * Populates the time slot dropdown.
+     */
     private void initTimeSlots() {
         comboTime.setItems(FXCollections.observableArrayList("12:00", "13:00", "14:00", "19:00", "20:00", "21:00"));
     }
 
+    /**
+     * Validates input and sends availability check to the server.
+     */
     @FXML
     void clickCheckAvailability(ActionEvent event) {
         LocalDate date = datePicker.getValue();
@@ -56,6 +69,9 @@ public class NewReservationController implements ChatIF {
         client.handleMessageFromClientUI(message);
     }
 
+    /**
+     * Navigates back to the main menu.
+     */
     @FXML
     void clickBack(ActionEvent event) {
         String fxmlPath = userType.equals("Subscriber") ? 
@@ -64,13 +80,15 @@ public class NewReservationController implements ChatIF {
         navigateTo(event, fxmlPath);
     }
 
+    /**
+     * Scene switching logic for returning to menus.
+     */
     private void navigateTo(ActionEvent event, String path) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
             Parent root = loader.load();
             Object ctrl = loader.getController();
             
-            // Re-injecting the client to the menu
             if (ctrl instanceof clientGUI.Controllers.SubscriberControlls.SubscriberMenuController) {
                 ((clientGUI.Controllers.SubscriberControlls.SubscriberMenuController) ctrl).setClient(client);
             } else {
@@ -87,11 +105,19 @@ public class NewReservationController implements ChatIF {
         }
     }
 
+    /**
+     * Implements ChatIF to display server responses.
+     */
     @Override
-    public void display(String message) {
-        appendLog(message);
+    public void display(Object message) {
+        if (message != null) {
+            appendLog(message.toString());
+        }
     }
 
+    /**
+     * Safe UI update for log messages.
+     */
     public void appendLog(String message) {
         Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));
     }
