@@ -36,15 +36,10 @@ public class WaitingListController {
 
 	public long addToWaitingList(User user, int guests) {
 		// need to fix confirmation code method
-		long confirmationCode = 2;
-        if (resController.checkAvailability(LocalDateTime.now(), guests)) {
-        	//do we want to save in DB?
-        	seatCustomer(long confirmationCode);
-        	break;
-        }    
-		WaitingListEntry waiter = new WaitingListEntry(confirmationCode, guests, user);
-		dbController.save(waiter);
-		return confirmationCode;
+		long confirmationCode = generateCode();
+	    WaitingListEntry waiter = new WaitingListEntry(confirmationCode, guests, user);
+	    dbController.save(waiter);
+	    return confirmationCode;
 	}
 
 	
