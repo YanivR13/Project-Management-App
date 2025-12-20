@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="600.0" prefWidth="600.0" stylesheets="@../../cssStyle/style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.Controllers.ReservationControlls.CancelReservationController">
+   <children>
+      <VBox alignment="TOP_CENTER" layoutX="25.0" layoutY="30.0" prefWidth="550.0" spacing="20.0">
+         <children>
+            <Label styleClass="header-label" text="Cancel Existing Reservation">
+               <font>
+                  <Font name="System Bold" size="24.0" />
+               </font>
+            </Label>
+            
+            <Label text="Please select an active reservation from the list to cancel:" textFill="#ecf0f1" />
+            
+            <TableView fx:id="tableReservations" prefHeight="250.0" prefWidth="550.0">
+              <columns>
+                <TableColumn fx:id="colID" prefWidth="100.0" text="Order ID" />
+                <TableColumn fx:id="colDate" prefWidth="120.0" text="Date" />
+                <TableColumn fx:id="colTime" prefWidth="100.0" text="Time" />
+                <TableColumn fx:id="colGuests" prefWidth="100.0" text="Guests Count" />
+              </columns>
+            </TableView>
+
+            <HBox alignment="CENTER" spacing="20.0">
+               <children>
+                  <Button fx:id="btnCancelSelected" onAction="#clickCancelSelected" prefHeight="50.0" prefWidth="200.0" style="-fx-background-color: #e74c3c;" text="Cancel Selected Order" />
+                  <Button fx:id="btnBack" onAction="#clickBack" prefHeight="50.0" prefWidth="200.0" style="-fx-background-color: #7f8c8d;" text="Back to Menu" />
+               </children>
+            </HBox>
+         </children>
+      </VBox>
+      <TextArea fx:id="txtLog" editable="false" layoutX="25.0" layoutY="440.0" prefHeight="130.0" prefWidth="550.0" wrapText="true" />
+   </children>
+</AnchorPane>
