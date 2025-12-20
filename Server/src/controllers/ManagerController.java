@@ -3,6 +3,9 @@ package controllers;
 import java.util.List;
 import java.util.Map;
 
+import entities.Subscriber;
+import entities.Visit;
+
 /**
  * Controller responsible for administrative tasks, generating analytical reports,
  * and monitoring restaurant performance metrics.

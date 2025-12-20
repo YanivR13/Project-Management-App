@@ -37,37 +37,43 @@ public class ServerController extends AbstractServer {
     }
 
     /**
-     * Called automatically by OCSF when the server begins listening.
-     * Attempts to connect to the MySQL database and logs the results.
+     * Called automatically by OCSF when the server starts listening for clients.
+     * 
+     * This method initializes the database layer by obtaining the singleton
+     * instance of DBController and establishing a connection to the MySQL database.
+     * 
+     * Any connection failure is logged to the server UI.
      */
     @Override
     protected void serverStarted() {
-        serverUI.appendLog("Server started!");
+        serverUI.appendLog("Server started.");
 
         try {
-            DBController.connectToDB();
-            serverUI.appendLog("Connected to Database.");
-        } catch (Exception e) {
-            serverUI.appendLog("Database connection failed: " + e.getMessage());
+            // Obtain the single DBController instance and connect to the database
+            DBController dbController = DBController.getInstance();
+            dbController.connectToDB();
+
+            serverUI.appendLog("Connected to database successfully.");
+        } catch (SQLException e) {
+            serverUI.appendLog("Failed to connect to database: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     /**
      * Called automatically when the server stops listening.
-     * Closes the database connection if open.
+     * Safely closes the database connection if it exists.
      */
     @Override
     protected void serverStopped() {
         serverUI.appendLog("Server has stopped.");
 
         try {
-            if (DBController.conn != null && !DBController.conn.isClosed()) {
-                DBController.conn.close();
-                serverUI.appendLog("Database connection closed.");
-            }
-        } catch (Exception e) {
+            DBController.getInstance().closeConnection();
+            serverUI.appendLog("Database connection closed.");
+        } catch (SQLException e) {
             serverUI.appendLog("Error closing database: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -115,13 +121,15 @@ public class ServerController extends AbstractServer {
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
         serverUI.appendLog("Message received: " + msg + " from " + client);
+        
+        DBController db = DBController.getInstance();
 
         // Case 1: Client asks to display all orders
         if (msg instanceof String) {
             String command = (String) msg;
 
             if (command.equals("display")) {
-                ArrayList<String> orders = DBController.getAllOrders();
+                ArrayList<String> orders = db.getAllOrders();
 
                 try {
                     client.sendToClient(orders);
@@ -143,7 +151,7 @@ public class ServerController extends AbstractServer {
                 String date = list.get(2);
                 String guests = list.get(3);
 
-                boolean success = DBController.updateOrder(id, date, guests);
+                boolean success = db.updateOrder(id, date, guests);
 
                 try {
                     if (success) {

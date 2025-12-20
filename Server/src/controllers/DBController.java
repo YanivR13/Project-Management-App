@@ -16,9 +16,25 @@ import java.util.List;
 public class DBController {
 
     /** 
+     * The single instance of DBController (Singleton).
+     */
+    private static DBController instance;
+    
+    /** 
      * A single shared database connection used by the server.
      */
-    public static Connection conn;
+    private Connection conn;
+    
+    /**
+     * Returns the single instance of DBController.
+     */
+    public static DBController getInstance() {
+        if (instance == null) {
+            instance = new DBController();
+        }
+        return instance;
+    }
+    
 
     /**
      * Establishes a connection to the MySQL database.
@@ -26,13 +42,24 @@ public class DBController {
      *
      * @throws SQLException if the connection fails
      */
-    public static void connectToDB() throws SQLException {
+    public void connectToDB() throws SQLException {
+        if (conn != null) {
+            return; // already connected
+        }
+
         conn = DriverManager.getConnection(
-            "jdbc:mysql://localhost:3307/bistrodb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
+            "jdbc:mysql://localhost:3306/bistrodb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
             "root",
-            "Rochlin99!"
+            "Eden2701@"
         );
+
         System.out.println("SQL connection succeed");
+    }
+    
+    public void closeConnection() throws SQLException {
+        if (conn != null && !conn.isClosed()) {
+            conn.close();
+        }
     }
     
     public boolean save(Object entity) {
@@ -75,7 +102,7 @@ public class DBController {
      *
      * @return a list of formatted order strings to send back to the client
      */
-    public static ArrayList<String> getAllOrders() {
+    public ArrayList<String> getAllOrders() {
         ArrayList<String> list = new ArrayList<>();
 
         try {
@@ -114,7 +141,7 @@ public class DBController {
      * @param guests the new number of guests
      * @return true if the update succeeded, false if the ID does not exist or an error occurred
      */
-    public static boolean updateOrder(String id, String date, String guests) {
+    public boolean updateOrder(String id, String date, String guests) {
         try {
             Statement stmt = conn.createStatement();
 
