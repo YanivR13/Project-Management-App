@@ -104,5 +104,5 @@ public class RestaurantController {
         TimeRange range = restaurant.getHoursForDate(date);
         return (range != null) ? range.getCloseTime() : null;
     }
-	
+	// check
 }
