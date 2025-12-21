@@ -9,7 +9,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="600.0" prefWidth="500.0" stylesheets="@../../cssStyle/style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.Controllers.SubscriberControlls.SubscriberMenuController">
+<AnchorPane prefHeight="600.0" prefWidth="500.0" stylesheets="@../../cssStyle/GlobalStyles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.Controllers.SubscriberControlls.SubscriberMenuController">
    <children>
       <VBox alignment="CENTER" layoutX="50.0" layoutY="20.0" prefWidth="400.0" spacing="20.0">
          <children>
@@ -25,15 +25,15 @@
                 <RowConstraints minHeight="10.0" prefHeight="60.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <Button fx:id="btnNewRes" maxWidth="Infinity" onAction="#clickNewRes" prefHeight="60.0" text="New Res" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                  <Button fx:id="btnCancelRes" maxWidth="Infinity" onAction="#clickCancelRes" prefHeight="60.0" text="Cancel Res" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                  <Button fx:id="btnViewRes" maxWidth="Infinity" onAction="#clickViewRes" prefHeight="60.0" text="View Res" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                  <Button fx:id="btnExitWait" maxWidth="Infinity" onAction="#clickExitWait" prefHeight="60.0" style="-fx-background-color: #e67e22;" text="Exit List" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button fx:id="btnHistory" maxWidth="Infinity" onAction="#clickHistory" prefHeight="60.0" style="-fx-background-color: #9b59b6;" text="History" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                  <Button fx:id="btnEditProfile" maxWidth="Infinity" onAction="#clickEditProfile" prefHeight="60.0" style="-fx-background-color: #16a085;" text="Profile" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Button fx:id="btnNewRes" maxWidth="Infinity" onAction="#clickNewRes" prefHeight="60.0" text="New Reservation" styleClass="btn-new" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                  <Button fx:id="btnCancelRes" maxWidth="Infinity" onAction="#clickCancelRes" prefHeight="60.0" text="Cancel Exist Reservation" styleClass="btn-cancel" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                  <Button fx:id="btnViewRes" maxWidth="Infinity" onAction="#clickViewRes" prefHeight="60.0" text="Active Reservation" styleClass="btn-view" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                  <Button fx:id="btnExitWait" maxWidth="Infinity" onAction="#clickExitWait" prefHeight="60.0" text="Exit Waiting List" styleClass="btn-exit" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Button fx:id="btnHistory" maxWidth="Infinity" onAction="#clickHistory" prefHeight="60.0" text="Order History" styleClass="btn-history" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                  <Button fx:id="btnEditProfile" maxWidth="Infinity" onAction="#clickEditProfile" prefHeight="60.0" text="Profile Settings" styleClass="btn-profile" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                </children>
             </GridPane>
-            <Button fx:id="btnLogout" maxWidth="Infinity" onAction="#clickLogout" prefHeight="40.0" style="-fx-background-color: #e74c3c;" text="Logout" />
+            <Button fx:id="btnLogout" maxWidth="Infinity" onAction="#clickLogout" prefHeight="40.0" styleClass="btn-logout" text="Logout" />
          </children>
       </VBox>
       <TextArea fx:id="txtLog" editable="false" layoutX="25.0" layoutY="450.0" prefHeight="120.0" prefWidth="450.0" wrapText="true" />

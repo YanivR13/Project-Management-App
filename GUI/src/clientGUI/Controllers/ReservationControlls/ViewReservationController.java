@@ -15,10 +15,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
 
-/**
- * Controller for the View & Pay screen.
- * Allows users to view active unpaid reservations and process payments.
- */
 public class ViewReservationController implements ChatIF {
 
     private ChatClient client;
@@ -30,9 +26,6 @@ public class ViewReservationController implements ChatIF {
     @FXML private TableColumn<Reservation, Integer> colGuests;
     @FXML private TextArea txtLog;
 
-    /**
-     * Initializes the UI and requests data from the server.
-     */
     public void setClient(ChatClient client, String userType) {
         this.client = client;
         this.userType = userType;
@@ -40,9 +33,6 @@ public class ViewReservationController implements ChatIF {
         requestUnpaidReservations();
     }
 
-    /**
-     * Maps table columns to Reservation entity getters.
-     */
     private void setupTable() {
         colCode.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
         colDate.setCellValueFactory(new PropertyValueFactory<>("dateString")); 
@@ -50,24 +40,18 @@ public class ViewReservationController implements ChatIF {
         colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests"));
     }
 
-    /**
-     * Asks the server for all active reservations with unpaid status.
-     */
     private void requestUnpaidReservations() {
-        appendLog("System: Requesting your unpaid active orders...");
+        appendLog("System: Requesting your unpaid orders...");
         ArrayList<String> message = new ArrayList<>();
         message.add("GET_UNPAID_RESERVATIONS");
         client.handleMessageFromClientUI(message);
     }
 
-    /**
-     * Sends a payment command for the selected reservation.
-     */
     @FXML
     void clickPayNow(ActionEvent event) {
         Reservation selected = tableReservations.getSelectionModel().getSelectedItem();
         if (selected == null) {
-            appendLog("Error: Please select an order from the table first.");
+            appendLog("Error: Select an order first.");
             return;
         }
 
@@ -75,24 +59,18 @@ public class ViewReservationController implements ChatIF {
         message.add("PAY_RESERVATION");
         message.add(String.valueOf(selected.getConfirmationCode()));
 
-        appendLog("System: Processing payment for code: " + selected.getConfirmationCode());
+        appendLog("System: Processing payment...");
         client.handleMessageFromClientUI(message);
     }
 
-    /**
-     * Returns the user to the dashboard.
-     */
     @FXML
     void clickBack(ActionEvent event) {
         String fxmlPath = userType.equals("Subscriber") ? 
             "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml" : 
-            "/clientGUI/fxmlFiles/OccasinalFXML/OccasionalMenuFrame.fxml";
+            "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml";
         navigateToMenu(event, fxmlPath);
     }
 
-    /**
-     * Navigation helper with client re-injection.
-     */
     private void navigateToMenu(ActionEvent event, String path) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
@@ -107,21 +85,16 @@ public class ViewReservationController implements ChatIF {
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+            // תיקון נתיב CSS
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
         } catch (Exception e) {
-            // 1. מדפיס את כל ה-Stack Trace ל-Console (טקסט אדום מפורט)
             e.printStackTrace(); 
-            
-            // 2. מציג הודעה קצרה למשתמש על גבי ה-UI (ב-TextArea)
             appendLog("Error: " + e.getMessage());
         }
     }
 
-    /**
-     * Implements ChatIF for server feedback.
-     */
     @Override
     public void display(Object message) {
         if (message != null) {
@@ -129,9 +102,6 @@ public class ViewReservationController implements ChatIF {
         }
     }
 
-    /**
-     * Safe UI logger.
-     */
     public void appendLog(String message) {
         Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));
     }

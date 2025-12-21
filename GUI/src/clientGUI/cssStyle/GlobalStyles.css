@@ -1,0 +1,121 @@
+/* ==========================================================================
+   GlobalStyles.css - The Master Style Sheet for Bistro System (2025)
+   ========================================================================== */
+
+/* --- 1. ROOT & GLOBAL SETTINGS --- */
+/* הגדרות כלליות לכל חלון האפליקציה */
+.root {
+    -fx-background-color: linear-gradient(to bottom, #2c3e50, #000000);
+    -fx-font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* --- 2. TYPOGRAPHY & LABELS --- */
+/* כותרות וטקסטים רגילים */
+.label {
+    -fx-text-fill: #ecf0f1; /* לבן-אפרפר להקלה על העיניים */
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 2, 0, 0, 1);
+}
+
+/* כותרות גדולות (Header) למסכים */
+.header-label {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #3498db; /* כחול בולט */
+    -fx-effect: dropshadow(gaussian, black, 5, 0, 0, 2);
+    -fx-padding: 10 0 20 0;
+}
+
+/* --- 3. FORM ELEMENTS (Inputs) --- */
+/* שדות טקסט (TextField) */
+.text-field {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #000000;
+    -fx-border-color: #34495e;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8;
+    -fx-font-size: 13px;
+}
+
+/* אזור טקסט גדול (TextArea / Log) */
+.text-area {
+    -fx-font-family: "Consolas", "Courier New", monospace;
+    -fx-control-inner-background: #ecf0f1; 
+    -fx-background-radius: 8;
+    -fx-border-color: #34495e;
+    -fx-border-radius: 8;
+}
+
+.text-area .content {
+    -fx-background-color: transparent;
+}
+
+/* --- 4. BASE BUTTON STYLE --- */
+/* הגדרות בסיסיות לכל כפתור במערכת */
+.button {
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+    -fx-cursor: hand;
+    -fx-background-radius: 12; /* פינות מעוגלות במידה נעימה */
+    -fx-font-size: 14px;
+    -fx-padding: 8 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 5, 0, 0, 2);
+}
+
+/* אפקט תנועה כללי לכל כפתור בעת מעבר עכבר */
+.button:hover {
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+/* --- 5. SPECIFIC BUTTON COLOR CLASSES --- */
+/* שימוש דרך: styleClass="btn-xxx" ב-FXML */
+
+/* ירוק - הרשמה, אישור, עדכון (Success) */
+.btn-update, .btn-new, .btn-register { 
+    -fx-background-color: #2ecc71; 
+}
+.btn-update:hover, .btn-new:hover, .btn-register:hover { 
+    -fx-background-color: #27ae60; 
+}
+
+/* כחול - צפייה, פרטים, התחברות (Info) */
+.btn-view, .btn-login { 
+    -fx-background-color: #3498db; 
+}
+.btn-view:hover, .btn-login:hover { 
+    -fx-background-color: #2980b9; 
+}
+
+/* אפור/כהה - ביטול (Cancel) */
+.btn-cancel { 
+    -fx-background-color: #212121; 
+}
+.btn-cancel:hover { 
+    -fx-background-color: #424242; 
+}
+
+/* כתום - יציאה מהמסך (Warning/Transition) */
+.btn-exit, .btn-back { 
+    -fx-background-color: #e67e22; 
+}
+.btn-exit:hover, .btn-back:hover { 
+    -fx-background-color: #d35400; 
+}
+
+/* אדום - התנתקות (Danger) */
+.btn-logout { 
+    -fx-background-color: #e74c3c; 
+}
+.btn-logout:hover { 
+    -fx-background-color: #c0392b; 
+}
+
+/* סגול/טורקיז - היסטוריה ופרופיל */
+.btn-history { -fx-background-color: #9b59b6; }
+.btn-history:hover { -fx-background-color: #8e44ad; }
+
+.btn-profile { -fx-background-color: #16a085; }
+.btn-profile:hover { -fx-background-color: #1abc9c; }

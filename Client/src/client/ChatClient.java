@@ -41,7 +41,10 @@ public class ChatClient extends AbstractClient {
         this.clientUI = clientUI;
         openConnection();    // Attempt to connect immediately
     }
-
+    
+    public void setUI(ChatIF clientUI) {
+        this.clientUI = clientUI;
+    }
 
     /**
      * Handles any message received from the server.

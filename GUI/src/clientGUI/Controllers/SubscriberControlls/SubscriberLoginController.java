@@ -16,43 +16,25 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.application.Platform;
 
-/**
- * Controller for the Subscriber login screen.
- * Handles identification via unique Subscriber ID.
- * Implements ChatIF to handle responses from the server.
- */
 public class SubscriberLoginController implements ChatIF {
 
     private ChatClient client;
 
-    @FXML
-    private TextField txtSubscriberID;
+    @FXML private TextField txtSubscriberID;
+    @FXML private Button btnLogin;
+    @FXML private Button btnBack;
+    @FXML private TextArea txtLog;
 
-    @FXML
-    private Button btnLogin;
-
-    @FXML
-    private Button btnBack;
-
-    @FXML
-    private TextArea txtLog;
-
-    /**
-     * Injects the client instance into this controller.
-     * @param client The ChatClient instance used for communication.
-     */
     public void setClient(ChatClient client) {
         this.client = client;
+        if (client != null) {
+            client.setUI(this); 
+        }
     }
 
-    /**
-     * Triggered when the user clicks the Login button.
-     * Validates input and sends a login request to the server.
-     */
     @FXML
     void clickLogin(ActionEvent event) {
         String subID = txtSubscriberID.getText();
-
         if (subID.isEmpty()) {
             appendLog("Error: Subscriber ID is required.");
             return;
@@ -63,87 +45,70 @@ public class SubscriberLoginController implements ChatIF {
         message.add(subID);
 
         if (client != null) {
-            appendLog("Attempting to verify Subscriber ID: " + subID);
+            appendLog("Attempting verification...");
             client.handleMessageFromClientUI(message);
-            navigateToMenu(event);
-        } else {
-            // אם תראה את ההודעה הזו בתיבה הלבנה, סימן שה-client לא הועבר כמו שצריך
-            appendLog("Critical Error: ChatClient is NOT initialized!");
         }
     }
 
-    /**
-     * Navigates back to the Remote Access Portal.
-     */
     @FXML
     void clickBack(ActionEvent event) {
         navigateToPortal(event);
     }
 
-    /**
-     * Loads the Subscriber Menu (Dashboard).
-     */
-    private void navigateToMenu(ActionEvent event) {
+    @Override
+    public void display(Object message) {
+        if (message != null) {
+            String response = message.toString();
+            appendLog(response);
+            if (response.equals("LOGIN_SUCCESS")) {
+                Platform.runLater(() -> navigateToMenu());
+            }
+        }
+    }
+
+    private void navigateToMenu() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml"));
             Parent root = loader.load();
-            
-            // Get the controller and inject the client
             SubscriberMenuController controller = loader.getController();
             controller.setClient(client);
             
-            switchScene(event, root, "Subscriber Dashboard");
+            Stage stage = (Stage) btnLogin.getScene().getWindow();
+            Scene scene = new Scene(root);
+            // תיקון נתיב CSS
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
+            
+            stage.setTitle("Subscriber Dashboard");
+            stage.setScene(scene);
+            stage.show();
         } catch (Exception e) {
             appendLog("Navigation Error: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    /**
-     * Loads the initial Remote Access Portal screen.
-     */
     private void navigateToPortal(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
             Parent root = loader.load();
-            
             RemoteLoginController portalCtrl = loader.getController();
             portalCtrl.setClient(client);
-            
             switchScene(event, root, "Bistro - Remote Access Portal");
         } catch (Exception e) {
-            appendLog("Navigation Error: " + e.getMessage());
+            appendLog("Error: " + e.getMessage());
         }
     }
 
-    /**
-     * Helper method to handle the physical stage/scene switching.
-     */
     private void switchScene(ActionEvent event, Parent root, String title) {
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+        // תיקון נתיב CSS
+        scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
         stage.setTitle(title);
         stage.setScene(scene);
         stage.show();
     }
 
-    /**
-     * Implementation of the ChatIF interface.
-     * Updated to handle Object instead of String to match the interface contract.
-     * @param message The message object received from the server.
-     */
-    @Override
-    public void display(Object message) {
-        if (message != null) {
-            appendLog(message.toString());
-        }
-    }
-
-    /**
-     * Appends text to the on-screen log area within the JavaFX thread.
-     * @param message The text to display in the log.
-     */
     public void appendLog(String message) {
         Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));
     }

@@ -11,23 +11,27 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-/**
- * Controller for the Occasional (Guest) login screen.
- * Handles temporary identification and registration navigation.
- */
 public class OccasionalLoginController implements ChatIF {
 
     private ChatClient client;
 
     @FXML private TextField txtUsername, txtContact;
+    @FXML private TextField txtForgotContact, txtNewUsername;
     @FXML private TextArea txtLog;
+    @FXML private VBox paneLogin, paneForgot;
+    @FXML private Button btnLogin;
 
     public void setClient(ChatClient client) {
         this.client = client;
+        if (client != null) {
+            client.setUI(this);
+        }
     }
 
     @FXML
@@ -36,7 +40,7 @@ public class OccasionalLoginController implements ChatIF {
         String contact = txtContact.getText();
 
         if (username.isEmpty() || contact.isEmpty()) {
-            appendLog("Error: All fields are mandatory.");
+            appendLog("Error: Username and Contact are required.");
             return;
         }
 
@@ -48,15 +52,97 @@ public class OccasionalLoginController implements ChatIF {
         if (client != null) {
             appendLog("Verifying guest details for: " + username);
             client.handleMessageFromClientUI(message);
-            // ניווט לתפריט (במצב טסט)
-            navigateToMenu(event);
+        }
+    }
+
+    @FXML
+    void showForgotArea(ActionEvent event) {
+        paneLogin.setVisible(false);
+        paneLogin.setManaged(false);
+        paneForgot.setVisible(true);
+        paneForgot.setManaged(true);
+    }
+
+    @FXML
+    void hideForgotArea(ActionEvent event) {
+        paneForgot.setVisible(false);
+        paneForgot.setManaged(false);
+        paneLogin.setVisible(true);
+        paneLogin.setManaged(true);
+    }
+
+    @FXML
+    void clickSubmitForgot(ActionEvent event) {
+        String oldContact = txtForgotContact.getText();
+        String newUsername = txtNewUsername.getText();
+
+        if (oldContact.isEmpty() || newUsername.isEmpty()) {
+            appendLog("Error: Both fields are required to reset username.");
+            return;
+        }
+
+        ArrayList<String> message = new ArrayList<>();
+        message.add("RESET_OCCASIONAL_USERNAME");
+        message.add(oldContact);
+        message.add(newUsername);
+
+        if (client != null) {
+            appendLog("Requesting username reset for contact: " + oldContact);
+            client.handleMessageFromClientUI(message);
+        }
+    }
+
+    @Override
+    public void display(Object message) {
+        if (message != null) {
+            String response = message.toString();
+            appendLog(response);
+
+            if (response.equals("LOGIN_OCCASIONAL_SUCCESS")) {
+                Platform.runLater(() -> navigateToMenu());
+            }
+            
+            if (response.equals("RESET_USERNAME_SUCCESS")) {
+                Platform.runLater(() -> {
+                    appendLog("Success! You can now log in with your new username.");
+                    hideForgotArea(null);
+                });
+            }
+        }
+    }
+
+    private void navigateToMenu() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"));
+            Parent root = loader.load();
+            
+            OccasionalMenuController controller = loader.getController();
+            controller.setClient(client);
+
+            Stage stage = (Stage) btnLogin.getScene().getWindow();
+            Scene scene = new Scene(root);
+            // תיקון נתיב CSS
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
+            stage.setTitle("Guest Dashboard");
+            stage.setScene(scene);
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+            appendLog("Navigation Error: " + e.getMessage());
         }
     }
 
     @FXML
     void clickRegister(ActionEvent event) {
-        appendLog("Navigating to Registration Module...");
-        // Placeholder for future Registration screen
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalRegistrationFrame.fxml"));
+            Parent root = loader.load();
+            OccasionalRegistrationController controller = loader.getController();
+            controller.setClient(client);
+            switchScene(event, root, "Register New Guest");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
@@ -64,35 +150,15 @@ public class OccasionalLoginController implements ChatIF {
         navigateToPortal(event);
     }
 
-    private void navigateToMenu(ActionEvent event) {
-        try {
-            // תיקון נתיב: הוספת תיקיית OccasionalFXML
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"));
-            Parent root = loader.load();
-            
-            OccasionalMenuController controller = loader.getController();
-            controller.setClient(client);
-            
-            switchScene(event, root, "Guest Dashboard");
-        } catch (Exception e) {
-            // הדפסת השגיאה המלאה ל-Console
-            e.printStackTrace(); 
-            appendLog("Navigation Error: " + e.getMessage());
-        }
-    }
-
     private void navigateToPortal(ActionEvent event) {
         try {
-            // הנחת עבודה: ה-Portal נמצא ישירות תחת fxmlFiles
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
             Parent root = loader.load();
-            
             RemoteLoginController controller = loader.getController();
             controller.setClient(client);
-            
             switchScene(event, root, "Bistro - Remote Access Portal");
         } catch (Exception e) {
-            e.printStackTrace(); 
+            e.printStackTrace();
             appendLog("Navigation Error: " + e.getMessage());
         }
     }
@@ -101,23 +167,16 @@ public class OccasionalLoginController implements ChatIF {
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
         Scene scene = new Scene(root);
         
-        // וודא שהנתיב ל-CSS תקין אצלך בפרויקט
         try {
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+            // תיקון נתיב CSS
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
         } catch (Exception e) {
-            System.out.println("CSS not found, skipping style.");
+            System.out.println("CSS not found: " + e.getMessage());
         }
         
         stage.setTitle(title);
         stage.setScene(scene);
         stage.show();
-    }
-
-    @Override
-    public void display(Object message) {
-        if (message != null) {
-            appendLog(message.toString());
-        }
     }
 
     public void appendLog(String message) {

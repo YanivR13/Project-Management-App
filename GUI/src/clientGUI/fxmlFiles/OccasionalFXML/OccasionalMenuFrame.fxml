@@ -6,16 +6,16 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane prefHeight="550.0" prefWidth="450.0" stylesheets="@../../cssStyle/style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.Controllers.OccasionalControlls.OccasionalMenuController">
+<AnchorPane prefHeight="550.0" prefWidth="450.0" stylesheets="@../../cssStyle/GlobalStyles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.Controllers.OccasionalControlls.OccasionalMenuController">
    <children>
       <VBox alignment="CENTER" layoutX="50.0" layoutY="20.0" prefWidth="350.0" spacing="15.0">
          <children>
             <Label styleClass="header-label" text="Guest Menu" />
-            <Button fx:id="btnNewReservation" maxWidth="Infinity" onAction="#clickNewReservation" prefHeight="50.0" text="New Reservation" />
-            <Button fx:id="btnCancelReservation" maxWidth="Infinity" onAction="#clickCancelReservation" prefHeight="50.0" text="Cancel Reservation" />
-            <Button fx:id="btnViewReservation" maxWidth="Infinity" onAction="#clickViewReservation" prefHeight="50.0" text="View Reservation" />
-            <Button fx:id="btnExitWaitingList" maxWidth="Infinity" onAction="#clickExitWaitingList" prefHeight="50.0" style="-fx-background-color: #e67e22;" text="Exit Waiting List" />
-            <Button fx:id="btnLogout" maxWidth="Infinity" onAction="#clickLogout" prefHeight="40.0" style="-fx-background-color: #e74c3c;" text="Logout" />
+            <Button fx:id="btnNewReservation" maxWidth="Infinity" onAction="#clickNewReservation" prefHeight="50.0" styleClass="btn-view" text="New Reservation" />
+            <Button fx:id="btnCancelReservation" maxWidth="Infinity" onAction="#clickCancelReservation" prefHeight="50.0" styleClass="btn-cancel" text="Cancel Reservation" />
+            <Button fx:id="btnViewReservation" maxWidth="Infinity" onAction="#clickViewReservation" prefHeight="50.0" styleClass="btn-view" text="View Reservation" />
+            <Button fx:id="btnExitWaitingList" maxWidth="Infinity" onAction="#clickExitWaitingList" prefHeight="50.0" styleClass="btn-exit" text="Exit Waiting List" />
+            <Button fx:id="btnLogout" maxWidth="Infinity" onAction="#clickLogout" prefHeight="40.0" styleClass="btn-logout" text="Logout" />
          </children>
       </VBox>
       <TextArea fx:id="txtLog" editable="false" layoutX="25.0" layoutY="400.0" prefHeight="120.0" prefWidth="400.0" wrapText="true" />

@@ -2,18 +2,12 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.*?>
 
-<AnchorPane prefHeight="550.0" prefWidth="500.0" stylesheets="@../../cssStyle/style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.Controllers.ReservationControlls.NewReservationController">
+<AnchorPane prefHeight="550.0" prefWidth="500.0" stylesheets="@../../cssStyle/GlobalStyles.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="clientGUI.Controllers.ReservationControlls.NewReservationController">
    <children>
       <VBox alignment="TOP_CENTER" layoutX="50.0" layoutY="30.0" prefWidth="400.0" spacing="20.0">
          <children>
-            <Label styleClass="header-label" text="New Reservation">
-               <font>
-                  <Font name="System Bold" size="24.0" />
-               </font>
-            </Label>
-            
+            <Label styleClass="header-label" text="New Reservation" />
             <GridPane vgap="15.0">
               <columnConstraints>
                 <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="120.0" />
@@ -22,19 +16,16 @@
               <children>
                  <Label text="Date:" GridPane.rowIndex="0" />
                  <DatePicker fx:id="datePicker" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                 
                  <Label text="Time Slot:" GridPane.rowIndex="1" />
                  <ComboBox fx:id="comboTime" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                 
-                 <Label text="Number of Guests:" GridPane.rowIndex="2" />
+                 <Label text="Guests:" GridPane.rowIndex="2" />
                  <TextField fx:id="txtGuests" promptText="e.g. 4" GridPane.columnIndex="1" GridPane.rowIndex="2" />
               </children>
             </GridPane>
-
             <HBox spacing="15.0">
                <children>
-                  <Button fx:id="btnCheck" maxWidth="Infinity" onAction="#clickCheckAvailability" prefHeight="50.0" text="Check Availability" HBox.hgrow="ALWAYS" />
-                  <Button fx:id="btnBack" maxWidth="Infinity" onAction="#clickBack" prefHeight="50.0" style="-fx-background-color: #7f8c8d;" text="Back to Menu" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="btnCheck" maxWidth="Infinity" onAction="#clickCheckAvailability" prefHeight="50.0" styleClass="btn-view" text="Check Availability" HBox.hgrow="ALWAYS" />
+                  <Button fx:id="btnBack" maxWidth="Infinity" onAction="#clickBack" prefHeight="50.0" styleClass="btn-back" text="Back to Menu" HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
          </children>

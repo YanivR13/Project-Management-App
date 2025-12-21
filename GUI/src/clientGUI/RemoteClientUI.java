@@ -1,5 +1,5 @@
 package clientGUI;
-// sharmuta
+
 import client.ChatClient;
 import clientGUI.Controllers.RemoteLoginController;
 import javafx.application.Application;
@@ -21,27 +21,35 @@ public class RemoteClientUI extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        // Correct path to fxmlFiles folder
+        // 1. טעינת ה-FXML והבקר
         FXMLLoader loader = new FXMLLoader(getClass().getResource("fxmlFiles/RemoteLoginFrame.fxml"));
         Parent root = loader.load();
-        
         RemoteLoginController controller = loader.getController();
 
+        // 2. הכנת הסצנה והצגה מיידית של החלון
+        Scene scene = new Scene(root);
+        
+        // הערה: נשאיר את ה-CSS כבוי בינתיים לבדיקה
+        // scene.getStylesheets().add(getClass().getResource("cssStyle/style.css").toExternalForm());
+        
+        primaryStage.setTitle("Bistro - Remote Access Portal");
+        primaryStage.setResizable(false);
+        primaryStage.setScene(scene);
+        
+        // הצגת המסך עכשיו תבטיח שהמשתמש יראה את הכפתורים מיד
+        primaryStage.show();
+
+        // 3. ניסיון חיבור לשרת (רק אחרי שהמסך כבר מוצג)
         try {
-            // Chain: GUI -> CLIENT
             client = new ChatClient("localhost", 5555, controller);
             controller.setClient(client);
             controller.appendLog("Connected to server successfully.");
         } catch (Exception e) {
-            controller.appendLog("Status: Offline - Could not connect to server.");
+            // אם החיבור נכשל, עדיין נראה את המסך אבל תופיע הודעת שגיאה בלוג
+            if (controller != null) {
+                controller.appendLog("Status: Offline - Could not connect to server.");
+            }
+            e.printStackTrace();
         }
-
-        Scene scene = new Scene(root);
-        // Correct path to cssStyle folder
-        scene.getStylesheets().add(getClass().getResource("cssStyle/style.css").toExternalForm());
-        
-        primaryStage.setTitle("Bistro - Remote Access Portal");
-        primaryStage.setResizable(false);
-        primaryStage.show();
     }
 }

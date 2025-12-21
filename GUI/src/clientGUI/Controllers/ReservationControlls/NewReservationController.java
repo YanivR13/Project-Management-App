@@ -15,10 +15,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.stage.Stage;
 
-/**
- * Controller for the New Reservation screen.
- * Handles availability checks and initial reservation data entry.
- */
 public class NewReservationController implements ChatIF {
 
     private ChatClient client;
@@ -29,25 +25,16 @@ public class NewReservationController implements ChatIF {
     @FXML private TextField txtGuests;
     @FXML private TextArea txtLog;
 
-    /**
-     * Sets up the client and initializes UI components.
-     */
     public void setClient(ChatClient client, String userType) {
         this.client = client;
         this.userType = userType;
         initTimeSlots();
     }
 
-    /**
-     * Populates the time slot dropdown.
-     */
     private void initTimeSlots() {
         comboTime.setItems(FXCollections.observableArrayList("12:00", "13:00", "14:00", "19:00", "20:00", "21:00"));
     }
 
-    /**
-     * Validates input and sends availability check to the server.
-     */
     @FXML
     void clickCheckAvailability(ActionEvent event) {
         LocalDate date = datePicker.getValue();
@@ -65,24 +52,18 @@ public class NewReservationController implements ChatIF {
         message.add(time);
         message.add(guests);
 
-        appendLog("Checking availability for " + guests + " diners on " + date);
+        appendLog("Checking availability...");
         client.handleMessageFromClientUI(message);
     }
 
-    /**
-     * Navigates back to the main menu.
-     */
     @FXML
     void clickBack(ActionEvent event) {
         String fxmlPath = userType.equals("Subscriber") ? 
             "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml" : 
-            "/clientGUI/fxmlFiles/OccasinalFXML/OccasionalMenuFrame.fxml";
+            "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml";
         navigateTo(event, fxmlPath);
     }
 
-    /**
-     * Scene switching logic for returning to menus.
-     */
     private void navigateTo(ActionEvent event, String path) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
@@ -97,21 +78,16 @@ public class NewReservationController implements ChatIF {
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+            // תיקון נתיב CSS
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
             stage.setScene(scene);
             stage.show();
         } catch (Exception e) {
-            // 1. מדפיס את כל ה-Stack Trace ל-Console (טקסט אדום מפורט)
             e.printStackTrace(); 
-            
-            // 2. מציג הודעה קצרה למשתמש על גבי ה-UI (ב-TextArea)
             appendLog("Error: " + e.getMessage());
         }
     }
 
-    /**
-     * Implements ChatIF to display server responses.
-     */
     @Override
     public void display(Object message) {
         if (message != null) {
@@ -119,9 +95,6 @@ public class NewReservationController implements ChatIF {
         }
     }
 
-    /**
-     * Safe UI update for log messages.
-     */
     public void appendLog(String message) {
         Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));
     }

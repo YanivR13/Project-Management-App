@@ -1,5 +1,6 @@
 package clientGUI.Controllers;
 
+import java.io.IOException;
 import client.ChatClient;
 import clientGUI.Controllers.OccasionalControlls.OccasionalLoginController;
 import clientGUI.Controllers.SubscriberControlls.SubscriberLoginController;
@@ -17,8 +18,7 @@ import javafx.scene.Node;
 public class RemoteLoginController implements ChatIF {
     private ChatClient client;
 
-    @FXML
-    private TextArea txtLog;
+    @FXML private TextArea txtLog;
 
     public void setClient(ChatClient client) {
         this.client = client;
@@ -26,9 +26,7 @@ public class RemoteLoginController implements ChatIF {
 
     @Override
     public void display(Object message) {
-        if (message != null) {
-            appendLog(message.toString());
-        }
+        if (message != null) appendLog(message.toString());
     }
 
     public void appendLog(String message) {
@@ -37,21 +35,32 @@ public class RemoteLoginController implements ChatIF {
 
     @FXML
     void clickOccasional(ActionEvent event) {
-        // וודא שהאיות כאן תואם בדיוק לשם התיקייה בדיסק
         loadScreen(event, "OccasionalFXML/OccasionalLoginFrame.fxml", "Occasional Customer Login");
     }
 
     @FXML
     void clickSubscriber(ActionEvent event) {
-        // הוספת הנתיב המלא כולל תיקיית המשנה
-        loadScreen(event, "SubscriberFXML/SubscriberLoginFrame.fxml", "Subscriber Login");
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/SubscriberFXML/SubscriberLoginFrame.fxml"));
+            Parent root = loader.load();
+            SubscriberLoginController controller = loader.getController();
+            controller.setClient(this.client); 
+            
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+            // תיקון נתיב CSS
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void loadScreen(ActionEvent event, String fxmlFile, String title) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/" + fxmlFile));
             Parent root = loader.load();
-            
             Object controller = loader.getController();
             
             if (controller instanceof SubscriberLoginController) {
@@ -62,13 +71,14 @@ public class RemoteLoginController implements ChatIF {
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+            // תיקון נתיב CSS - כאן הייתה השגיאה בשורה 82
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
             stage.setTitle(title);
             stage.setScene(scene);
             stage.show();
             
         } catch (Exception e) {
-            e.printStackTrace(); // זה ידפיס ל-Console באדום את כל הנתיב של השגיאה
+            e.printStackTrace();
             appendLog("Error: " + e.getMessage());
         }
     }

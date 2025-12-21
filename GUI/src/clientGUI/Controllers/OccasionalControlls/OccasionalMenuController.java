@@ -15,10 +15,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
-/**
- * Boundary class for Occasional (Guest) customers.
- * Provides access only to basic restaurant features using shared navigation logic.
- */
 public class OccasionalMenuController implements ChatIF, ICustomerActions {
 
     private ChatClient client;
@@ -30,14 +26,9 @@ public class OccasionalMenuController implements ChatIF, ICustomerActions {
     @FXML private Button btnLogout;
     @FXML private TextArea txtLog;
 
-    /**
-     * Injects the client instance and ensures connectivity.
-     */
     public void setClient(ChatClient client) {
         this.client = client;
     }
-
-    // --- Actions using shared logic from ICustomerActions ---
 
     @FXML
     void clickNewReservation(ActionEvent event) {
@@ -63,12 +54,8 @@ public class OccasionalMenuController implements ChatIF, ICustomerActions {
         exitWaitingList(client, "GUEST_TEMP_ID");
     }
 
-    // --- Subscriber-only methods (Empty implementation for Guest) ---
-
-    @Override public void viewOrderHistory(ChatClient client) { /* Not available for Guest */ }
-    @Override public void editPersonalDetails(ChatClient client) { /* Not available for Guest */ }
-
-    // --- Navigation & Log Logic ---
+    @Override public void viewOrderHistory(ChatClient client) { }
+    @Override public void editPersonalDetails(ChatClient client) { }
 
     @FXML
     void clickLogout(ActionEvent event) {
@@ -76,10 +63,6 @@ public class OccasionalMenuController implements ChatIF, ICustomerActions {
         navigateToPortal(event);
     }
 
-    /**
-     * Implementation of ChatIF. Receives updates from the server.
-     * Updated to handle Object type as required by the new interface.
-     */
     @Override
     public void display(Object message) {
         if (message != null) {
@@ -101,15 +84,13 @@ public class OccasionalMenuController implements ChatIF, ICustomerActions {
 
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/style.css").toExternalForm());
+            // תיקון נתיב CSS
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
             stage.setTitle("Bistro - Remote Access Portal");
             stage.setScene(scene);
             stage.show();
         } catch (Exception e) {
-            // 1. מדפיס את כל ה-Stack Trace ל-Console (טקסט אדום מפורט)
             e.printStackTrace(); 
-            
-            // 2. מציג הודעה קצרה למשתמש על גבי ה-UI (ב-TextArea)
             appendLog("Error: " + e.getMessage());
         }
     }
