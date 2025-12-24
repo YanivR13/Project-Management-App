@@ -1,31 +1,42 @@
 package MainControllers;
 
 import java.sql.SQLException;
+import serverLogic.menuLogic.*;
+import serverLogic.serverRestaurant.RestaurantManager;
 import java.util.ArrayList;
-
 import common.ServerIF;
+import common.ServiceResponse;
 import ocsf.server.AbstractServer;
 import ocsf.server.ConnectionToClient;
-
-// הוספת ה-Imports עבור כל ה-Handlers ב-ServerLogic
-import serverLogic.SubscriberLoginHandler;
-import serverLogic.OccasionalLoginHandler;
-import serverLogic.OccasionalRegistrationHandler;
-import serverLogic.OccasionalRestUsernameHandler; // ה-Handler החדש שביקשת
+import serverLogic.serverLogin.OccasionalLoginHandler;
+import serverLogic.serverLogin.OccasionalRegistrationHandler;
+import serverLogic.serverLogin.OccasionalRestUsernameHandler;
+import serverLogic.serverLogin.SubscriberLoginHandler;
 
 /**
- * ServerController extends the OCSF AbstractServer and represents the
- * logical server component. It handles the routing of messages to specific handlers.
+ * The ServerController class is the central communication hub for the Bistro Server.
+ * It extends the OCSF {@link AbstractServer} to provide robust socket communication 
+ * and multi-threaded client management.
+ * * Primary Responsibilities:
+ * 1. Lifecycle Management: Starting/Stopping the server and the DB connection.
+ * 2. Resource Initialization: Pre-loading restaurant data into RAM for fast access.
+ * 3. Command Routing: Parsing incoming ArrayList protocols and delegating to 
+ * specialized business logic handlers.
+ * * @author Software Engineering Student
+ * @version 1.0
+ * @see ocsf.server.AbstractServer
  */
 public class ServerController extends AbstractServer {
 
+    /** * Interface reference for UI logging. Allows the controller to push 
+     * status updates to the Server GUI.
+     */
     private ServerIF serverUI;
 
     /**
-     * Constructs a new server instance.
-     *
-     * @param port the port number to listen on
-     * @param serverUI the interface used to display messages in the server GUI
+     * Constructs the server controller instance.
+     * * @param port     The dedicated TCP port for the server to listen on (e.g., 5555).
+     * @param serverUI The interface implementation for GUI logging.
      */
     public ServerController(int port, ServerIF serverUI) {
         super(port);
@@ -33,18 +44,32 @@ public class ServerController extends AbstractServer {
     }
 
     /**
-     * Initializes the database connection when the server starts.
+     * HOOK METHOD: Executed automatically when the server starts listening for clients.
+     * Performs critical infrastructure setup including Database connection and 
+     * RAM cache initialization.
      */
     @Override
     protected void serverStarted() {
         serverUI.appendLog("Server started.");
 
         try {
-            // התחברות ל-DB דרך ה-Singleton
+            // STEP 1: Establish Database connectivity via the DB Singleton
             DBController dbController = DBController.getInstance();
             dbController.connectToDB();
-
             serverUI.appendLog("Connected to database successfully.");
+
+            /**
+             * STEP 2: RAM Optimization (Caching)
+             * Pre-loads restaurant metadata, inventory, and hours into the RestaurantManager.
+             * This avoids redundant SQL queries for every reservation availability check.
+             * Defaults to Restaurant ID #1 for this system iteration.
+             */
+            if (RestaurantManager.initialize(1)) {
+                serverUI.appendLog("Restaurant data initialized in RAM (Inventory & Hours).");
+            } else {
+                serverUI.appendLog("Warning: Restaurant data could not be loaded. Check if DB is empty.");
+            }
+
         } catch (SQLException e) {
             serverUI.appendLog("Failed to connect to database: " + e.getMessage());
             e.printStackTrace();
@@ -52,13 +77,15 @@ public class ServerController extends AbstractServer {
     }
 
     /**
-     * Closes the database connection when the server stops.
+     * HOOK METHOD: Executed when the server stops listening.
+     * Ensures graceful termination of the database connection to prevent resource leaks.
      */
     @Override
     protected void serverStopped() {
         serverUI.appendLog("Server has stopped.");
 
         try {
+            // Cleanly close the JDBC connection
             DBController.getInstance().closeConnection();
             serverUI.appendLog("Database connection closed.");
         } catch (SQLException e) {
@@ -67,65 +94,108 @@ public class ServerController extends AbstractServer {
         }
     }
 
+    /**
+     * Triggered when a new socket connection is accepted from a client.
+     * @param client The specific connection handle.
+     */
     @Override
     protected void clientConnected(ConnectionToClient client) {
         String ip = client.getInetAddress().getHostAddress();
         serverUI.appendLog("Client connected: IP = " + ip);
     }
 
+    /**
+     * Triggered when a client closes their session or is disconnected.
+     * @param client The specific connection handle.
+     */
     @Override
     protected void clientDisconnected(ConnectionToClient client) {
         serverUI.appendLog("Client disconnected: " + client);
     }
 
     /**
-     * Main message handler. Routes ArrayList commands to the appropriate logic handlers.
+     * CORE ROUTING LOGIC: Processes all incoming objects from clients.
+     * This method implements the Command Pattern approach, extracting a string 
+     * command from the message protocol and delegating work to a dedicated handler class.
+     * * Message Protocol: Expects an {@link ArrayList} where:
+     * - Index 0: String command (e.g., "LOGIN_SUBSCRIBER")
+     * - Index 1+: Optional payload data.
+     * * @param msg    The incoming message object.
+     * @param client The specific client that sent the message.
      */
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
-        // רישום ההודעה הנכנסת בלוג של השרת
+        // Log activity for server monitoring
         serverUI.appendLog("Message received: " + msg + " from " + client);
 
+        // Protocol Validation: Ensure the message is an ArrayList as per system standard
         if (msg instanceof ArrayList) {
             @SuppressWarnings("unchecked")
-            ArrayList<String> messageList = (ArrayList<String>) msg;
+            ArrayList<Object> messageList = (ArrayList<Object>) msg;
             
-            if (messageList.isEmpty()) return;
+            if (messageList.isEmpty()) {
+                serverUI.appendLog("Warning: Received empty ArrayList from " + client);
+                return;
+            }
 
-            String command = messageList.get(0);
+            // Command extraction
+            String command = (String) messageList.get(0);
 
+            /**
+             * Dispatcher Switch:
+             * Routes the message to the appropriate functional handler class.
+             * This keeps the ServerController code clean and maintainable.
+             */
             switch (command) {
                 case "LOGIN_SUBSCRIBER":
-                    // ניתוב לטיפול בכניסת מנוי
                     new SubscriberLoginHandler().handle(messageList, client);
                     break;
 
                 case "LOGIN_OCCASIONAL":
-                    // ניתוב לטיפול בכניסת לקוח מזדמן
                     new OccasionalLoginHandler().handle(messageList, client);
                     break;
 
                 case "RESET_OCCASIONAL_USERNAME":
-                    // ניתוב לטיפול באיפוס שם משתמש ללקוח מזדמן (מחלקה חדשה)
                     new OccasionalRestUsernameHandler().handle(messageList, client);
                     break;
 
                 case "REGISTER_OCCASIONAL":
-                    // ניתוב לטיפול ברישום לקוח מזדמן חדש
                     new OccasionalRegistrationHandler().handle(messageList, client);
+                    break;
+                    
+                case "CREATE_RESERVATION":
+                    /**
+                     * Routes to the CreateOrderHandler which manages table allocation 
+                     * logic and interaction with the 'reservation' table.
+                     */
+                    serverUI.appendLog("Routing to CreateOrderHandler for Client: " + client);
+                    new CreateOrderHandler().handle(messageList, client);
                     break;
 
                 default:
+                    // Protocol Fallback: Handle unrecognized commands
                     serverUI.appendLog("Unknown command received: " + command);
                     try {
-                        client.sendToClient("ERROR: Unknown Command");
+                        client.sendToClient(new ServiceResponse(
+                            ServiceResponse.ReservationResponseStatus.INTERNAL_ERROR, 
+                            "ERROR: Unknown Command '" + command + "'"
+                        ));
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        serverUI.appendLog("Failed to send Error message: " + e.getMessage());
                     }
                     break;
             }
         } else {
+            // Protocol Violation Fallback: Handle non-ArrayList objects
             serverUI.appendLog("Received unexpected message type: " + msg.getClass().getSimpleName());
+            try {
+                client.sendToClient(new ServiceResponse(
+                    ServiceResponse.ReservationResponseStatus.INTERNAL_ERROR, 
+                    "ERROR: Invalid Protocol (Expected ArrayList)"
+                ));
+            } catch (Exception e) {
+                serverUI.appendLog("Error notifying client: " + e.getMessage());
+            }
         }
     }
 }

@@ -2,31 +2,32 @@ package MainControllers;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
- * Handles all database operations for the server.
- * Responsible for connecting to MySQL and executing CRUD operations on the 'orders' table.
+ * The DBController class serves as the central database manager for the server-side application.
+ * It encapsulates the JDBC connection logic and provides a unified gateway to the 
+ * MySQL database.
+ * * <p>Design Pattern: <b>Singleton</b>.
+ * This ensures that only one database connection instance exists across the entire 
+ * server application, preventing resource exhaustion and maintaining data consistency.</p>
+ * * @author Software Engineering Student
+ * @version 1.0
  */
 public class DBController {
 
-    /** 
-     * The single instance of DBController (Singleton).
+    /** * The single, static instance of DBController.
      */
     private static DBController instance;
     
-    /** 
-     * A single shared database connection used by the server.
+    /** * The persistent JDBC {@link Connection} object used for all SQL operations.
      */
     private Connection conn;
     
     /**
-     * Returns the single instance of DBController.
+     * Retrieves the single instance of the DBController.
+     * Uses lazy initialization to create the instance only when first requested.
+     * * @return the singleton {@link DBController} instance.
      */
     public static DBController getInstance() {
         if (instance == null) {
@@ -36,42 +37,54 @@ public class DBController {
     }
 
     /**
-     * Establishes a connection to the MySQL database.
-     * This method must be called before any DB operation.
-     *
-     * @throws SQLException if the connection fails
+     * Establishes a physical connection to the MySQL database using the JDBC driver.
+     * * <p>Connection Parameters:
+     * <ul>
+     * <li><b>Port:</b> 3307 (Custom MySQL port)</li>
+     * <li><b>Schema:</b> prototypedb</li>
+     * <li><b>Timezone:</b> Asia/Jerusalem</li>
+     * <li><b>SSL:</b> Disabled</li>
+     * </ul>
+     * </p>
+     * * @throws SQLException if the connection attempt fails or the driver is not found.
      */
     public void connectToDB() throws SQLException {
+        // Prevent re-connecting if an active connection already exists
         if (conn != null) {
-            return; // already connected
+            return; 
         }
 
+        /**
+         * The connection string includes:
+         * - allowLoadLocalInfile: Permits loading local files into the DB.
+         * - serverTimezone: Aligns Java LocalDateTime with the database's clock.
+         */
         conn = DriverManager.getConnection(
-        	    "jdbc:mysql://localhost:3307/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
-        	    "root",
-        	    "Rochlin99!"
-        	);
+            "jdbc:mysql://localhost:3307/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
+            "root",
+            "Rochlin99!"
+        );
 
         System.out.println("SQL connection succeed");
     }
     
-    
     /**
-     * Provides access to the established database connection for other logic classes.
-     * * @return the active java.sql.Connection object
+     * Provides the global connection object to other DAOs and Controllers.
+     * This is used by classes like 'CreateOrderController' to prepare statements.
+     * * @return the active {@link java.sql.Connection} object.
      */
-    
     public Connection getConnection() {
         return conn;
     }
     
     /**
-     * Safely closes the database connection.
-     * This should be called when the server is shutting down.
-     * * @throws SQLException if a database access error occurs
+     * Gracefully terminates the database connection.
+     * This method should be invoked during the server shutdown sequence (e.g., when 
+     * the 'Server Stop' button is clicked in the GUI).
+     * * @throws SQLException if a database access error occurs during closure.
      */
     public void closeConnection() throws SQLException {
-        // Check if connection exists and is not already closed
+        // Verify that the connection exists and is still open before attempting to close
         if (conn != null && !conn.isClosed()) {
             conn.close();
             System.out.println("SQL connection closed successfully.");

@@ -1,25 +1,34 @@
 package dbLogic.systemLogin;
 
 import MainControllers.DBController;
+import dbLogic.ILoginDatabase;
 import java.sql.*;
 
 /**
- * Database logic for Occasional Customers based on linked tables:
- * 'user' (contact info) and 'occasional_customer' (username).
+ * The DBOccasionalConnection class manages the data access logic for Guest (Occasional) customers.
+ * It coordinates data across two relational tables: 'user' (shared metadata) and 
+ * 'occasional_customer' (guest-specific credentials).
+ * * This class implements the {@link ILoginDatabase} interface to provide standard 
+ * authentication and registration services within the login subsystem.
+ * * @author Software Engineering Student
+ * @version 1.0
  */
-public class DBOccasionalConnection {
+public class DBOccasionalConnection implements ILoginDatabase {
 
     /**
-     * Verifies occasional customer login by joining 'occasional_customer' and 'user'.
-     * @param username The entered username.
-     * @param contact The entered phone or email.
-     * @return true if credentials match across both tables.
+     * Authenticates an occasional customer by verifying their username and contact details.
+     * Logic: Performs a JOIN between 'occasional_customer' and 'user' to ensure the 
+     * username matches the provided phone number or email address.
+     * * @param username The guest's unique identifier.
+     * @param contact The guest's phone or email provided during login.
+     * @return The unique 'user_id' if verification passes, or -1 if no match is found.
      */
-    public boolean verifyOccasional(String username, String contact) {
+    @Override
+    public int verifyOccasional(String username, String contact) {
         Connection conn = DBController.getInstance().getConnection();
         
-        // שאילתה שמחברת את שתי הטבלאות ובודקת אם ה-contact תואם לטלפון או למייל
-        String sql = "SELECT oc.* FROM occasional_customer oc " +
+        // Relational Query: Links the guest identity to the core contact information
+        String sql = "SELECT oc.user_id FROM occasional_customer oc " +
                      "JOIN user u ON oc.user_id = u.user_id " +
                      "WHERE oc.username = ? AND (u.phone_number = ? OR u.email = ?)";
         
@@ -29,32 +38,38 @@ public class DBOccasionalConnection {
             pstmt.setString(3, contact);
             
             try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
+                if (rs.next()) {
+                    return rs.getInt("user_id");
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
         }
+        return -1;
     }
 
     /**
-     * Resets the username by identifying the user via the 'user' table first.
+     * Updates the username for an existing occasional customer.
+     * This method follows a strict validation flow:
+     * 1. Verifies the existence of the contact information.
+     * 2. Checks for username uniqueness to prevent collisions.
+     * 3. Performs the update in the 'occasional_customer' table.
+     * * @param contact The registered phone or email associated with the user.
+     * @param newUsername The new desired username.
+     * @return A status code (e.g., "RESET_USERNAME_SUCCESS") or a descriptive error.
      */
     public String resetUsername(String contact, String newUsername) {
         Connection conn = DBController.getInstance().getConnection();
         
-        // 1. מציאת ה-user_id לפי טלפון או מייל בטבלת user
-        String findUserIdSql = "SELECT user_id FROM user WHERE phone_number = ? OR email = ?";
-        // 2. בדיקה ששם המשתמש החדש לא תפוס ב-occasional_customer
-        String checkUserSql = "SELECT * FROM occasional_customer WHERE username = ?";
-        // 3. עדכון שם המשתמש בטבלה הנכונה
+        // Modular SQL queries for step-by-step validation
+        String findUserSql = "SELECT user_id FROM user WHERE phone_number = ? OR email = ?";
+        String checkUsernameSql = "SELECT user_id FROM occasional_customer WHERE username = ?";
         String updateSql = "UPDATE occasional_customer SET username = ? WHERE user_id = ?";
 
         try {
+            // STEP 1: Identification - Find the internal UserID via the contact identifier
             int userId = -1;
-
-            // שלב א: מציאת ה-ID
-            try (PreparedStatement pstmt = conn.prepareStatement(findUserIdSql)) {
+            try (PreparedStatement pstmt = conn.prepareStatement(findUserSql)) {
                 pstmt.setString(1, contact);
                 pstmt.setString(2, contact);
                 ResultSet rs = pstmt.executeQuery();
@@ -65,75 +80,57 @@ public class DBOccasionalConnection {
                 }
             }
 
-            // שלב ב: בדיקת זמינות שם המשתמש
-            try (PreparedStatement pstmt = conn.prepareStatement(checkUserSql)) {
+            // STEP 2: Uniqueness - Ensure the new username is not already claimed
+            try (PreparedStatement pstmt = conn.prepareStatement(checkUsernameSql)) {
                 pstmt.setString(1, newUsername);
-                ResultSet rs = pstmt.executeQuery();
-                if (rs.next()) return "ERROR: Username already taken.";
+                if (pstmt.executeQuery().next()) {
+                    return "ERROR: Username '" + newUsername + "' is already taken.";
+                }
             }
 
-            // שלב ג: ביצוע העדכון בטבלת ה-occasional_customer
+            // STEP 3: Execution - Update the database record
             try (PreparedStatement pstmt = conn.prepareStatement(updateSql)) {
                 pstmt.setString(1, newUsername);
                 pstmt.setInt(2, userId);
-                int rows = pstmt.executeUpdate();
-                return (rows > 0) ? "RESET_USERNAME_SUCCESS" : "ERROR: Update failed.";
+                int affectedRows = pstmt.executeUpdate();
+                if (affectedRows > 0) {
+                    return "RESET_USERNAME_SUCCESS";
+                } else {
+                    return "ERROR: Could not update username.";
+                }
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
-            return "ERROR: DB Error: " + e.getMessage();
+            return "ERROR: Database failure - " + e.getMessage();
         }
     }
-    
+
+    /**
+     * Handles the dual-table registration process for a new guest.
+     * Uses ATOMIC TRANSACTIONS (Commit/Rollback) to ensure that a 'user' record 
+     * is only created if the 'occasional_customer' record succeeds, preventing orphaned rows.
+     * * Process:
+     * 1. Check uniqueness (Username and Contact).
+     * 2. Insert into 'user' table and retrieve generated ID.
+     * 3. Insert into 'occasional_customer' table using the new ID.
+     * * @param username The desired guest username.
+     * @param contact The phone number or email string.
+     * @return REGISTRATION_SUCCESS or descriptive error string.
+     */
     public String registerNewOccasional(String username, String contact) {
         Connection conn = DBController.getInstance().getConnection();
-        
-        // הדפסת דיבאג לטרמינל של השרת - כדי שתראה מה הגיע מהלקוח
-        System.out.println("Registering: User=" + username + ", Contact=" + contact);
 
-        // --- 1. ולידציה של שם משתמש ---
-        if (username == null || username.length() > 10) {
-            return "ERROR: Username too long. Maximum 10 characters allowed.";
-        }
-
-        if (contact == null || contact.isEmpty()) {
-            return "ERROR: Contact field cannot be empty.";
-        }
-
-        boolean isEmail = false;
-        boolean isPhone = false;
-
-        // --- 2. Switch Case לזיהוי סוג פרטי הקשר ---
-        switch (contact.charAt(0)) {
-            case '0': 
-                // המשתמש התחיל ב-0? אנחנו בודקים פורמט טלפון
-                if (contact.matches("^0\\d{9}$")) {
-                    isPhone = true;
-                } else {
-                    return "ERROR: Invalid Phone. Must be exactly 10 digits and contain only numbers.";
-                }
-                break;
-
-            default: 
-                // כל תו אחר? אנחנו בודקים פורמט אימייל
-                if (contact.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.com$")) {
-                    isEmail = true;
-                } else {
-                    return "ERROR: Invalid Email format. Must contain '@' and end with '.com'.";
-                }
-                break;
-        }
-
-        // --- 3. לוגיקת בסיס הנתונים (SQL) ---
         String checkUserSql = "SELECT * FROM occasional_customer WHERE username = ?";
         String checkContactSql = "SELECT * FROM user WHERE phone_number = ? OR email = ?";
         String insertUserSql = "INSERT INTO user (phone_number, email) VALUES (?, ?)";
         String insertOccSql = "INSERT INTO occasional_customer (user_id, username) VALUES (?, ?)";
 
         try {
-            conn.setAutoCommit(false); // התחלת טרנזקציה
+            // Initiate Transaction: Disable auto-commit to manage multi-step operations manually
+            conn.setAutoCommit(false);
 
-            // א. בדיקה אם שם המשתמש קיים
+            // Phase 1: Pre-validation of identity uniqueness
             try (PreparedStatement pstmt = conn.prepareStatement(checkUserSql)) {
                 pstmt.setString(1, username);
                 if (pstmt.executeQuery().next()) {
@@ -142,50 +139,73 @@ public class DBOccasionalConnection {
                 }
             }
 
-            // ב. בדיקה אם המייל/טלפון כבר רשומים
             try (PreparedStatement pstmt = conn.prepareStatement(checkContactSql)) {
                 pstmt.setString(1, contact);
                 pstmt.setString(2, contact);
                 if (pstmt.executeQuery().next()) {
                     conn.rollback();
-                    return "ERROR: Contact info already registered.";
+                    return "ERROR: Contact info already exists.";
                 }
             }
 
-            // ג. הכנסה לטבלת user
+            // Phase 2: Metadata Creation - Create record in 'user' table
             int userId = -1;
             try (PreparedStatement pstmt = conn.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS)) {
-                if (isEmail) {
-                    pstmt.setNull(1, java.sql.Types.VARCHAR); 
+                // Detect contact type: Email contains '@', otherwise treated as phone
+                if (contact.contains("@")) {
+                    pstmt.setNull(1, Types.VARCHAR);
                     pstmt.setString(2, contact);
                 } else {
                     pstmt.setString(1, contact);
-                    pstmt.setNull(2, java.sql.Types.VARCHAR);
+                    pstmt.setNull(2, Types.VARCHAR);
                 }
-                
                 pstmt.executeUpdate();
+                
+                // Retrieve the auto-incremented primary key generated by MySQL
                 ResultSet rs = pstmt.getGeneratedKeys();
-                if (rs.next()) userId = rs.getInt(1);
+                if (rs.next()) {
+                    userId = rs.getInt(1);
+                }
             }
 
-            // ד. קישור לטבלת occasional_customer
+            // Phase 3: Identity Creation - Link UserID to the guest username
             if (userId != -1) {
                 try (PreparedStatement pstmt = conn.prepareStatement(insertOccSql)) {
                     pstmt.setInt(1, userId);
                     pstmt.setString(2, username);
                     pstmt.executeUpdate();
                 }
+            } else {
+                conn.rollback();
+                return "ERROR: Failed to create user profile.";
             }
 
+            // Phase 4: Finalization - Commit all changes to the database
             conn.commit();
             return "REGISTRATION_SUCCESS";
 
         } catch (SQLException e) {
+            // Failure Management: Roll back changes if any step in the transaction fails
             try { if (conn != null) conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             e.printStackTrace();
-            return "ERROR: Database failure: " + e.getMessage();
+            return "ERROR: " + e.getMessage();
         } finally {
+            // Restore default database behavior
             try { conn.setAutoCommit(true); } catch (SQLException e) { e.printStackTrace(); }
         }
+    }
+
+    // --- Interface implementation methods for system-wide compatibility ---
+
+    @Override
+    public boolean registerOccasional(String username, String phone, String email) {
+        String contact = (phone != null && !phone.isEmpty()) ? phone : email;
+        return "REGISTRATION_SUCCESS".equals(registerNewOccasional(username, contact));
+    }
+
+    @Override
+    public int verifySubscriber(long subID) {
+        // Method is part of ILoginDatabase but not supported by this specific implementation
+        return -1; 
     }
 }

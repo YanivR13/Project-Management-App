@@ -3,6 +3,7 @@ package clientGUI.Controllers.OccasionalControlls;
 import client.ChatClient;
 import clientGUI.Controllers.ICustomerActions;
 import clientGUI.Controllers.RemoteLoginController;
+import clientGUI.Controllers.MenuControlls.BaseMenuController;
 import common.ChatIF;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -15,54 +16,91 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
-public class OccasionalMenuController implements ChatIF, ICustomerActions {
+/**
+ * The OccasionalMenuController serves as the main dashboard for Guest (Occasional) users.
+ * It provides access to core restaurant services like making, viewing, or canceling 
+ * reservations without requiring a full subscription.
+ * * <p>Architectural Strategy:
+ * 1. Extends {@link BaseMenuController} to inherit shared session state (client, userId, userType).
+ * 2. Implements {@link ICustomerActions} to leverage centralized navigation logic for reservation flows.
+ * 3. Implements {@link ChatIF} to allow the server to push status updates directly to the guest log.
+ * </p>
+ * * @author Software Engineering Student
+ * @version 1.0
+ */
+public class OccasionalMenuController extends BaseMenuController implements ChatIF, ICustomerActions {
 
-    private ChatClient client;
-
-    @FXML private Button btnNewReservation;
-    @FXML private Button btnCancelReservation;
-    @FXML private Button btnViewReservation;
-    @FXML private Button btnExitWaitingList;
-    @FXML private Button btnLogout;
+    /** Navigation buttons for Guest-accessible features. */
+    @FXML private Button btnNewReservation, btnCancelReservation, btnViewReservation, btnLogout, btnExitWaitingList;
+    
+    /** Console-style log area for providing real-time feedback to the guest user. */
     @FXML private TextArea txtLog;
 
-    public void setClient(ChatClient client) {
-        this.client = client;
+    // --- Core Navigation Methods ---
+    // These methods call default implementations in ICustomerActions to reduce code duplication.
+
+    /** Triggers the New Reservation scene transition. */
+    @FXML void clickNewReservation(ActionEvent event) { 
+        createNewReservation(client, event, userType, userId); 
+    }
+    
+    /** Triggers the Reservation Cancellation scene transition. */
+    @FXML void clickCancelReservation(ActionEvent event) { 
+        cancelReservation(client, event, userType, userId); 
+    }
+    
+    /** Triggers the Reservation Viewing/Payment scene transition. */
+    @FXML void clickViewReservation(ActionEvent event) { 
+        viewReservation(client, event, userType, userId); 
     }
 
-    @FXML
-    void clickNewReservation(ActionEvent event) {
-        appendLog("Navigating to New Reservation...");
-        createNewReservation(client, event, "Occasional");
-    }
-
-    @FXML
-    void clickCancelReservation(ActionEvent event) {
-        appendLog("Opening Cancellation Module...");
-        cancelReservation(client, event, "Occasional");
-    }
-
-    @FXML
-    void clickViewReservation(ActionEvent event) {
-        appendLog("Opening View & Pay Module...");
-        viewReservation(client, event, "Occasional");
-    }
-
+    /** Placeholder for future Waiting List management features. */
     @FXML
     void clickExitWaitingList(ActionEvent event) {
-        appendLog("Sending request to exit waiting list...");
-        exitWaitingList(client, "GUEST_TEMP_ID");
+        appendLog("Navigating to Waiting List management...");
     }
 
-    @Override public void viewOrderHistory(ChatClient client) { }
-    @Override public void editPersonalDetails(ChatClient client) { }
-
+    /**
+     * Handles the logout process. Returns the user to the initial portal selection screen
+     * and ensures the persistent ChatClient is passed back correctly to maintain connection.
+     * * @param event The ActionEvent from the 'Logout' button.
+     */
     @FXML
     void clickLogout(ActionEvent event) {
-        appendLog("Logging out...");
-        navigateToPortal(event);
+        try {
+            // Load the main remote access landing page
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
+            Parent root = loader.load();
+            
+            // Re-inject the client into the next controller to maintain the OCSF socket
+            ((RemoteLoginController)loader.getController()).setClient(client);
+            
+            // Update the Primary Stage with the new Scene
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            appendLog("Logout Error: Unable to return to portal.");
+        }
     }
 
+    /**
+     * Implementation of ICustomerActions. 
+     * Note: Occasional guests may have restricted access to history compared to Subscribers.
+     */
+    @Override public void viewOrderHistory(ChatClient client, int userId) { }
+    
+    /**
+     * Implementation of ICustomerActions.
+     * Profile editing for guests is typically handled during the 'Update Username' flow.
+     */
+    @Override public void editPersonalDetails(ChatClient client, int userId) { }
+
+    /**
+     * HOOK METHOD (ChatIF): Receives and processes data objects pushed by the Server.
+     * @param message The object sent by the server via OCSF.
+     */
     @Override
     public void display(Object message) {
         if (message != null) {
@@ -70,28 +108,13 @@ public class OccasionalMenuController implements ChatIF, ICustomerActions {
         }
     }
 
+    /**
+     * Updates the UI log area in a thread-safe manner.
+     * Crucial because OCSF handleMessageFromServer calls occur on a background thread,
+     * while JavaFX UI updates must happen on the Application Thread.
+     * * @param message The text to display in the UI log.
+     */
     public void appendLog(String message) {
         Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));
-    }
-
-    private void navigateToPortal(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
-            Parent root = loader.load();
-            
-            RemoteLoginController controller = loader.getController();
-            controller.setClient(client);
-
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            // תיקון נתיב CSS
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
-            stage.setTitle("Bistro - Remote Access Portal");
-            stage.setScene(scene);
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace(); 
-            appendLog("Error: " + e.getMessage());
-        }
     }
 }
