@@ -1,9 +1,12 @@
 package MainControllers;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import serverLogic.menuLogic.*;
 import serverLogic.serverRestaurant.RestaurantManager;
 import java.util.ArrayList;
+
+import common.Restaurant;
 import common.ServerIF;
 import common.ServiceResponse;
 import ocsf.server.AbstractServer;
@@ -125,6 +128,7 @@ public class ServerController extends AbstractServer {
      */
     @Override
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) {
+    	        
         // Log activity for server monitoring
         serverUI.appendLog("Message received: " + msg + " from " + client);
 
@@ -161,6 +165,25 @@ public class ServerController extends AbstractServer {
 
                 case "REGISTER_OCCASIONAL":
                     new OccasionalRegistrationHandler().handle(messageList, client);
+                    break;
+                    
+                case "GET_RESTAURANT_WORKTIMES":
+                    try {
+                        Restaurant rest = RestaurantManager.getInstance();
+                        
+                        if (rest != null) {
+                            client.sendToClient(rest);
+                            serverUI.appendLog("Successfully sent restaurant worktimes to " + client);
+                        } else {
+                            serverUI.appendLog("Error: Restaurant data is null in RAM!");
+                            client.sendToClient(new ServiceResponse(
+                                ServiceResponse.ReservationResponseStatus.INTERNAL_ERROR, 
+                                "Server Error: Restaurant data not found."
+                            ));
+                        }
+                    } catch (IOException e) {
+                        serverUI.appendLog("Failed to transmit restaurant data: " + e.getMessage());
+                    }
                     break;
                     
                 case "CREATE_RESERVATION":

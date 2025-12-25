@@ -1,6 +1,7 @@
 package dbLogic.restaurantDB;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -45,6 +46,15 @@ public class CreateOrderController {
             if (restaurant == null) {
                 return new ServiceResponse(ReservationResponseStatus.INTERNAL_ERROR, "Server Error: Restaurant data not initialized.");
             }
+            
+            // --- PHASE 0: Check Order Timing
+            LocalDate date = requestedDT.toLocalDate();
+            String timeStr = requestedDT.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+
+            if (!restaurant.isOpen(date, timeStr)) {
+                return new ServiceResponse(ReservationResponseStatus.RESERVATION_OUT_OF_HOURS, 
+                    "The restaurant is closed on " + date + " at " + timeStr + ".");
+            }
 
             // --- PHASE 1: Direct Availability Check ---
             // Attempt to find the best-fitting table for the exact requested date/time
@@ -69,12 +79,23 @@ public class CreateOrderController {
              * at the same time slot to provide the user with an alternative.
              */
             for (int i = 1; i <= 3; i++) {
-                LocalDateTime nextDate = requestedDT.plusDays(i);
-                if (findAvailableTableSize(restaurant, nextDate, res.getNumberOfGuests()) != -1) {
-                    // Alternative slot found; return it as a formatted String for the Client to display
-                    String suggestion = nextDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
-                    return new ServiceResponse(ReservationResponseStatus.RESERVATION_SUGGESTION, suggestion);
+                LocalDateTime nextDT = requestedDT.plusDays(i);
+                LocalDate nextDate = nextDT.toLocalDate();
+                String nextTimeStr = nextDT.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"));
+
+             // 1. First check: Is the restaurant even open on this day and time?
+             // This method automatically checks both Regular and Special Hours.
+                if (restaurant.isOpen(nextDate, nextTimeStr)) {
+                    
+                	// 2. Second check: If open, is there a free table?
+                    if (findAvailableTableSize(restaurant, nextDT, res.getNumberOfGuests()) != -1) {
+                        
+                    	// We found a perfect offer: both open and available!
+                        String suggestion = nextDT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                        return new ServiceResponse(ReservationResponseStatus.RESERVATION_SUGGESTION, suggestion);
+                    }
                 }
+             // If the restaurant is closed on day i, the loop will simply continue to the next day (i+1)
             }
 
             // --- PHASE 3: Capacity Reached ---

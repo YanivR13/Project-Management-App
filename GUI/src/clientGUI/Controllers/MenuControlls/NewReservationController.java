@@ -2,12 +2,14 @@ package clientGUI.Controllers.MenuControlls;
 
 import java.net.URL;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
-
+import client.ChatClient;
 import common.ChatIF;
 import common.Reservation;
+import common.Restaurant;
 import common.ServiceResponse;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -47,8 +49,24 @@ public class NewReservationController extends BaseMenuController implements Chat
     @FXML private TextField txtGuests;
     @FXML private TextArea txtLog;
     @FXML private Button btnConfirm;
-    @FXML private Button btnBack; 
-
+    @FXML private Button btnBack;
+    
+    /** Cached restaurant data received from the server for validation and display. */
+    private Restaurant currentRestaurant;
+    
+    /**
+     * This runs automatically because it's called by the BaseMenuController
+     * immediately after the client is injected.
+     */
+    @Override
+    protected void onClientReady() {
+        ArrayList<Object> msg = new ArrayList<>();
+        msg.add("GET_RESTAURANT_WORKTIMES");
+        
+        this.client.handleMessageFromClientUI(msg);
+        appendLog("Fetching restaurant information...");
+    }
+   
     /**
      * Initializes the controller, setting up the UI constraints and populating time slots.
      * Called automatically by the FXMLLoader.
@@ -82,6 +100,7 @@ public class NewReservationController extends BaseMenuController implements Chat
         // Sets today as the default selected date
         dpDate.setValue(LocalDate.now());
         appendLog("Ready to take your reservation.");
+  
     }
 
     /**
@@ -99,19 +118,40 @@ public class NewReservationController extends BaseMenuController implements Chat
 
         try {
             // Step 2: Parse and validate guest count
-            int g = Integer.parseInt(txtGuests.getText());
+        	String guestsInput = txtGuests.getText().trim();
+        	if (!guestsInput.matches("\\d+")) {
+                appendLog("Error: Guests field must contain only numbers (no letters or symbols).");
+                return;
+            }
+        	
+        	int g = Integer.parseInt(guestsInput);
             if (g <= 0) throw new NumberFormatException();
+        	
+        	// Step 3: Check that the order is at least an hour from now to a month from now
+        	LocalDateTime requestedDT = LocalDateTime.of(dpDate.getValue(), LocalTime.parse(comboTime.getValue()));
+        	LocalDateTime now = LocalDateTime.now();
+        	
+        	if (requestedDT.isBefore(now.plusHours(1))) {
+        	    appendLog("Error: Reservations must be made at least 1 hour in advance.");
+        	    return;
+        	}
 
-            // Step 3: Format the date and time for SQL compatibility (YYYY-MM-DD HH:mm:ss)
+        	
+        	if (requestedDT.isAfter(now.plusMonths(1))) {
+        	    appendLog("Error: Reservations can only be made up to one month in advance.");
+        	    return;
+        	}
+
+            // Step 4: Format the date and time for SQL compatibility (YYYY-MM-DD HH:mm:ss)
             String dt = dpDate.getValue().toString() + " " + comboTime.getValue() + ":00";
             
-            // Step 4: Create the DTO and encapsulate it in a protocol message
+            // Step 5: Create the DTO and encapsulate it in a protocol message
             Reservation res = new Reservation(userId, dt, g);
             ArrayList<Object> msg = new ArrayList<>();
             msg.add("CREATE_RESERVATION");
             msg.add(res);
 
-            // Step 5: Transmit to server via OCSF
+            // Step 6: Transmit to server via OCSF
             if (client != null) {
                 client.setUI(this); // Register this screen to receive the server's response
                 appendLog("Sending request to server...");
@@ -167,6 +207,17 @@ public class NewReservationController extends BaseMenuController implements Chat
      */
     @Override
     public void display(Object message) {
+    	
+    	if (message instanceof Restaurant) {
+            this.currentRestaurant = (Restaurant) message;
+
+            Platform.runLater(() -> {
+                appendLog("--- Restaurant Information Loaded ---");
+                
+                appendLog(currentRestaurant.getFormattedOpeningHours());
+            });
+            return;
+        }
         if (message instanceof ServiceResponse) {
             ServiceResponse sr = (ServiceResponse) message;
             Platform.runLater(() -> {
@@ -187,6 +238,11 @@ public class NewReservationController extends BaseMenuController implements Chat
                     case INTERNAL_ERROR:
                         showPopup(AlertType.ERROR, "Server Error", sr.getData().toString());
                         appendLog("Server Error: " + sr.getData());
+                        break;
+                        
+                    case RESERVATION_OUT_OF_HOURS:
+                        showPopup(AlertType.WARNING, "Restaurant Closed", sr.getData().toString());
+                        appendLog("Server: " + sr.getData());
                         break;
                 }
             });

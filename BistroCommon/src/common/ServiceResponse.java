@@ -28,8 +28,11 @@ public class ServiceResponse implements Serializable {
         RESERVATION_SUGGESTION, 
         
         /** Case 3: Absolute capacity reached. No tables available in the requested or alternative slots. */
-        RESERVATION_FULL,       
+        RESERVATION_FULL,
         
+        /** Case 4: Order: The order was placed outside the restaurant's operating hours. */
+        RESERVATION_OUT_OF_HOURS,
+
         /** General system failure, Database connection loss, or SQL execution error. */
         INTERNAL_ERROR          
     }

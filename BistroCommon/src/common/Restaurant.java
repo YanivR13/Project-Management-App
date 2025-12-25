@@ -88,6 +88,87 @@ public class Restaurant implements Serializable {
     public void setSpecialHours(LocalDate date, String open, String close) {
         specialHours.put(date, new TimeRange(open, close));
     }
+    
+    /**
+     * Retrieves the standard weekly operating schedule.
+     * The map keys are day names (e.g., "Monday") and values are {@link TimeRange} objects.
+     * * @return A {@link Map} containing the regular weekly hours.
+     */
+    public Map<String, TimeRange> getRegularHours() {
+        return regularHours;
+    }
+
+    /**
+     * Retrieves the calendar-specific scheduling overrides.
+     * This map contains special hours for specific dates (holidays, events, etc.).
+     * * @return A {@link Map} containing the date-specific special hours.
+     */
+    public Map<LocalDate, TimeRange> getSpecialHours() {
+        return specialHours;
+    }
+    
+    /**
+     * Generates a comprehensive, human-readable summary of the restaurant's schedule.
+     * This method fulfills two main requirements:
+     * 1. Displays the standard weekly operating hours for general information.
+     * 2. Identifies and highlights 'Special Hours' (overrides) for the next 14 days.
+     * * The logic ensures that if a special date exists (like a holiday), it is 
+     * explicitly marked as an override to the regular schedule.
+     * * @return A formatted String containing the full schedule and prioritized alerts.
+     */
+    public String getFormattedOpeningHours() {
+        // StringBuilder is used for efficient string manipulation in loops
+        StringBuilder sb = new StringBuilder("=== RESTAURANT OPERATING HOURS ===\n\n");
+
+        // --- SECTION 1: Standard Weekly Schedule ---
+        sb.append("[ Standard Weekly Schedule ]\n");
+        if (regularHours == null || regularHours.isEmpty()) {
+            sb.append("No regular hours are currently defined.\n");
+        } else {
+            // Iterating through the regularHours Map (e.g., Monday: 09:00 - 22:00)
+            for (Map.Entry<String, TimeRange> entry : regularHours.entrySet()) {
+                sb.append("• ").append(entry.getKey())
+                  .append(": ")
+                  .append(entry.getValue().toString())
+                  .append("\n");
+            }
+        }
+
+        // --- SECTION 2: Special Overrides Logic ---
+        // We define a 14-day window to show relevant upcoming schedule changes
+        LocalDate today = LocalDate.now();
+        LocalDate lookAheadLimit = today.plusDays(14);
+        boolean hasSpecialAlerts = false;
+
+        // Iterate through specialHours to find dates falling within the 14-day window
+        for (Map.Entry<LocalDate, TimeRange> entry : specialHours.entrySet()) {
+            LocalDate specialDate = entry.getKey();
+
+            // Verification: Check if the special date is between today and 2 weeks from now
+            if (!specialDate.isBefore(today) && !specialDate.isAfter(lookAheadLimit)) {
+                
+                // Add a header only if at least one special date is found
+                if (!hasSpecialAlerts) {
+                    sb.append("\n[ !!! IMPORTANT: UPCOMING SCHEDULE CHANGES !!! ]\n");
+                    hasSpecialAlerts = true;
+                }
+
+                // Logic: Explicitly state that this specific date overrides regular hours
+                sb.append("• Date: ").append(specialDate)
+                  .append(" (").append(specialDate.getDayOfWeek()).append(")\n")
+                  .append("  New Hours: ").append(entry.getValue().toString())
+                  .append(" *Overrides regular schedule*\n");
+            }
+        }
+
+        // Fallback message if no special dates are found in the near future
+        if (!hasSpecialAlerts) {
+            sb.append("\nNo special holiday or event hours in the next 14 days.\n");
+        }
+
+        sb.append("\n=================================");
+        return sb.toString();
+    }
 
     /**
      * Business Logic: Validates if the restaurant is operational at a specific timestamp.
