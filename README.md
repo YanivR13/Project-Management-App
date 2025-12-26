@@ -4,13 +4,13 @@ How to Run the Project and Initialize the Database
 1. Create the database schema
 
   Inside the project you will find the DDL file at:
-  Server/data_base/bistrodb_schema.sql
+  Server/data_base/ProjectDB.sql
 
   This file contains the SQL script used to create the database schema required by the system.
 
    How to execute it:
     *Open MySQL Workbench
-    *Go to File → Open SQL Script and select the file - bistrodb_schema.sql
+    *Go to File → Open SQL Script and select the file - ProjectDB.sql
     *Click the "Run All" (lightning bolt) button
     *The database and all required tables will be created automatically
 
