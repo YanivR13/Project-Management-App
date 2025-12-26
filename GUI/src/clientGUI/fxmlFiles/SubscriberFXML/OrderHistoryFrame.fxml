@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane
+    maxHeight="-Infinity"
+    maxWidth="-Infinity"
+    minHeight="-Infinity"
+    minWidth="-Infinity"
+    prefHeight="400.0"
+    prefWidth="600.0"
+    xmlns="http://javafx.com/javafx/17"
+    xmlns:fx="http://javafx.com/fxml/1"
+    fx:controller="clientGUI.Controllers.SubscriberControlls.OrderHistoryController">
+   <children>
+      <TableView fx:id="orderTable" layoutX="14.0" layoutY="84.0" prefHeight="200.0" prefWidth="573.0">
+        <columns>
+          <TableColumn fx:id="codeCol" prefWidth="133.0" text="Confirmation Code" />
+          <TableColumn fx:id="dateCol" prefWidth="122.0" text="Date" />
+            <TableColumn fx:id="timeCol" prefWidth="111.0" text="Time" />
+            <TableColumn fx:id="guestCol" prefWidth="112.0" text="Guests" />
+            <TableColumn fx:id="statusCol" prefWidth="96.0" text="Status" />
+        </columns>
+      </TableView>
+      <Label layoutX="265.0" layoutY="38.0" text="Order History" />
+      <Button fx:id="btnBack" layoutX="275.0" layoutY="309.0" mnemonicParsing="false" onAction="#clickBack" text="Back" />
+   </children>
+</AnchorPane>

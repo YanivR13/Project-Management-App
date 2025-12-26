@@ -1,5 +1,7 @@
 package clientGUI.Controllers.SubscriberControlls;
 
+import java.io.IOException;
+
 import client.ChatClient;
 import clientGUI.Controllers.ICustomerActions;
 import clientGUI.Controllers.RemoteLoginController;
@@ -70,7 +72,24 @@ public class SubscriberMenuController extends BaseMenuController implements Chat
      * @param client The active OCSF network client.
      * @param userId The specific subscriber's database ID.
      */
-    @Override public void viewOrderHistory(ChatClient client, int userId) { 
+    @Override public void viewOrderHistory(ChatClient client, int userId) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/clientGUI/fxmlFiles/SubscriberFXML/OrderHistoryFrame.fxml")
+            );
+            Parent root = loader.load();
+
+            OrderHistoryController controller = loader.getController();
+            controller.loadOrdersForUser(userId);
+            
+            Stage stage = new Stage();
+            stage.setTitle("Order History");
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         appendLog("History logic for user: " + userId); 
     }
     
