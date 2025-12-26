@@ -59,7 +59,7 @@ public class NewReservationController extends BaseMenuController implements Chat
      * immediately after the client is injected.
      */
     @Override
-    protected void onClientReady() {
+    public void onClientReady() {
         ArrayList<Object> msg = new ArrayList<>();
         msg.add("GET_RESTAURANT_WORKTIMES");
         

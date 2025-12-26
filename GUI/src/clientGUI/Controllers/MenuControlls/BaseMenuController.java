@@ -34,8 +34,8 @@ public abstract class BaseMenuController implements ChatIF { // הוספנו Cha
      * and 'userId' objects have been successfully injected and are not null. 
      * This makes it the only safe place to initiate network communication during screen startup.
      */
-    @Override
-    protected void onClientReady() {
+    
+	public void onClientReady() {
         // Specific screen logic goes here (e.g., client.handleMessageFromClientUI(...))
     }
 
