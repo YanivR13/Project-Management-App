@@ -1,6 +1,7 @@
 package common;
 
 /**
+ * y
  * The ServerIF interface defines a communication contract between the server's 
  * backend logic and its User Interface (UI).
  * * By implementing this interface, any UI component (such as a JavaFX Controller) 
