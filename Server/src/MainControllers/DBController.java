@@ -60,9 +60,9 @@ public class DBController {
          * - serverTimezone: Aligns Java LocalDateTime with the database's clock.
          */
         conn = DriverManager.getConnection(
-            "jdbc:mysql://localhost:3307/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
+            "jdbc:mysql://localhost:3306/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false",
             "root",
-            "Rochlin99!"
+            "Eden2701@"
         );
 
         System.out.println("SQL connection succeed");

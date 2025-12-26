@@ -13,6 +13,6 @@
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/OCSF"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/BistroCommon"/>
-	<classpathentry kind="lib" path="C:/Users/Yaniv Rochlin/Desktop/GitRepository/Project-Management-App/Server/lib/mysql-connector-j-9.5.0.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Eden Sabag/Desktop/לימודים/שנה ג/סמסטר 5/שיטות הנדסיות לפיתוח מערכות/פרוייקט/mysql-connector-j-9.5.0.zip"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

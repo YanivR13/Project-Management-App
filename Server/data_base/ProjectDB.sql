@@ -1,3 +1,9 @@
+CREATE DATABASE IF NOT EXISTS prototypedb
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_0900_ai_ci;
+
+USE prototypedb;
+
 -- MySQL dump 10.13  Distrib 8.0.44, for Win64 (x86_64)
 --
 -- Host: localhost    Database: prototypedb
