@@ -45,6 +45,26 @@ public interface ICustomerActions {
     default void viewReservation(ChatClient client, ActionEvent event, String userType, int userId) {
         navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/ViewReservationFrame.fxml", "Bistro - View & Pay");
     }
+    
+    /**
+     * Abstract method to be implemented for retrieving past reservation data from the DB.
+     */
+    void viewOrderHistory(ChatClient client, int userId);
+
+    /**
+     * Abstract method to be implemented for allowing users to update their profile info.
+     */
+    void editPersonalDetails(ChatClient client, int userId);
+    
+    /**
+     * Sends a command to the server to remove a customer from a digital waiting list.
+     * Uses the OCSF communication protocol (ArrayList containing Command and Data).
+     * * @param client           The network client.
+     * @param confirmationCode The code identifying the specific waiting list entry.
+     */
+    default void exitWaitingList(ChatClient client, String confirmationCode) {
+    	
+    }
 
     /**
      * The Central Navigation Engine.
@@ -88,34 +108,6 @@ public interface ICustomerActions {
         } catch (Exception e) {
             // Logs critical errors during scene loading (e.g., missing FXML or CSS files)
             e.printStackTrace();
-        }
-    }
-
-    /**
-     * Abstract method to be implemented for retrieving past reservation data from the DB.
-     */
-    void viewOrderHistory(ChatClient client, int userId);
-
-    /**
-     * Abstract method to be implemented for allowing users to update their profile info.
-     */
-    void editPersonalDetails(ChatClient client, int userId);
-    
-    /**
-     * Sends a command to the server to remove a customer from a digital waiting list.
-     * Uses the OCSF communication protocol (ArrayList containing Command and Data).
-     * * @param client           The network client.
-     * @param confirmationCode The code identifying the specific waiting list entry.
-     */
-    default void exitWaitingList(ChatClient client, String confirmationCode) {
-        // Constructing the message protocol for the server
-        java.util.ArrayList<String> message = new java.util.ArrayList<>();
-        message.add("EXIT_WAITING_LIST"); // Command header
-        message.add(confirmationCode);   // Payload
-        
-        if (client != null) {
-            // Asynchronously send the request to the OCSF server
-            client.handleMessageFromClientUI(message);
         }
     }
 }

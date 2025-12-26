@@ -1,5 +1,7 @@
 package serverLogic.serverRestaurant;
 
+import java.sql.SQLException;
+
 import common.Restaurant;
 import dbLogic.restaurantDB.RestaurantDBController;
 
@@ -35,18 +37,24 @@ public class RestaurantManager {
     public static boolean initialize(int restaurantId) {
         System.out.println("Initializing restaurant data in RAM for ID: " + restaurantId + "...");
         
-        /**
-         * Delegation: Reaching out to the DB logic to perform relational queries 
-         * and reconstruct the Restaurant domain object.
-         */
-        currentRestaurant = RestaurantDBController.loadFullRestaurantData(restaurantId);
-        
-        if (currentRestaurant != null) {
-            System.out.println("Restaurant data loaded successfully: " + currentRestaurant.getRestaurantName());
-            return true;
-        } else {
-            // Error logging for server-side diagnostics
-            System.err.println("Error: Failed to load restaurant data from database.");
+        try {
+            /**
+             * Delegation: Calling the DB logic. 
+             * Since loadFullRestaurantData now throws SQLException, we must wrap it in try-catch.
+             */
+            currentRestaurant = RestaurantDBController.loadFullRestaurantData(restaurantId);
+            
+            if (currentRestaurant != null) {
+                System.out.println("Restaurant data loaded successfully: " + currentRestaurant.getRestaurantName());
+                return true;
+            } else {
+                System.err.println("Error: Failed to load restaurant data from database.");
+                return false;
+            }
+        } catch (SQLException e) {
+            // Here we catch the exception that was thrown from RestaurantDBController
+            System.err.println("Database Error during initialization: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

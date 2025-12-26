@@ -25,7 +25,8 @@ public class RestaurantDBController {
      * * @param restaurantId The primary key of the restaurant to be loaded.
      * @return A fully populated {@link Restaurant} object, or null if the ID is not found.
      */
-    public static Restaurant loadFullRestaurantData(int restaurantId) {
+	
+    public static Restaurant loadFullRestaurantData(int restaurantId) throws SQLException {
         Restaurant restaurant = null;
         // Accessing the shared database connection singleton
         Connection conn = DBController.getInstance().getConnection(); 
@@ -87,11 +88,39 @@ public class RestaurantDBController {
                     );
                 }
             }
+            
+            
+            // --- PHASE 4: Special Operating Hours Overrides ---
+               /**
+                * RELATIONAL JOIN LOGIC:
+                * Fetches date-specific overrides from 'restaurant_special_hours' joined with 'time_range'.
+                * This ensures that if a specific date (e.g., Holiday) has different hours, it is loaded into RAM.
+                */
+               String querySpecial = "SELECT sh.special_date, tr.open_time, tr.close_time " +
+                                     "FROM restaurant_special_hours sh " +
+                                     "JOIN time_range tr ON sh.time_range_id = tr.time_range_id " +
+                                     "WHERE sh.restaurant_id = ?";
+               try (PreparedStatement stmt = conn.prepareStatement(querySpecial)) {
+                   stmt.setInt(1, restaurantId);
+                   ResultSet rs = stmt.executeQuery();
+                   while (rs.next()) {
+                       // Convert SQL Date to Java LocalDate
+                       LocalDate specialDate = rs.getDate("special_date").toLocalDate();
+                       
+                       // Populate the specialHours map in the Restaurant object
+                       restaurant.setSpecialHours(
+                           specialDate, 
+                           rs.getString("open_time"), 
+                           rs.getString("close_time")
+                       );
+                   }
+               }
 
         } catch (SQLException e) { 
             // Standard JDBC error handling; prints the stack trace for server-side debugging
             e.printStackTrace(); 
         }
+ 
         
         return restaurant;
     }

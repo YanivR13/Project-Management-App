@@ -90,11 +90,12 @@ public class NewReservationController extends BaseMenuController implements Chat
 
         // Populates the time ComboBox with 30-minute intervals from 09:00 to 22:00
         ObservableList<String> hours = FXCollections.observableArrayList();
-        LocalTime time = LocalTime.of(9, 0);
-        while (!time.isAfter(LocalTime.of(22, 0))) {
+        LocalTime time = LocalTime.MIDNIGHT; // 00:00
+        do {
             hours.add(time.toString());
             time = time.plusMinutes(30);
-        }
+        } while (!time.equals(LocalTime.MIDNIGHT)); // 23:30
+
         comboTime.setItems(hours);
         
         // Sets today as the default selected date

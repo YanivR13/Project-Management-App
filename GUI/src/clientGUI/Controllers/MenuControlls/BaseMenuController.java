@@ -4,7 +4,7 @@ import client.ChatClient;
 import common.ChatIF;
 
 
-public abstract class BaseMenuController implements ChatIF { // הוספנו ChatIF כאן
+public abstract class BaseMenuController implements ChatIF { 
 
     protected ChatClient client;
     protected String userType;
