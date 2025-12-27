@@ -30,7 +30,7 @@
                   <Button fx:id="btnViewRes" maxWidth="Infinity" onAction="#clickViewRes" prefHeight="60.0" styleClass="btn-view" text="Active Reservation" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                   <Button fx:id="btnExitWait" maxWidth="Infinity" onAction="#clickExitWait" prefHeight="60.0" styleClass="btn-exit" text="Exit Waiting List" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                   <Button fx:id="btnHistory" maxWidth="Infinity" onAction="#clickHistory" prefHeight="60.0" styleClass="btn-history" text="Reservations History" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                  <Button fx:id="btnEditProfile" maxWidth="Infinity" onAction="#clickEditProfile" prefHeight="60.0" styleClass="btn-profile" text="Profile Settings" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Button fx:id="btnEditProfile" maxWidth="Infinity" onAction="#clickEditProfile" prefHeight="60.0" styleClass="btn-profile" text="Edit Details" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                </children>
             </GridPane>
             <Button fx:id="btnLogout" maxWidth="Infinity" onAction="#clickLogout" prefHeight="40.0" styleClass="btn-logout" text="Logout" />

@@ -113,6 +113,23 @@
     -fx-background-color: #c0392b; 
 }
 
+.save-edit-button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
+.cancel-edit-button {
+    -fx-background-color: #E53935;
+    -fx-text-fill: white;
+}
+
+.title-edit-label {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;   /* או #FFFFFF */
+}
+
+
 /* סגול/טורקיז - היסטוריה ופרופיל */
 .btn-history { -fx-background-color: #9b59b6; }
 .btn-history:hover { -fx-background-color: #8e44ad; }
