@@ -75,12 +75,13 @@ public class SubscriberMenuController extends BaseMenuController implements Chat
     @Override public void viewOrderHistory(ChatClient client, int userId) {
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/clientGUI/fxmlFiles/SubscriberFXML/OrderHistoryFrame.fxml")
+                    getClass().getResource("/clientGUI/fxmlFiles/SubscriberFXML/ReservationsHistoryFrame.fxml")
             );
             Parent root = loader.load();
 
-            OrderHistoryController controller = loader.getController();
-            controller.loadOrdersForUser(userId);
+            ReservationHistoryController controller = loader.getController();
+            controller.setClient(client);
+            controller.loadReservationsForUser(userId);
             
             Stage stage = new Stage();
             stage.setTitle("Order History");

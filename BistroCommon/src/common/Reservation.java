@@ -84,12 +84,41 @@ public class Reservation implements Serializable {
     public void setConfirmationCode(long code) { 
         this.confirmationCode = code; 
     }
+    
+    /**
+     * Updates the current status of the reservation.
+     *
+     * @param status the new reservation status as defined in ReservationStatus
+     */
+    public void setStatus(ReservationStatus status) {
+        this.status = status;
+    }
 
     /**
      * @return The scheduled date and time string.
      */
     public String getReservationDateTime() { 
         return reservationDateTime; 
+    }
+    
+    /**
+     * Extracts the date part from the reservation date-time string.
+     *
+     * @return the reservation date in YYYY-MM-DD format
+     */
+    public String getReservationDate() {
+        if (reservationDateTime == null) return "";
+        return reservationDateTime.split(" ")[0]; // YYYY-MM-DD
+    }
+
+    /**
+     * Extracts the time part from the reservation date-time string.
+     *
+     * @return the reservation time in HH:MM:SS format
+     */
+    public String getReservationTime() {
+        if (reservationDateTime == null) return "";
+        return reservationDateTime.split(" ")[1]; // HH:MM:SS
     }
 
     /**
