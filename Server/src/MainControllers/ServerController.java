@@ -181,6 +181,10 @@ public class ServerController extends AbstractServer {
                     }
                     break;
                     
+                case "GET_RESERVATIONS_HISTORY":
+                	new ReservationHistoryHandler().handle(messageList, client);
+                	break;
+                    
                 case "GET_RESTAURANT_WORKTIMES":
                     try {
                         Restaurant rest = RestaurantManager.getInstance();

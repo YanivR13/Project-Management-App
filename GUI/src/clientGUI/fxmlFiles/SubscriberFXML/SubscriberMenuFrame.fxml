@@ -25,12 +25,12 @@
                 <RowConstraints minHeight="10.0" prefHeight="60.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <Button fx:id="btnNewRes" maxWidth="Infinity" onAction="#clickNewRes" prefHeight="60.0" text="New Reservation" styleClass="btn-new" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                  <Button fx:id="btnCancelRes" maxWidth="Infinity" onAction="#clickCancelRes" prefHeight="60.0" text="Cancel Exist Reservation" styleClass="btn-cancel" GridPane.columnIndex="1" GridPane.rowIndex="0" />
-                  <Button fx:id="btnViewRes" maxWidth="Infinity" onAction="#clickViewRes" prefHeight="60.0" text="Active Reservation" styleClass="btn-view" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-                  <Button fx:id="btnExitWait" maxWidth="Infinity" onAction="#clickExitWait" prefHeight="60.0" text="Exit Waiting List" styleClass="btn-exit" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button fx:id="btnHistory" maxWidth="Infinity" onAction="#clickHistory" prefHeight="60.0" text="Order History" styleClass="btn-history" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-                  <Button fx:id="btnEditProfile" maxWidth="Infinity" onAction="#clickEditProfile" prefHeight="60.0" text="Profile Settings" styleClass="btn-profile" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                  <Button fx:id="btnNewRes" maxWidth="Infinity" onAction="#clickNewRes" prefHeight="60.0" styleClass="btn-new" text="New Reservation" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                  <Button fx:id="btnCancelRes" maxWidth="Infinity" onAction="#clickCancelRes" prefHeight="60.0" styleClass="btn-cancel" text="Cancel Exist Reservation" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                  <Button fx:id="btnViewRes" maxWidth="Infinity" onAction="#clickViewRes" prefHeight="60.0" styleClass="btn-view" text="Active Reservation" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                  <Button fx:id="btnExitWait" maxWidth="Infinity" onAction="#clickExitWait" prefHeight="60.0" styleClass="btn-exit" text="Exit Waiting List" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <Button fx:id="btnHistory" maxWidth="Infinity" onAction="#clickHistory" prefHeight="60.0" styleClass="btn-history" text="Reservations History" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                  <Button fx:id="btnEditProfile" maxWidth="Infinity" onAction="#clickEditProfile" prefHeight="60.0" styleClass="btn-profile" text="Edit Details" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                </children>
             </GridPane>
             <Button fx:id="btnLogout" maxWidth="Infinity" onAction="#clickLogout" prefHeight="40.0" styleClass="btn-logout" text="Logout" />
