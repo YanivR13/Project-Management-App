@@ -129,6 +129,34 @@
     -fx-text-fill: white;   /* או #FFFFFF */
 }
 
+.title-history-label {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.back-btn-history {
+    -fx-background-color: #E53935;   /* אדום */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 20;
+    -fx-padding: 8 20 8 20;
+}
+
+.table-view .column-header .label {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #222222;
+    -fx-effect: null;  
+}
+
+.table-view .placeholder .label {
+    -fx-text-fill: black;        
+    -fx-font-size: 14px;         
+    -fx-font-weight: normal;
+    -fx-effect: null;            
+}
 
 /* סגול/טורקיז - היסטוריה ופרופיל */
 .btn-history { -fx-background-color: #9b59b6; }
