@@ -14,11 +14,4 @@
 	<natures>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>src/clientGUI/fxmlFiles/SubscriberFXML/OrderHistoryFrame.fxml</name>
-			<type>1</type>
-			<location>C:/Users/Eden Sabag/git/Project-Management-App/GUI/src/clientGUI/fxmlFiles/SubscriberFXML/OrderHistoryFrame.fxml</location>
-		</link>
-	</linkedResources>
 </projectDescription>
