@@ -170,6 +170,10 @@ public class ServerController extends AbstractServer {
                 case "GET_RESERVATIONS_HISTORY":
                 	new ReservationHistoryHandler().handle(messageList, client);
                 	break;
+                	
+                case "GET_SUBSCRIBER_DETAILS":
+                	new EditDetailsHandler().handle(messageList, client);
+                	break;
                     
                 case "GET_RESTAURANT_WORKTIMES":
                     try {

@@ -99,8 +99,34 @@ public class SubscriberMenuController extends BaseMenuController implements Chat
      * @param client The active OCSF network client.
      * @param userId The specific subscriber's database ID.
      */
-    @Override public void editPersonalDetails(ChatClient client, int userId) { 
-        appendLog("Settings for user: " + userId); 
+    @Override
+    public void editPersonalDetails(ChatClient client, int userId) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource(
+                            "/clientGUI/fxmlFiles/SubscriberFXML/EditSubscriberDetailsFrame.fxml"
+                    )
+            );
+
+            Parent root = loader.load();
+
+            // קבלת ה־controller של מסך העריכה
+            EditSubscriberDetailsController controller = loader.getController();
+
+            // העברת תלותים
+            controller.setClient(client);
+            controller.setUserId(userId);
+
+            Stage stage = new Stage();
+            stage.setTitle("Edit Profile");
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        appendLog("Settings for user: " + userId);
     }
 
     /**

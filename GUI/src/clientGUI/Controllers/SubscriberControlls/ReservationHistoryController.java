@@ -22,7 +22,7 @@ public class ReservationHistoryController implements ChatIF {
 
 	public void setClient(ChatClient client) {
 	    this.client = client;
-	    client.setUI(this); // ⬅️ זה החיבור החשוב
+	    client.setUI(this); 
 	}
 	
 	@FXML private Button btnBack;
