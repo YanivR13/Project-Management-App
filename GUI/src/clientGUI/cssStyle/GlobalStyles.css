@@ -175,3 +175,128 @@
 
 .btn-profile { -fx-background-color: #16a085; }
 .btn-profile:hover { -fx-background-color: #1abc9c; }
+
+
+/* רקע כללי של המסך */
+.payment-root {
+    -fx-background-color: #f8f9fa;
+    -fx-font-family: "Segoe UI", system-ui;
+}
+
+/* כותרת */
+.payment-header {
+    -fx-font-size: 30px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d3436;
+}
+
+/* כרטיס החשבונית */
+.bill-card {
+    -fx-background-color: white;
+    -fx-background-radius: 20px;
+    -fx-border-radius: 20px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 15, 0, 0, 8);
+}
+
+/* תוויות מידע */
+.info-label {
+    -fx-text-fill: #636e72;
+    -fx-font-size: 14px;
+}
+
+.info-value {
+    -fx-text-fill: #2d3436;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+/* תוויות מחיר */
+.price-label {
+    -fx-text-fill: #b2bec3;
+    -fx-font-size: 15px;
+}
+
+.price-value {
+    -fx-text-fill: #2d3436;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.discount-value {
+    -fx-text-fill: #00b894; /* ירוק הנחה */
+    -fx-font-weight: bold;
+}
+
+/* אזור הסכום הסופי */
+.total-container {
+    -fx-background-color: #fff9f1;
+    -fx-padding: 15px;
+    -fx-background-radius: 10px;
+}
+
+.total-label {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2d3436;
+}
+
+.total-price {
+    -fx-font-size: 26px;
+    -fx-font-weight: 900;
+    -fx-text-fill: #e67e22; /* כתום ביסטרו */
+}
+
+/* כפתור תשלום */
+.pay-button {
+    -fx-background-color: #e67e22;
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 60;
+    -fx-background-radius: 50px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(230,126,34,0.3), 10, 0, 0, 5);
+}
+
+.pay-button:hover {
+    -fx-background-color: #d35400;
+}
+
+.bill-separator {
+    -fx-opacity: 0.3;
+}
+
+/* עיצוב תיבת הטקסט */
+.modern-text-field {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #dfe6e9;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    -fx-padding: 12px;
+    -fx-font-size: 16px;
+    -fx-text-fill: #2d3436;
+    -fx-alignment: CENTER;
+}
+
+.modern-text-field:focused {
+    -fx-border-color: #e67e22; /* צבע כתום ביסטרו בזמן פוקוס */
+    -fx-border-width: 2px;
+}
+
+/* כפתור משני (Back) */
+.secondary-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #636e72;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-border-color: #b2bec3;
+    -fx-border-radius: 50px;
+    -fx-padding: 10 40;
+    -fx-cursor: hand;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #f1f2f6;
+    -fx-text-fill: #2d3436;
+    -fx-border-color: #2d3436;
+}

@@ -35,8 +35,8 @@ public interface ICustomerActions {
     /**
      * Navigates the user to the Reservation Cancellation screen.
      */
-    default void payBill(ChatClient client, ActionEvent event, String userType, int userId) {
-        navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/CancelReservationFrame.fxml", "Bistro - Cancel Reservation");
+    default void payBill(ChatClient client, ActionEvent event, String userType, int userId) {   	
+    	navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/PayBillEntryFrame.fxml", "Bistro - Enter Payment Code");
     }
 
     /**
