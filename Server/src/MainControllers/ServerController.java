@@ -7,6 +7,7 @@ import serverLogic.serverRestaurant.RestaurantManager;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.Bill;
 import common.Restaurant;
 import common.ServerIF;
 import common.ServiceResponse;
@@ -166,6 +167,40 @@ public class ServerController extends AbstractServer {
 
                 case "REGISTER_OCCASIONAL":
                     new OccasionalRegistrationHandler().handle(messageList, client);
+                    break;
+                    
+                case "PROCESS_PAYMENT":
+                    Bill billToProcess = (Bill) messageList.get(1);
+                    boolean isSuccess = dbLogic.restaurantDB.PaymentController.finalizePayment(billToProcess);
+                    
+                    try {
+                        if (isSuccess) {
+                            client.sendToClient("PAYMENT_SUCCESS");
+                            serverUI.appendLog("Payment processed successfully for Bill ID: " + billToProcess.getBillId());
+                        } else {
+                            client.sendToClient("PAYMENT_FAILED");
+                            serverUI.appendLog("Failed to process payment for Bill ID: " + billToProcess.getBillId());
+                        }
+                    } catch (IOException e) { e.printStackTrace(); }
+                    break;
+                    
+                case "GET_VISIT_BY_CODE":
+                    try {
+                        long code = (long) messageList.get(1);                     
+                        common.Visit visitData = dbLogic.restaurantDB.PaymentController.getVisitDetails(code);
+                        
+                        if (visitData != null) {
+                            client.sendToClient(visitData); 
+                            serverUI.appendLog("Visit found for code: #" + code);
+                        } else {
+                            client.sendToClient("VISIT_NOT_FOUND");
+                            serverUI.appendLog("No active visit for code: #" + code);
+                        }
+                    } catch (IOException e) {
+                        serverUI.appendLog("Network error: " + e.getMessage());
+                    } catch (Exception e) {
+                        serverUI.appendLog("Error in GET_VISIT_BY_CODE: " + e.getMessage());
+                    }
                     break;
                     
                 case "CANCEL_RESERVATION":
