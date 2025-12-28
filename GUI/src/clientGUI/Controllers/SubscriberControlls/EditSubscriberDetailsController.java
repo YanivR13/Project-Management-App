@@ -1,13 +1,16 @@
 package clientGUI.Controllers.SubscriberControlls;
 
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 
 import java.util.ArrayList;
 
+
 import client.ChatClient;
 import common.ChatIF;
 import javafx.fxml.FXML;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.scene.Node;
 import javafx.stage.Stage;
@@ -62,7 +65,11 @@ public class EditSubscriberDetailsController implements ChatIF {
 
         // אם הכל ריק – אין מה לעדכן
         if (username.isEmpty() && phone.isEmpty() && email.isEmpty()) {
-            System.out.println("No fields were filled. Nothing to update.");
+            showAlert(
+                "No Changes",
+                "Please enter at least one field to update.",
+                Alert.AlertType.INFORMATION
+            );
             return;
         }
 
@@ -78,9 +85,60 @@ public class EditSubscriberDetailsController implements ChatIF {
         client.handleMessageFromClientUI(msg);
     }
 
-	@Override
-	public void display(Object message) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void display(Object message) {
+
+        Platform.runLater(() -> {
+
+            if (message instanceof ArrayList<?>) {
+                ArrayList<?> data = (ArrayList<?>) message;
+
+                String command = data.get(0).toString();
+
+                if ("EDIT_DETAILS_RESULT".equals(command)) {
+
+                    String result = data.get(1).toString();
+
+                    if ("SUCCESS".equals(result)) {
+                        showAlert(
+                            "Profile Updated",
+                            "Your personal details were updated successfully.",
+                            Alert.AlertType.INFORMATION
+                        );
+                        closeWindow();
+                    }
+                    else if ("NO_CHANGES".equals(result)) {
+                        showAlert(
+                            "No Changes",
+                            "No details were updated.",
+                            Alert.AlertType.INFORMATION
+                        );
+                    }
+                }
+            }
+            else if (message instanceof String &&
+                     "ERROR_EDITING_DETAILS".equals(message)) {
+
+                showAlert(
+                    "Error",
+                    "An error occurred while updating your details.",
+                    Alert.AlertType.ERROR
+                );
+            }
+        });
+    }
+    
+    private void showAlert(String title, String content, Alert.AlertType type) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+    
+    private void closeWindow() {
+        Stage stage = (Stage) btnSave.getScene().getWindow();
+        stage.close();
+    }
+
 }

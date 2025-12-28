@@ -20,58 +20,63 @@ public class DBSubscriberDetails {
      * @param email    new email (optional)
      * @return true if update was executed, false otherwise
      */
-    public boolean updateSubscriberDetails(
-            int userId,
-            String username,
-            String phone,
-            String email
-    ) {
+	public boolean updateSubscriberDetails(
+	        int userId,
+	        String username,
+	        String phone,
+	        String email
+	) {
+	    boolean updated = false;
 
-        List<String> fields = new ArrayList<>();
-        List<Object> values = new ArrayList<>();
+	    try {
+	        Connection conn = DBController.getInstance().getConnection();
 
-        if (username != null && !username.isBlank()) {
-            fields.add("username = ?");
-            values.add(username);
-        }
+	        /* ===== update subscriber.username ===== */
+	        if (username != null && !username.isBlank()) {
+	            String sqlSubscriber =
+	                "UPDATE subscriber SET username = ? WHERE user_id = ?";
+	            try (PreparedStatement ps = conn.prepareStatement(sqlSubscriber)) {
+	                ps.setString(1, username);
+	                ps.setInt(2, userId);
+	                updated |= ps.executeUpdate() > 0;
+	            }
+	        }
 
-        if (phone != null && !phone.isBlank()) {
-            fields.add("phone = ?");
-            values.add(phone);
-        }
+	        /* ===== update user.phone_number & email ===== */
+	        List<String> fields = new ArrayList<>();
+	        List<Object> values = new ArrayList<>();
 
-        if (email != null && !email.isBlank()) {
-            fields.add("email = ?");
-            values.add(email);
-        }
+	        if (phone != null && !phone.isBlank()) {
+	            fields.add("phone_number = ?");
+	            values.add(phone);
+	        }
 
-        // אם לא הוזן שום שדה – אין מה לעדכן
-        if (fields.isEmpty()) {
-            return false;
-        }
+	        if (email != null && !email.isBlank()) {
+	            fields.add("email = ?");
+	            values.add(email);
+	        }
 
-        String sql = "UPDATE user SET " +
-                     String.join(", ", fields) +
-                     " WHERE id = ?";
+	        if (!fields.isEmpty()) {
+	            String sqlUser =
+	                "UPDATE user SET " + String.join(", ", fields) +
+	                " WHERE user_id = ?";
 
-        try {
-            Connection conn = DBController.getInstance().getConnection();
-            PreparedStatement pstmt = conn.prepareStatement(sql);
+	            try (PreparedStatement ps = conn.prepareStatement(sqlUser)) {
+	                int i = 1;
+	                for (Object v : values) {
+	                    ps.setObject(i++, v);
+	                }
+	                ps.setInt(i, userId);
+	                updated |= ps.executeUpdate() > 0;
+	            }
+	        }
 
-            int index = 1;
-            for (Object value : values) {
-                pstmt.setObject(index++, value);
-            }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	        return false;
+	    }
 
-            pstmt.setInt(index, userId);
-
-            int rowsUpdated = pstmt.executeUpdate();
-            return rowsUpdated > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
+	    return updated;
+	}
 }
+

@@ -4,7 +4,7 @@ import ocsf.server.ConnectionToClient;
 import java.util.ArrayList;
 import java.util.List;
 
-import dbLogic.restaurantDB.RestaurantDBController;
+import dbLogic.restaurantDB.DBReservationsHistoryController;
 import common.Reservation;
 /**
  * Handles server-side logic for fetching order history of a subscriber.
@@ -29,7 +29,7 @@ public class ReservationHistoryHandler {
             int userId = (int) data.get(1);
 
             /* STEP 2: DB delegation */
-            RestaurantDBController db = new RestaurantDBController();
+            DBReservationsHistoryController db = new DBReservationsHistoryController();
             List<Reservation> reservations = db.getReservationsForUser(userId);
 
             /* STEP 3: Build response */

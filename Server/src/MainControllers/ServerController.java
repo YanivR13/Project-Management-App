@@ -203,7 +203,7 @@ public class ServerController extends AbstractServer {
                 	new ReservationHistoryHandler().handle(messageList, client);
                 	break;
                 	
-                case "GET_SUBSCRIBER_DETAILS":
+                case "UPDATE_SUBSCRIBER_DETAILS":
                 	new EditDetailsHandler().handle(messageList, client);
                 	break;
                     
