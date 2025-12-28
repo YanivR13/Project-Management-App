@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import serverLogic.menuLogic.*;
 import serverLogic.serverRestaurant.RestaurantManager;
 import java.util.ArrayList;
+import java.util.List;
 
 import common.Restaurant;
 import common.ServerIF;
@@ -165,6 +166,37 @@ public class ServerController extends AbstractServer {
 
                 case "REGISTER_OCCASIONAL":
                     new OccasionalRegistrationHandler().handle(messageList, client);
+                    break;
+                    
+                case "CANCEL_RESERVATION":
+                	
+                    long codeToCancel = (long) messageList.get(1);                    
+                    boolean isCanceled = dbLogic.restaurantDB.viewReservationController.cancelReservationByCode(codeToCancel);
+                    
+                    try {
+                        if (isCanceled) {
+                            client.sendToClient("CANCEL_SUCCESS");
+                            serverUI.appendLog("Successfully canceled reservation #" + codeToCancel);
+                        } else {
+                            client.sendToClient("CANCEL_FAILED");
+                            serverUI.appendLog("Failed to cancel reservation #" + codeToCancel);
+                        }
+                    } catch (IOException e) {
+                        serverUI.appendLog("Error sending cancel response to client: " + e.getMessage());
+                    }
+                    break;
+                    
+                case "GET_ACTIVE_RESERVATIONS":
+                    int userId = (int) messageList.get(1);
+                    
+                    List<common.Reservation> activeReservations = dbLogic.restaurantDB.viewReservationController.getActiveReservationsByUserId(userId);
+                    
+                    try {
+                        client.sendToClient(activeReservations);
+                        serverUI.appendLog("Sent " + activeReservations.size() + " active reservations to user " + userId);
+                    } catch (IOException e) {
+                        serverUI.appendLog("Error sending reservations to client: " + e.getMessage());
+                    }
                     break;
                     
                 case "GET_RESERVATIONS_HISTORY":

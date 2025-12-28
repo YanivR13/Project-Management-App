@@ -97,6 +97,17 @@
     -fx-background-color: #424242; 
 }
 
+.btn-pay { 
+    -fx-background-color: #f1c40f; 
+    -fx-text-fill: #2c3e50; /* טקסט כהה לניגודיות טובה על צהוב */
+}
+
+.btn-pay:hover { 
+    -fx-background-color: #f39c12; /* זהב כהה יותר במעבר עכבר */
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
 /* כתום - יציאה מהמסך (Warning/Transition) */
 .btn-exit, .btn-back { 
     -fx-background-color: #e67e22; 

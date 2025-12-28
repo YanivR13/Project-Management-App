@@ -28,7 +28,7 @@
                      <font><Font name="System Bold" size="16.0" /></font>
                   </Button>
                   
-                  <Button fx:id="btnCancelReservation" maxWidth="Infinity" maxHeight="Infinity" onAction="#clickCancelReservation" style="-fx-background-color: #222222; -fx-background-radius: 15;" text="Cancel Reservation" textFill="WHITE" GridPane.columnIndex="1" GridPane.rowIndex="0">
+                  <Button fx:id="btnPayBill" maxWidth="Infinity" maxHeight="Infinity" onAction="#clickPayBill" style="-fx-background-color: #f1c40f; -fx-background-radius: 15;" text="Pay Bill" textFill="WHITE" GridPane.columnIndex="1" GridPane.rowIndex="0">
                      <font><Font name="System Bold" size="14.0" /></font>
                   </Button>
                   
