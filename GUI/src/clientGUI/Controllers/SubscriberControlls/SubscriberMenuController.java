@@ -33,7 +33,7 @@ import javafx.stage.Stage;
 public class SubscriberMenuController extends BaseMenuController implements ChatIF, ICustomerActions {
 
     /** Navigation buttons for various system modules. */
-    @FXML private Button btnNewRes, btnCancelRes, btnViewRes, btnExitWait, btnHistory, btnEditProfile, btnLogout;
+    @FXML private Button btnNewRes, btnPayBill, btnViewRes, btnExitWait, btnHistory, btnEditProfile, btnLogout;
     
     /** Logger area for displaying session updates and background operation feedback. */
     @FXML private TextArea txtLog;
@@ -45,8 +45,8 @@ public class SubscriberMenuController extends BaseMenuController implements Chat
         createNewReservation(client, event, userType, userId); 
     }
     
-    @FXML void clickCancelRes(ActionEvent event) { 
-        cancelReservation(client, event, userType, userId); 
+    @FXML void clickPayBill(ActionEvent event) { 
+        payBill(client, event, userType, userId); 
     }
     
     @FXML void clickViewRes(ActionEvent event) { 

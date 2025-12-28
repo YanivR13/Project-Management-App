@@ -26,7 +26,7 @@
               </rowConstraints>
                <children>
                   <Button fx:id="btnNewRes" maxWidth="Infinity" onAction="#clickNewRes" prefHeight="60.0" styleClass="btn-new" text="New Reservation" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-                  <Button fx:id="btnCancelRes" maxWidth="Infinity" onAction="#clickCancelRes" prefHeight="60.0" styleClass="btn-cancel" text="Cancel Exist Reservation" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                  <Button fx:id="btnPayBill" maxWidth="Infinity" onAction="#clickPayBill" prefHeight="60.0" styleClass="btn-pay" text="Pay Bill" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                   <Button fx:id="btnViewRes" maxWidth="Infinity" onAction="#clickViewRes" prefHeight="60.0" styleClass="btn-view" text="Active Reservation" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                   <Button fx:id="btnExitWait" maxWidth="Infinity" onAction="#clickExitWait" prefHeight="60.0" styleClass="btn-exit" text="Exit Waiting List" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                   <Button fx:id="btnHistory" maxWidth="Infinity" onAction="#clickHistory" prefHeight="60.0" styleClass="btn-history" text="Reservations History" GridPane.columnIndex="0" GridPane.rowIndex="2" />

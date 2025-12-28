@@ -10,39 +10,78 @@ import java.util.List;
 import MainControllers.DBController;
 import common.Reservation;
 
+/**
+ * Controller class responsible for handling database operations related to viewing reservations.
+ * This class interacts with the 'reservation' table in the database.
+ */
 public class viewReservationController {
 	
 	/**
 	 * Fetches all ACTIVE reservations for a specific user from the database.
-	 * Aligned with the provided Reservation DTO and 'prototypedb' schema.
-	 * * @param userId The ID of the customer whose reservations are being requested.
-	 * @return A list of active Reservation objects.
+	 * This method maps database records to Reservation DTO objects.
+	 * * @param userId The unique ID of the customer.
+	 * @return A list of active Reservation objects belonging to the user.
 	 */
 	public static List<Reservation> getActiveReservationsByUserId(int userId) {
+		
 	    List<Reservation> activeReservations = new ArrayList<>();
+	    
+	   //SQL query to retrieve specific columns for active reservations of a given user
 	    String query = "SELECT confirmation_code, reservation_datetime, number_of_guests, user_id, status " +
 	                   "FROM reservation WHERE user_id = ? AND status = 'ACTIVE'";
 
-	    // מקבלים את החיבור מה-DBController בלי להכניס אותו ל-try-with-resources
+        //Accessing the shared database connection singleton
 	    Connection conn = DBController.getInstance().getConnection();
 	    
-	    // רק ה-PreparedStatement וה-ResultSet נסגרים אוטומטית
+	   //Using try-with-resources to ensure the PreparedStatement is closed automatically
 	    try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+	    	
+	    	//Bind the userId parameter to the first placeholder (?) in the query
 	        pstmt.setInt(1, userId);
+	        
+	        //Execute the query and process the results
 	        try (ResultSet rs = pstmt.executeQuery()) {
 	            while (rs.next()) {
+	            	//Create a new Reservation object and map the standard fields from the result set
 	                Reservation res = new Reservation(
 	                    rs.getInt("user_id"),
 	                    rs.getString("reservation_datetime"),
 	                    rs.getInt("number_of_guests")
 	                );
+	                //Set the unique confirmation code (mapping long from DB)
 	                res.setConfirmationCode(rs.getLong("confirmation_code"));
+	                //Add the populated reservation object to the list
 	                activeReservations.add(res);
 	            }
 	        }
 	    } catch (SQLException e) {
+	    	
+	    	//Log database errors to the console (consider using a logger for production)
 	        e.printStackTrace();
 	    }
 	    return activeReservations;
+	}
+	
+	/**
+	 * Updates the status of a specific reservation to 'CANCELED' in the database.
+	 * @param confirmationCode The unique code of the reservation to cancel.
+	 * @return true if the update was successful (rows affected > 0), false otherwise.
+	 */
+	public static boolean cancelReservationByCode(long confirmationCode) {
+	    String query = "UPDATE reservation SET status = 'CANCELED' WHERE confirmation_code = ?";
+
+	    Connection conn = DBController.getInstance().getConnection();
+	    
+	    try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+	        pstmt.setLong(1, confirmationCode);
+	        
+	        int rowsAffected = pstmt.executeUpdate();
+	        return rowsAffected > 0;
+	        
+	    } catch (SQLException e) {
+	        System.out.println("DB Error during cancellation: " + e.getMessage());
+	        e.printStackTrace();
+	        return false;
+	    }
 	}
 }

@@ -31,7 +31,7 @@ import javafx.stage.Stage;
 public class OccasionalMenuController extends BaseMenuController implements ChatIF, ICustomerActions {
 
     /** Navigation buttons for Guest-accessible features. */
-    @FXML private Button btnNewReservation, btnCancelReservation, btnViewReservation, btnLogout, btnExitWaitingList;
+    @FXML private Button btnNewReservation, btnPayBill, btnViewReservation, btnLogout, btnExitWaitingList;
     
     /** Console-style log area for providing real-time feedback to the guest user. */
     @FXML private TextArea txtLog;
@@ -45,8 +45,8 @@ public class OccasionalMenuController extends BaseMenuController implements Chat
     }
     
     /** Triggers the Reservation Cancellation scene transition. */
-    @FXML void clickCancelReservation(ActionEvent event) { 
-        cancelReservation(client, event, userType, userId); 
+    @FXML void clickPayBill(ActionEvent event) { 
+        payBill(client, event, userType, userId); 
     }
     
     /** Triggers the Reservation Viewing/Payment scene transition. */
