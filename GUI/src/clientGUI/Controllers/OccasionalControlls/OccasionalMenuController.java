@@ -1,9 +1,12 @@
 package clientGUI.Controllers.OccasionalControlls;
 
+import java.util.ArrayList;
+
 import client.ChatClient;
 import clientGUI.Controllers.ICustomerActions;
 import clientGUI.Controllers.RemoteLoginController;
 import clientGUI.Controllers.MenuControlls.BaseMenuController;
+import clientGUI.Controllers.MenuControlls.ExitWaitingListHelper;
 import common.ChatIF;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -12,7 +15,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 
@@ -57,8 +63,10 @@ public class OccasionalMenuController extends BaseMenuController implements Chat
     /** Placeholder for future Waiting List management features. */
     @FXML
     void clickExitWaitingList(ActionEvent event) {
-        appendLog("Navigating to Waiting List management...");
+    	appendLog("Exit Waiting List triggered.");
+    	ExitWaitingListHelper.requestLeaveWaitingList(this.client, this.userId);
     }
+  
 
     /**
      * Handles the logout process. Returns the user to the initial portal selection screen
@@ -105,6 +113,14 @@ public class OccasionalMenuController extends BaseMenuController implements Chat
     public void display(Object message) {
         if (message != null) {
             appendLog(message.toString());
+        }
+        
+        if (message instanceof String) {
+            String response = (String) message;
+            
+            if (response.startsWith("CANCEL_WAITING") || response.equals("NOT_ON_WAITING_LIST")) {
+                ExitWaitingListHelper.handleServerResponse(response);
+            }
         }
     }
 

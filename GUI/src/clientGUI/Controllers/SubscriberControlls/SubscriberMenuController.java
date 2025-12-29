@@ -6,6 +6,7 @@ import client.ChatClient;
 import clientGUI.Controllers.ICustomerActions;
 import clientGUI.Controllers.RemoteLoginController;
 import clientGUI.Controllers.MenuControlls.BaseMenuController;
+import clientGUI.Controllers.MenuControlls.ExitWaitingListHelper;
 import common.ChatIF;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -57,6 +58,8 @@ public class SubscriberMenuController extends BaseMenuController implements Chat
 
     @FXML void clickExitWait(ActionEvent event) { 
         appendLog("Exit Waiting List triggered."); 
+    	ExitWaitingListHelper.requestLeaveWaitingList(this.client, this.userId);
+
     }
     
     @FXML void clickHistory(ActionEvent event) { 
@@ -163,6 +166,14 @@ public class SubscriberMenuController extends BaseMenuController implements Chat
     public void display(Object message) {
         if (message != null) {
             appendLog(message.toString());
+        }
+        
+        if (message instanceof String) {
+            String response = (String) message;
+            
+            if (response.startsWith("CANCEL_WAITING") || response.equals("NOT_ON_WAITING_LIST")) {
+                ExitWaitingListHelper.handleServerResponse(response);
+            }
         }
     }
 
