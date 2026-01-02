@@ -17,6 +17,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import terminalGUI.Controllers.TerminalControllers.TerminalLoginController;
 import terminalGUI.Controllers.TerminalControllers.TerminalMenuController;
 
 /**
@@ -268,10 +269,27 @@ public class OccasionalLoginController implements ChatIF {
      */
     @FXML void clickBack(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
-            Parent root = loader.load();
-            ((RemoteLoginController)loader.getController()).setClient(client);
+            FXMLLoader loader;
+            Parent root;
+
+            if (loginSource == LoginSource.TERMINAL) {
+                loader = new FXMLLoader(
+                    getClass().getResource("/clientGUI/fxmlFiles/TerminalLoginFrame.fxml")
+                );
+                root = loader.load();
+                TerminalLoginController controller = loader.getController();
+                controller.setClient(client);
+
+            } else {
+                loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
+                root = loader.load();
+
+                ((RemoteLoginController) loader.getController())
+                        .setClient(client);
+            }
+
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) { e.printStackTrace(); }

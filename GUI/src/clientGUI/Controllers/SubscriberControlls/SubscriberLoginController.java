@@ -15,6 +15,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import terminalGUI.Controllers.TerminalControllers.TerminalLoginController;
 import terminalGUI.Controllers.TerminalControllers.TerminalMenuController;
 import javafx.application.Platform;
 
@@ -99,15 +100,32 @@ public class SubscriberLoginController implements ChatIF {
     @FXML
     void clickBack(ActionEvent event) {
         try {
-            // Loading the FXML for the landing screen
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
-            Parent root = loader.load();
-            
-            // Passing the client reference back to the previous controller to maintain session
-            ((RemoteLoginController)loader.getController()).setClient(client);
-            
-            // Scene switching logic
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            FXMLLoader loader;
+            Parent root;
+
+            if (loginSource == LoginSource.TERMINAL) {
+                loader = new FXMLLoader(
+                    getClass().getResource("/clientGUI/fxmlFiles/TerminalLoginFrame.fxml")
+                );
+                root = loader.load();
+
+                // החזרת ה-client למסך הקודם
+                TerminalLoginController controller =
+                        loader.getController();
+                controller.setClient(client);
+
+            } else {
+                loader = new FXMLLoader(
+                    getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml")
+                );
+                root = loader.load();
+
+                ((RemoteLoginController) loader.getController())
+                        .setClient(client);
+            }
+
+            Stage stage = (Stage) ((Node) event.getSource())
+                    .getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
         } catch (Exception e) { 

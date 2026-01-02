@@ -5,6 +5,7 @@ import clientGUI.Controllers.OccasionalControlls.OccasionalLoginController;
 import clientGUI.Controllers.SubscriberControlls.SubscriberLoginController;
 import javafx.event.ActionEvent;
 import common.ChatIF;
+import commonLogin.LoginSource;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -85,8 +86,10 @@ public class RemoteLoginController implements ChatIF {
              */
             if (controller instanceof SubscriberLoginController) {
                 ((SubscriberLoginController) controller).setClient(client);
+                ((SubscriberLoginController) controller).setLoginSource(LoginSource.REMOTE);
             } else if (controller instanceof OccasionalLoginController) {
                 ((OccasionalLoginController) controller).setClient(client);
+                ((OccasionalLoginController) controller).setLoginSource(LoginSource.REMOTE);
             }
 
             // Stage and Scene Configuration

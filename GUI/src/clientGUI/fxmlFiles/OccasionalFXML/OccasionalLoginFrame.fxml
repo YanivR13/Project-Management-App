@@ -30,7 +30,7 @@
                   <Button fx:id="btnLogin" maxWidth="Infinity" onAction="#clickLogin" styleClass="btn-login" text="Login" />
                   <Button fx:id="btnForgot" maxWidth="Infinity" onAction="#showForgotArea" style="-fx-background-color: transparent; -fx-text-fill: #3498db; -fx-underline: true;" text="I forgot my username" />
                   <Button fx:id="btnRegister" maxWidth="Infinity" onAction="#clickRegister" styleClass="btn-register" text="Register New User" />
-                  <Button fx:id="btnBack" maxWidth="Infinity" onAction="#clickBack" styleClass="btn-back" text="Back to Portal" />
+                  <Button fx:id="btnBack" maxWidth="Infinity" onAction="#clickBack" styleClass="btn-back" text="Back" />
                </children>
             </VBox>
 
