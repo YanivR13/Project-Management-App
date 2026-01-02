@@ -19,7 +19,7 @@
                </children>
             </VBox>
             <Button fx:id="btnLogin" maxWidth="Infinity" onAction="#clickLogin" styleClass="btn-login" text="Login" />
-            <Button fx:id="btnBack" maxWidth="Infinity" onAction="#clickBack" styleClass="btn-back" text="Back to Portal" />
+            <Button fx:id="btnBack" maxWidth="Infinity" onAction="#clickBack" styleClass="btn-back" text="Back" />
          </children>
       </VBox>
       <TextArea fx:id="txtLog" editable="false" layoutX="25.0" layoutY="350.0" prefHeight="120.0" prefWidth="350.0" wrapText="true" />
