@@ -1,4 +1,4 @@
-package clientGUI.Controllers;
+package terminalGUI.Controllers.TerminalControllers;
 
 import javafx.scene.control.Button;
 
@@ -22,7 +22,7 @@ import javafx.scene.control.Button;;
  * @author Software Engineering Student
  * @version 1.0
  */
-public class TerminalController implements ChatIF {
+public class TerminalMenuController implements ChatIF {
 
     /** Persistent network client (injected on application startup) */
     private ChatClient client;
@@ -30,7 +30,7 @@ public class TerminalController implements ChatIF {
     
     // FXML Button Bindings
     @FXML
-    private Button btnLostReservationCode;
+    private Button btnLostConfirmationCode;
     
     @FXML
     private Button btnManageReservation;
@@ -55,7 +55,7 @@ public class TerminalController implements ChatIF {
      * Handles "Lost Reservation Code" button click.
      */
     @FXML
-    private void handleLostReservationCode(ActionEvent event) {
+    private void handleLostConfirmationCode(ActionEvent event) {
         // TODO: implement reservation code recovery flow
     }
     

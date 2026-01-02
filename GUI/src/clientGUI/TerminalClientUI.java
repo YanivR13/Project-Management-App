@@ -1,12 +1,13 @@
 package clientGUI;
 
 import client.ChatClient;
-import clientGUI.Controllers.TerminalController;
+import clientGUI.Controllers.TerminalLoginController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import terminalGUI.Controllers.TerminalControllers.TerminalMenuController;
 
 /**
  * Main entry point for the Bistro Customer Service Terminal application.
@@ -33,12 +34,12 @@ public class TerminalClientUI extends Application {
         // --- UI Initialization Phase ---
 
         FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("fxmlFiles/TerminalFrame.fxml")
+                getClass().getResource("fxmlFiles/TerminalLoginFrame.fxml")
         );
         Parent root = loader.load();
 
         // Get controller
-        TerminalController controller = loader.getController();
+        TerminalLoginController controller = loader.getController();
 
         // Scene setup
         Scene scene = new Scene(root);

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import client.ChatClient;
 import clientGUI.Controllers.RemoteLoginController;
 import common.ChatIF;
+import commonLogin.LoginSource;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -14,6 +15,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import terminalGUI.Controllers.TerminalControllers.TerminalMenuController;
 import javafx.application.Platform;
 
 /**
@@ -28,6 +30,8 @@ public class SubscriberLoginController implements ChatIF {
     
     /** The persistent client connection used to send and receive server messages. */
     private ChatClient client;
+    
+    private LoginSource loginSource = LoginSource.REMOTE;
     
     /** Input field for the unique Subscriber Identification number. */
     @FXML private TextField txtSubscriberID;
@@ -51,6 +55,10 @@ public class SubscriberLoginController implements ChatIF {
             // Provides initial visual feedback to the user that the portal is ready
             appendLog("Connected to Portal. Waiting for login...");
         }
+    }
+    
+    public void setLoginSource(LoginSource source) {
+        this.loginSource = source;
     }
 
     /**
@@ -124,9 +132,17 @@ public class SubscriberLoginController implements ChatIF {
             if (status.equals("LOGIN_SUCCESS")) {
                 appendLog("Login confirmed! Loading dashboard...");
                 
+                int userId = (int) res.get(1);
                 // Navigation must happen on the JavaFX thread using Platform.runLater
-                Platform.runLater(() -> navigateToMenu((int)res.get(1)));
-            } else {
+                Platform.runLater(() -> {
+                    if (loginSource == LoginSource.TERMINAL) {
+                        navigateToTerminal(userId);
+                    } else {
+                        navigateToMenu(userId);
+                    }
+                });
+    
+            }else {
                 // Display specific server-side error messages (e.g., "ID not found")
                 appendLog("Server Response: " + res.toString());
             }
@@ -158,6 +174,34 @@ public class SubscriberLoginController implements ChatIF {
             appendLog("UI Error: Could not load Menu Frame.");
         }
     }
+    
+    private void navigateToTerminal(int userId) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+            		getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalMenuFrame.fxml")
+            );
+            Parent root = loader.load();
+
+            // Dependency Injection
+            TerminalMenuController controller = loader.getController();
+            controller.setClient(client);
+
+            Stage stage = (Stage) btnLogin.getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(
+                getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()
+            );
+
+            stage.setTitle("Customer Service Terminal");
+            stage.setScene(scene);
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            appendLog("Terminal navigation error.");
+        }
+    }
+
 
     /**
      * Appends text to the GUI's log area in a thread-safe manner.

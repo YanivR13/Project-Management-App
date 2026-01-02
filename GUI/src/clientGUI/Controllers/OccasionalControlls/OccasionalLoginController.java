@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import client.ChatClient;
 import clientGUI.Controllers.RemoteLoginController;
 import common.ChatIF;
+import commonLogin.LoginSource;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,6 +17,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import terminalGUI.Controllers.TerminalControllers.TerminalMenuController;
 
 /**
  * Controller for the Occasional (Guest) Login interface.
@@ -30,6 +32,9 @@ public class OccasionalLoginController implements ChatIF {
     
     /** The network client responsible for server communication. */
     private ChatClient client;
+    
+    private LoginSource loginSource = LoginSource.REMOTE;
+
 
     /** FXML injected components for user input and visual feedback. */
     @FXML private TextField txtUsername, txtContact, txtForgotContact, txtNewUsername;
@@ -52,6 +57,10 @@ public class OccasionalLoginController implements ChatIF {
             client.setUI(this);
             appendLog("Connected to Portal. Waiting for occasional login...");
         }
+    }
+    
+    public void setLoginSource(LoginSource source) {
+        this.loginSource = source;
     }
 
     /**
@@ -103,7 +112,11 @@ public class OccasionalLoginController implements ChatIF {
                     appendLog("Welcome! Navigating to Guest Menu...");
                     // The internal database ID is expected at index 1
                     int userId = (int) res.get(1);
-                    navigateToMenu(userId);
+                    if (loginSource == LoginSource.TERMINAL) {
+                        navigateToTerminal(userId);
+                    } else {
+                        navigateToMenu(userId);
+                    }
                 } else {
                     // Log protocol errors or specialized login failures
                     appendLog("Server Response: " + status);
@@ -188,6 +201,36 @@ public class OccasionalLoginController implements ChatIF {
             appendLog("Navigation Error: " + e.getMessage());
         }
     }
+    
+    private void navigateToTerminal(int userId) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+            		getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalMenuFrame.fxml")
+            );
+            Parent root = loader.load();
+
+            // Dependency Injection – טרמינל
+            TerminalMenuController controller = loader.getController();
+            controller.setClient(client);
+            // אם בעתיד תצטרך:
+            // controller.setUserId(userId);
+
+            Stage stage = (Stage) btnLogin.getScene().getWindow();
+            Scene scene = new Scene(root);
+            scene.getStylesheets().add(
+                getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()
+            );
+
+            stage.setTitle("Customer Service Terminal");
+            stage.setScene(scene);
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            appendLog("Error navigating to Terminal menu.");
+        }
+    }
+
 
     /**
      * UI Logic: Toggles the visible area to show the 'Forgot Username' form.
