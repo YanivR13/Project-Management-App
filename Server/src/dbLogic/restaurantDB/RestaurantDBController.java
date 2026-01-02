@@ -1,132 +1,148 @@
-package dbLogic.restaurantDB;
+package dbLogic.restaurantDB; // Defining the package for restaurant database operations
 
-import java.sql.*;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.*; // Importing standard SQL classes for JDBC operations
+import java.time.LocalDate; // Importing LocalDate for modern date handling
+import java.util.ArrayList; // Importing ArrayList for dynamic list structures
+import java.util.List; // Importing List interface
 
-import common.Reservation;
-import common.Restaurant;
-import common.Reservation.ReservationStatus;
-import MainControllers.DBController;
+import common.Reservation; // Importing the Reservation domain model
+import common.Restaurant; // Importing the Restaurant entity class
+import common.Reservation.ReservationStatus; // Importing ReservationStatus enum
+import MainControllers.DBController; // Importing the singleton database controller
 
 /**
  * The RestaurantDBController is a specialized data access object (DAO) responsible for 
- * reconstructing a complete {@link Restaurant} domain entity from the database.
- * * It executes multiple relational queries to aggregate the restaurant's basic information, 
- * its physical table inventory, and its operational weekly schedule.
- * * This class interacts directly with the 'prototypedb' schema using JDBC.
- * @author Software Engineering Student
- * @version 1.0
+ * reconstructing a complete Restaurant domain entity from the database.
  */
-public class RestaurantDBController {
+public class RestaurantDBController { // Start of the RestaurantDBController class
 
     /**
      * Performs a deep load of a restaurant's data based on its unique ID.
-     * This method orchestrates three distinct data retrieval phases:
-     * 1. Basic Metadata: Retrieves the restaurant's name and initializes the object.
-     * 2. Inventory Aggregation: Performs a JOIN to calculate total table counts by capacity.
-     * 3. Schedule Mapping: Joins weekly hours with time ranges to define operational windows.
-     * * @param restaurantId The primary key of the restaurant to be loaded.
-     * @return A fully populated {@link Restaurant} object, or null if the ID is not found.
      */
-	
-    public static Restaurant loadFullRestaurantData(int restaurantId) throws SQLException {
-        Restaurant restaurant = null;
-        // Accessing the shared database connection singleton
-        Connection conn = DBController.getInstance().getConnection(); 
+    public static Restaurant loadFullRestaurantData(int restaurantId) throws SQLException { // Start of the loading method
+        
+        // Initializing the restaurant object as null until basic metadata is retrieved
+        Restaurant restaurant = null; // Declaration and initialization
+        
+        // Accessing the shared database connection from the singleton DBController
+        Connection conn = DBController.getInstance().getConnection(); // Retrieving the active connection
 
-        try {
+        try { // Start of the main database access block
+            
             // --- PHASE 1: Basic Identification ---
-            // Retrieves the display name from the core 'restaurant' table.
-            String queryName = "SELECT name FROM restaurant WHERE restaurant_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(queryName)) {
-                stmt.setInt(1, restaurantId);
-                ResultSet rs = stmt.executeQuery();
-                if (rs.next()) {
-                    // Initialize the Restaurant DTO with ID and Name
-                    restaurant = new Restaurant(restaurantId, rs.getString("name"));
-                }
-            }
+            
+            // SQL query to fetch the name of the restaurant based on its ID
+            String queryName = "SELECT name FROM restaurant WHERE restaurant_id = ?"; // Query definition
+            
+            // Preparing the statement to prevent SQL injection and set parameters
+            try (PreparedStatement stmt = conn.prepareStatement(queryName)) { // Initializing the prepared statement
+                // Binding the method parameter restaurantId to the first question mark in the query
+                stmt.setInt(1, restaurantId); // Parameter assignment
+                
+                // Executing the query and storing results in a ResultSet
+                ResultSet rs = stmt.executeQuery(); // Execution
+                
+                // If a record is found for this restaurantId
+                if (rs.next()) { // Checking for results
+                    // Instantiate the Restaurant object with the ID and the name retrieved from the DB
+                    restaurant = new Restaurant(restaurantId, rs.getString("name")); // Object creation
+                } // End of if block
+            } // End of name query try-with-resources block
 
-            // Early exit if the restaurant does not exist in the database
-            if (restaurant == null) return null;
+            // Guard Clause: If no restaurant was found in Phase 1, return null immediately
+            if (restaurant == null) { // Null check
+                return null; // Early exit
+            } // End of guard clause
 
             // --- PHASE 2: Physical Table Inventory ---
-            /** * RELATIONAL JOIN LOGIC:
-             * This query links 'restaurant_table' (the mapping table) with 'table' (the entity table).
-             * It uses GROUP BY to aggregate how many tables of each seating capacity exist.
-             * Example: Results might show 5 tables of capacity 2, and 10 tables of capacity 4.
-             */
-            String queryTables = "SELECT t.capacity, COUNT(*) as total " +
-                                 "FROM restaurant_table rt " +
-                                 "JOIN `table` t ON rt.table_id = t.table_id " +
-                                 "WHERE rt.restaurant_id = ? GROUP BY t.capacity";
-            try (PreparedStatement stmt = conn.prepareStatement(queryTables)) {
-                stmt.setInt(1, restaurantId);
-                ResultSet rs = stmt.executeQuery();
-                while (rs.next()) {
-                    // Update the restaurant's internal inventory map
-                    restaurant.addTablesToInventory(rs.getInt("capacity"), rs.getInt("total"));
-                }
-            }
+            
+            // SQL query to count total tables grouped by their seating capacity (Best Fit Algorithm preparation)
+            String queryTables = "SELECT t.capacity, COUNT(*) as total " + // Select columns
+                                 "FROM restaurant_table rt " + // From the mapping table
+                                 "JOIN `table` t ON rt.table_id = t.table_id " + // Join with the table entity table
+                                 "WHERE rt.restaurant_id = ? GROUP BY t.capacity"; // Filter by restaurant and group results
+            
+            // Preparing the statement for table inventory retrieval
+            try (PreparedStatement stmt = conn.prepareStatement(queryTables)) { // Initializing the statement
+                // Binding the restaurantId to the query filter
+                stmt.setInt(1, restaurantId); // Parameter assignment
+                
+                // Executing the query to get table capacity counts
+                ResultSet rs = stmt.executeQuery(); // Execution
+                
+                // Iterate through each capacity group (e.g., 2-person tables, 4-person tables)
+                while (rs.next()) { // Loop start
+                    // Update the restaurant object's internal inventory map with the retrieved data
+                    restaurant.addTablesToInventory(rs.getInt("capacity"), rs.getInt("total")); // Inventory update
+                } // End of inventory loop
+            } // End of inventory query try-with-resources block
 
             // --- PHASE 3: Regular Operating Hours ---
-            /**
-             * RELATIONAL JOIN LOGIC:
-             * Links 'restaurant_regular_hours' with 'time_range' to fetch start and end strings.
-             * This populates the weekly schedule (e.g., Monday: 08:00 - 22:00).
-             */
-            String queryHours = "SELECT rh.day_of_week, tr.open_time, tr.close_time " +
-                                "FROM restaurant_regular_hours rh " +
-                                "JOIN time_range tr ON rh.time_range_id = tr.time_range_id " +
-                                "WHERE rh.restaurant_id = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(queryHours)) {
-                stmt.setInt(1, restaurantId);
-                ResultSet rs = stmt.executeQuery();
-                while (rs.next()) {
-                    // Map the DB hours to the restaurant's operational schedule map
-                    restaurant.setRegularHours(
-                        rs.getString("day_of_week"), 
-                        rs.getString("open_time"), 
-                        rs.getString("close_time")
-                    );
-                }
-            }
+            
+            // SQL query to fetch standard weekly schedule joined with specific time ranges
+            String queryHours = "SELECT rh.day_of_week, tr.open_time, tr.close_time " + // Select columns
+                                "FROM restaurant_regular_hours rh " + // From regular hours table
+                                "JOIN time_range tr ON rh.time_range_id = tr.time_range_id " + // Join with time ranges
+                                "WHERE rh.restaurant_id = ?"; // Filter by restaurant ID
+            
+            // Preparing the statement for weekly schedule retrieval
+            try (PreparedStatement stmt = conn.prepareStatement(queryHours)) { // Initializing the statement
+                // Binding the restaurantId to the query filter
+                stmt.setInt(1, restaurantId); // Parameter assignment
+                
+                // Executing the query to get standard opening/closing hours
+                ResultSet rs = stmt.executeQuery(); // Execution
+                
+                // Iterate through the results (typically 7 rows for each day of the week)
+                while (rs.next()) { // Loop start
+                    // Map the DB day name and time strings into the restaurant object
+                    restaurant.setRegularHours( // Call setter
+                        rs.getString("day_of_week"), // Extract day name
+                        rs.getString("open_time"), // Extract open time
+                        rs.getString("close_time") // Extract close time
+                    ); // End of setter call
+                } // End of regular hours loop
+            } // End of hours query try-with-resources block
             
             
             // --- PHASE 4: Special Operating Hours Overrides ---
-               /**
-                * RELATIONAL JOIN LOGIC:
-                * Fetches date-specific overrides from 'restaurant_special_hours' joined with 'time_range'.
-                * This ensures that if a specific date (e.g., Holiday) has different hours, it is loaded into RAM.
-                */
-               String querySpecial = "SELECT sh.special_date, tr.open_time, tr.close_time " +
-                                     "FROM restaurant_special_hours sh " +
-                                     "JOIN time_range tr ON sh.time_range_id = tr.time_range_id " +
-                                     "WHERE sh.restaurant_id = ?";
-               try (PreparedStatement stmt = conn.prepareStatement(querySpecial)) {
-                   stmt.setInt(1, restaurantId);
-                   ResultSet rs = stmt.executeQuery();
-                   while (rs.next()) {
-                       // Convert SQL Date to Java LocalDate
-                       LocalDate specialDate = rs.getDate("special_date").toLocalDate();
-                       
-                       // Populate the specialHours map in the Restaurant object
-                       restaurant.setSpecialHours(
-                           specialDate, 
-                           rs.getString("open_time"), 
-                           rs.getString("close_time")
-                       );
-                   }
-               }
+            
+            // SQL query to fetch date-specific overrides (e.g., Holidays) joined with time ranges
+            String querySpecial = "SELECT sh.special_date, tr.open_time, tr.close_time " + // Select columns
+                                   "FROM restaurant_special_hours sh " + // From special hours table
+                                   "JOIN time_range tr ON sh.time_range_id = tr.time_range_id " + // Join with time ranges
+                                   "WHERE sh.restaurant_id = ?"; // Filter by restaurant ID
+            
+            // Preparing the statement for special overrides retrieval
+            try (PreparedStatement stmt = conn.prepareStatement(querySpecial)) { // Initializing the statement
+                // Binding the restaurantId to the query filter
+                stmt.setInt(1, restaurantId); // Parameter assignment
+                
+                // Executing the query to get holiday/event specific hours
+                ResultSet rs = stmt.executeQuery(); // Execution
+                
+                // Iterate through any specific date overrides found in the DB
+                while (rs.next()) { // Loop start
+                    // Converting the SQL Date object to a modern Java LocalDate object
+                    LocalDate specialDate = rs.getDate("special_date").toLocalDate(); // Date conversion
+                    
+                    // Populate the special hours map within the restaurant object
+                    restaurant.setSpecialHours( // Call setter
+                        specialDate, // Assign the specific date
+                        rs.getString("open_time"), // Assign the new opening time
+                        rs.getString("close_time") // Assign the new closing time
+                    ); // End of setter call
+                } // End of special hours loop
+            } // End of special query try-with-resources block
 
-        } catch (SQLException e) { 
-            // Standard JDBC error handling; prints the stack trace for server-side debugging
-            e.printStackTrace(); 
-        }
+        } catch (SQLException e) { // Catch block for any SQL or connectivity errors
+            // Standard error handling: Print technical stack trace for server-side debugging
+            e.printStackTrace(); // Logging technical failure
+        } // End of main try-catch block
  
+        // Return the fully constructed and populated Restaurant domain object
+        return restaurant; // Return result
         
-        return restaurant;
-    }
-}
+    } // End of loadFullRestaurantData method
+    
+} // End of RestaurantDBController class

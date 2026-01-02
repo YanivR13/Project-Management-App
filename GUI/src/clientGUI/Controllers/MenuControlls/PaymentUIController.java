@@ -1,130 +1,155 @@
-package clientGUI.Controllers.MenuControlls;
+package clientGUI.Controllers.MenuControlls; // Define the package for menu-related controllers
 
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import java.util.Random;
-import java.util.ArrayList;
-import client.ChatClient;
-import clientGUI.Controllers.ICustomerActions;
-import common.Bill;
-import common.Visit;
+import javafx.event.ActionEvent; // Import for handling UI action events
+import javafx.fxml.FXML; // Import for FXML injection annotation
+import javafx.scene.control.Alert; // Import for alert dialog boxes
+import javafx.scene.control.Alert.AlertType; // Import for defining alert styles
+import javafx.scene.control.Button; // Import for button components
+import javafx.scene.control.Label; // Import for text label components
+import java.util.Random; // Import for generating random numbers
+import java.util.ArrayList; // Import for dynamic array list structures
+import client.ChatClient; // Import the main client communication class
+import clientGUI.Controllers.ICustomerActions; // Import customer action interface
+import common.Bill; // Import the Bill data transfer object
+import common.Visit; // Import the Visit entity class
 
 /**
  * Controller class for the Payment UI screen.
  * Handles the final bill calculation, display, and submission to the server.
- * Implements ICustomerActions for consistent customer-related functionality.
  */
-public class PaymentUIController extends BaseMenuController implements ICustomerActions {
+public class PaymentUIController extends BaseMenuController implements ICustomerActions { // Start class definition
 
-    @FXML private Label lblTableId;
-    @FXML private Label lblStartTime;
-    @FXML private Label lblBaseAmount;
-    @FXML private Label lblDiscount;
-    @FXML private Label lblFinalAmount;
-    @FXML private Button btnConfirmPay;
+    // Injecting UI labels linked to the FXML layout
+    @FXML private Label lblTableId; // Label to display the table number
+    @FXML private Label lblStartTime; // Label to display the visit start time
+    @FXML private Label lblBaseAmount; // Label to display the initial price
+    @FXML private Label lblDiscount; // Label to display the discount applied
+    @FXML private Label lblFinalAmount; // Label to display the total after discount
+    @FXML private Button btnConfirmPay; // Button to process the payment
 
-    private ChatClient client;
-    private String userType;
-    private int userId;
+    // Internal session and data storage fields
+    private ChatClient client; // Reference to the active network client
+    private String userType; // Stores the role of the user (e.g., Subscriber)
+    private int userId; // Stores the unique identifier of the user
 
-    private long currentBillId;
-    private long currentConfirmationCode;
+    // Tracking IDs required for the backend transaction
+    private long currentBillId; // The ID of the bill being processed
+    private long currentConfirmationCode; // The code linking the bill to a reservation
 
     /**
      * Initializes the payment screen with visit details and calculates the final price.
-     * * @param client       The active ChatClient instance for server communication.
-     * @param userType     The type of user (e.g., "Subscriber" or "Occasional").
-     * @param userId       The unique ID of the logged-in user.
-     * @param visit        The Visit object containing table and billing information.
-     * @param isSubscriber Boolean flag to determine if a member discount applies.
      */
-    public void setupPayment(ChatClient client, String userType, int userId, Visit visit, boolean isSubscriber) {
-        this.client = client;
-        this.userType = userType;
-        this.userId = userId;
+    public void setupPayment(ChatClient client, String userType, int userId, Visit visit, boolean isSubscriber) { // Start method
         
-        // Store IDs required for the database update transaction
-        this.currentBillId = visit.getBillId(); 
-        this.currentConfirmationCode = visit.getConfirmationCode();
+        // Initializing the session data fields
+        this.client = client; // Assign client reference
+        this.userType = userType; // Assign user role string
+        this.userId = userId; // Assign user unique ID
         
-        // Display visit details on the UI
-        lblTableId.setText(String.valueOf(visit.getTableId()));
-        lblStartTime.setText(visit.getStartTime());
+        // Caching IDs needed for the database update later
+        this.currentBillId = visit.getBillId(); // Retrieve bill ID from visit object
+        this.currentConfirmationCode = visit.getConfirmationCode(); // Retrieve confirmation code
+        
+        // Updating the UI with the static visit information
+        lblTableId.setText(String.valueOf(visit.getTableId())); // Set table ID text
+        lblStartTime.setText(visit.getStartTime()); // Set start time text
 
-        // Generate a random base price for simulation (Range: 150 - 450)
-        Random random = new Random();
-        double randomBaseAmount = 150 + (300 * random.nextDouble());
-        lblBaseAmount.setText(String.format("%.2f ₪", randomBaseAmount));
+        // Business Logic Simulation: Generate a random base price (Range: 150 - 450)
+        Random random = new Random(); // Initialize random generator
+        double randomBaseAmount = 150 + (300 * random.nextDouble()); // Perform random calculation
+        lblBaseAmount.setText(String.format("%.2f ₪", randomBaseAmount)); // Format and display base price
 
-        // Calculate discount based on user subscription status
-        double discountPercent = isSubscriber ? 10.0 : 0.0;
-        if (isSubscriber) {
-            lblDiscount.setText("10% (Member)");
-            lblDiscount.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
-        } else {
-            lblDiscount.setText("0%");
-            lblDiscount.setStyle("-fx-text-fill: red;");
-        }
+        // Initialization of calculation variables
+        double discountPercent = 0.0; // Default discount to zero
+        
+        // Refactored Logic: Using a cleaner approach for discount assignment and styling
+        if (isSubscriber) { // Check if the user is a registered member
+            discountPercent = 10.0; // Apply the 10% discount logic
+            lblDiscount.setText("10% (Member)"); // Update label text for members
+            lblDiscount.setStyle("-fx-text-fill: green; -fx-font-weight: bold;"); // Apply positive visual styling
+        } else { // Handle non-subscriber (Occasional) users
+            discountPercent = 0.0; // Ensure discount remains zero
+            lblDiscount.setText("0%"); // Update label text
+            lblDiscount.setStyle("-fx-text-fill: red;"); // Apply standard visual styling
+        } // End of subscriber check
 
-        // Calculate and display the final total
-        double finalTotal = randomBaseAmount * (1 - (discountPercent / 100));
-        lblFinalAmount.setText(String.format("%.2f ₪", finalTotal));
-    }
+        // Final Calculation: Calculate the total after applying the percentage
+        double finalTotal = randomBaseAmount * (1 - (discountPercent / 100)); // Mathematical calculation
+        lblFinalAmount.setText(String.format("%.2f ₪", finalTotal)); // Display formatted total to user
+        
+    } // End of setupPayment method
 
     /**
      * Event handler for the "Confirm & Pay" button.
-     * Extracts values from the UI, creates a Bill object, and sends it to the server.
-     * * @param event The ActionEvent triggered by the button click.
      */
-    @FXML
-    private void onPayClicked(ActionEvent event) {
-        try {
-        	// 1. Extract and clean numeric data from UI labels
-            double base = Double.parseDouble(lblBaseAmount.getText().replace(" ₪", ""));
-            double discount = Double.parseDouble(lblDiscount.getText().replaceAll("[^0-9.]", ""));
-            double finalPrice = Double.parseDouble(lblFinalAmount.getText().replace(" ₪", ""));
+    @FXML // Link to FXML action
+    private void onPayClicked(ActionEvent event) { // Start of pay action method
+        
+        try { // Start error handling block for data parsing
+            
+            // Step 1: Extract numeric values from the UI labels using string cleanup
+            double base = Double.parseDouble(lblBaseAmount.getText().replace(" ₪", "")); // Remove currency symbol and parse
+            double discount = Double.parseDouble(lblDiscount.getText().replaceAll("[^0-9.]", "")); // Extract only numbers from discount text
+            double finalPrice = Double.parseDouble(lblFinalAmount.getText().replace(" ₪", "")); // Remove currency symbol and parse
 
-            // 2. Create a Bill object with the synchronized database IDs
-            Bill bill = new Bill(currentBillId, currentConfirmationCode, base, discount, finalPrice);
+            // Step 2: Create a Bill DTO object with the parsed values and cached IDs
+            Bill bill = new Bill(currentBillId, currentConfirmationCode, base, discount, finalPrice); // Initialize Bill object
 
-            // 3. Construct the message protocol and send to the server
-            ArrayList<Object> message = new ArrayList<>();
-            message.add("PROCESS_PAYMENT");
-            message.add(bill);
-            client.handleMessageFromClientUI(message);
+            // Step 3: Construct the communication message and transmit to server
+            ArrayList<Object> message = new ArrayList<>(); // Initialize message list
+            message.add("PROCESS_PAYMENT"); // Add the command header
+            message.add(bill); // Add the bill payload
+            client.handleMessageFromClientUI(message); // Send list through the client
 
-            // 4. Show success confirmation and navigate back to the main menu
-            Alert alert = new Alert(AlertType.INFORMATION);
-            alert.setTitle("Payment Confirmation");
-            alert.setHeaderText("Transaction Successful!");
-            alert.setContentText("Payment processed and Table " + lblTableId.getText() + " is now available.\nReturning to Main Menu...");
-            alert.showAndWait();
+            // Step 4: UI Feedback - Show success message to the user
+            Alert alert = new Alert(AlertType.INFORMATION); // Create information alert
+            alert.setTitle("Payment Confirmation"); // Set window title
+            alert.setHeaderText("Transaction Successful!"); // Set header text
+            alert.setContentText("Payment processed and Table " + lblTableId.getText() + " is now available.\nReturning to Main Menu..."); // Set body text
+            alert.showAndWait(); // Display dialog and wait for user to close it
 
-            returnToMainMenu(event);
+            // Step 5: Transition - Return the user to the appropriate menu screen
+            returnToMainMenu(event); // Call navigation helper
 
-        } catch (Exception e) {
-        	// Log error if parsing fails
-            e.printStackTrace();
-        }
-    }
+        } catch (Exception e) { // Catch any parsing or communication errors
+            // Log the exception stack trace for debugging purposes
+            e.printStackTrace(); // Print technical error details
+        } // End of try-catch block
+        
+    } // End of onPayClicked method
 
     /**
      * Navigates the user back to their respective main menu based on their user type.
-     * * @param event The ActionEvent used to identify the current stage.
      */
-    private void returnToMainMenu(ActionEvent event) {
-    	// Determine the FXML path based on user role
-        String path = "Subscriber".equalsIgnoreCase(userType) ? 
-            "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml" : 
-            "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml";
+    private void returnToMainMenu(ActionEvent event) { // Start of navigation method
+        
+        // Variable to hold the destination FXML file path
+        String path = ""; // Initialize empty path string
+        
+        // Refactored: Using switch-case to determine path based on role string
+        if (userType != null) { // Guard clause to ensure userType is assigned
             
-        navigateTo(client, event, userType, userId, path, "Bistro - Main Menu");
-    }
+            switch (userType) { // Evaluate the user role
+                
+                case "Subscriber": // Case for registered members
+                    path = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml"; // Set subscriber FXML path
+                    break; // Exit switch
+                    
+                default: // Default case for Occasional users or others
+                    path = "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"; // Set occasional FXML path
+                    break; // Exit switch
+                    
+            } // End of switch
+            
+        } // End of null guard
+            
+        // Trigger the navigation using the helper method from BaseMenuController
+        navigateTo(client, event, userType, userId, path, "Bistro - Main Menu"); // Execute scene transition
+        
+    } // End of returnToMainMenu method
 
-    @Override public void viewOrderHistory(ChatClient client, int userId) {}
-    @Override public void editPersonalDetails(ChatClient client, int userId) {}
-}
+    // Interface requirement implementations (No logic changes permitted)
+    @Override public void viewOrderHistory(ChatClient client, int userId) {} // Empty stub
+    @Override public void editPersonalDetails(ChatClient client, int userId) {} // Empty stub
+    
+} // End of PaymentUIController class

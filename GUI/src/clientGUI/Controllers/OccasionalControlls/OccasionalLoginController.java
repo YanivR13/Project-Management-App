@@ -1,245 +1,298 @@
-package clientGUI.Controllers.OccasionalControlls;
+package clientGUI.Controllers.OccasionalControlls; // Defining the package for occasional user controllers
 
-import java.util.ArrayList;
-import client.ChatClient;
-import clientGUI.Controllers.RemoteLoginController;
-import common.ChatIF;
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
+import java.util.ArrayList; // Importing ArrayList for data list management
+import client.ChatClient; // Importing the ChatClient for communication
+import clientGUI.Controllers.MenuControlls.BaseMenuController; // Importing the base controller for inheritance
+import clientGUI.Controllers.RemoteLoginController; // Importing the remote login controller reference
+import javafx.application.Platform; // Importing Platform for UI thread safety
+import javafx.event.ActionEvent; // Importing ActionEvent for UI interaction
+import javafx.fxml.FXML; // Importing FXML annotation for UI injection
+import javafx.fxml.FXMLLoader; // Importing FXMLLoader to load new scenes
+import javafx.scene.Node; // Importing Node for generic UI elements
+import javafx.scene.Parent; // Importing Parent for the scene graph root
+import javafx.scene.Scene; // Importing Scene for window content
+import javafx.scene.control.Button; // Importing Button control
+import javafx.scene.control.TextArea; // Importing TextArea control
+import javafx.scene.control.TextField; // Importing TextField control
+import javafx.scene.layout.VBox; // Importing VBox layout container
+import javafx.stage.Stage; // Importing Stage for window management
 
 /**
  * Controller for the Occasional (Guest) Login interface.
- * This class handles guest authentication, username recovery, and navigation
- * between the login, registration, and main guest menu screens.
- * * <p>It implements {@link ChatIF} to serve as a listener for server-side messages
- * within the OCSF framework.</p>
- * * @author Software Engineering Student
- * @version 1.0
+ * Manages guest login, registration navigation, and username resets.
  */
-public class OccasionalLoginController implements ChatIF {
-    
-    /** The network client responsible for server communication. */
-    private ChatClient client;
+public class OccasionalLoginController extends BaseMenuController { // Class definition extending BaseMenuController
 
-    /** FXML injected components for user input and visual feedback. */
-    @FXML private TextField txtUsername, txtContact, txtForgotContact, txtNewUsername;
-    @FXML private TextArea txtLog;
-    
-    /** Layout containers used for toggling between the Login and Forgot Username views. */
-    @FXML private VBox paneLogin, paneForgot;
-    
-    /** Trigger button for the login process. */
-    @FXML private Button btnLogin;
+    // --- FXML Injected Components ---
+    @FXML private TextField txtUsername; // TextField for entering the username
+    @FXML private TextField txtContact; // TextField for entering the contact info
+    @FXML private TextField txtForgotContact; // TextField for contact info in forgot area
+    @FXML private TextField txtNewUsername; // TextField for the new username in forgot area
+    @FXML private TextArea txtLog; // TextArea used for displaying system logs
+    @FXML private VBox paneLogin; // VBox container for the login form
+    @FXML private VBox paneForgot; // VBox container for the forgotten username form
+    @FXML private Button btnLogin; // Button used to trigger the login process
 
     /**
-     * Injects the ChatClient instance and establishes this controller as the active UI listener.
-     * @param client The active OCSF network client.
+     * Called automatically when the client and session data are ready.
      */
-    public void setClient(ChatClient client) {
-        this.client = client;
-        if (client != null) {
-            // Register this controller to receive incoming messages from the server
-            client.setUI(this);
-            appendLog("Connected to Portal. Waiting for occasional login...");
-        }
-    }
+    @Override // Overriding the onClientReady method from BaseMenuController
+    public void onClientReady() { // Start of onClientReady method
+        // Log a message indicating the portal connection is active
+        appendLog("Connected to Portal. Waiting for occasional login..."); // Appending log message
+        
+        // Log the current system identity for debugging/tracking
+        appendLog("System Identity: " + userType + " (ID: " + userId + ")"); // Appending identity info
+    } // End of onClientReady method
 
     /**
-     * Initiates the login process for an occasional customer.
-     * Validates input fields and sends a "LOGIN_OCCASIONAL" request to the server.
-     * @param event The ActionEvent from the 'Login' button.
+     * Handles the login button click event.
      */
-    @FXML
-    void clickLogin(ActionEvent event) {
-        String username = txtUsername.getText();
-        String contact = txtContact.getText();
+    @FXML // Linking the method to FXML action
+    void clickLogin(ActionEvent event) { // Start of clickLogin method
+        // Extracting input values from text fields
+        String username = txtUsername.getText(); // Getting username text
+        String contact = txtContact.getText(); // Getting contact text
 
-        // Layer 1: Validate that required input is present
-        if (username.isEmpty() || contact.isEmpty()) {
-            appendLog("Error: Both fields are required.");
-            return;
-        }
+        // Validation: Ensure that both fields are not empty
+        if (username.isEmpty() || contact.isEmpty()) { // Checking for empty fields
+            appendLog("Error: Both fields are required."); // Logging validation error
+            return; // Terminating method execution
+        } // End of if validation block
 
-        // Layer 2: Construct the protocol message (Command + Data)
-        ArrayList<String> msg = new ArrayList<>();
-        msg.add("LOGIN_OCCASIONAL");
-        msg.add(username);
-        msg.add(contact);
-
-        // Layer 3: Dispatch message to server via the client logic
-        if (client != null) {
-            appendLog("Attempting login for Guest: " + username);
-            client.handleMessageFromClientUI(msg);
-        }
-    }
-
-    /**
-     * HOOK METHOD: Processes data received from the Server.
-     * Wraps execution in Platform.runLater to ensure UI changes occur on the JavaFX Application Thread.
-     * @param message The data object sent by the server.
-     */
-    @Override
-    @SuppressWarnings("unchecked")
-    public void display(Object message) {
-        // Asynchronous server responses must be handled on the UI thread
-        Platform.runLater(() -> {
-            // Case A: Response is an ArrayList (Complex result containing data like UserID)
-            if (message instanceof ArrayList) {
-                ArrayList<Object> res = (ArrayList<Object>) message;
-                String status = res.get(0).toString();
-
-                // Successful login leads to scene navigation
-                if (status.equals("LOGIN_OCCASIONAL_SUCCESS")) {
-                    appendLog("Welcome! Navigating to Guest Menu...");
-                    // The internal database ID is expected at index 1
-                    int userId = (int) res.get(1);
-                    navigateToMenu(userId);
-                } else {
-                    // Log protocol errors or specialized login failures
-                    appendLog("Server Response: " + status);
-                }
-            } 
-            // Case B: Response is a simple Object (typically a String message)
-            else if (message != null) {
-                String response = message.toString();
-
-                // Handle the outcome of a username recovery attempt
-                if (response.equals("RESET_USERNAME_SUCCESS")) {
-                    appendLog("SUCCESS: Your username has been updated successfully!");
-                    appendLog("Instruction: Please click 'Cancel' to return to the login screen and use your new username.");
-                    
-                    // Clear fields to reset the state for the next user interaction
-                    txtForgotContact.clear();
-                    txtNewUsername.clear();
-                } 
-                else {
-                    // Log general server-side errors or informational messages
-                    appendLog("Server Message: " + response);
-                }
-            }
-        });
-    }
-
-    /**
-     * Processes requests to recover or update a guest username.
-     * Validates contact info and username length constraints before server submission.
-     */
-    @FXML 
-    void clickSubmitForgot(ActionEvent event) {
-        String contact = txtForgotContact.getText();
-        String newUsername = txtNewUsername.getText();
-
-        // Client-side validation for missing fields
-        if (contact.isEmpty() || newUsername.isEmpty()) {
-            appendLog("Error: Contact info and New Username are required.");
-            return;
-        }
-
-        // Database constraint validation: Username must fit within the VARCHAR limit (10)
-        if (newUsername.length() > 10) {
-            appendLog("Error: New username must be 10 characters or less.");
-            return;
-        }
-
-        // Prepare the protocol message for recovery
-        ArrayList<String> msg = new ArrayList<>();
-        msg.add("RESET_OCCASIONAL_USERNAME");
-        msg.add(contact);
-        msg.add(newUsername);
-
-        if (client != null) {
-            appendLog("Requesting username recovery for contact: " + contact);
-            client.handleMessageFromClientUI(msg);
-        }
-    }
-
-    /**
-     * Orchestrates the transition to the Occasional Menu dashboard.
-     * Injects the persistent session data (client, type, userId) into the next controller.
-     * @param userId The database-generated ID for the current guest session.
-     */
-    private void navigateToMenu(int userId) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"));
-            Parent root = loader.load();
+        // Verify if the inherited client instance is available
+        if (client != null) { // Checking if client exists
+            // Inform the user that the login attempt has started
+            appendLog("Attempting login for Guest: " + username); // Appending log
             
-            // Dependency Injection: Setup the menu controller with session state
-            ((OccasionalMenuController)loader.getController()).setClient(client, "Occasional", userId);
+            // Constructing the protocol message for the server
+            ArrayList<String> msg = new ArrayList<>(); // Initializing message list
+            msg.add("LOGIN_OCCASIONAL"); // Adding the command header
+            msg.add(username); // Adding the username payload
+            msg.add(contact); // Adding the contact payload
             
-            // Standard JavaFX Stage update sequence
-            Stage stage = (Stage) btnLogin.getScene().getWindow();
-            Scene scene = new Scene(root);
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
-            stage.setTitle("Guest Dashboard");
-            stage.setScene(scene);
-            stage.show();
-        } catch (Exception e) { 
-            e.printStackTrace();
-            appendLog("Navigation Error: " + e.getMessage());
-        }
-    }
+            // Sending the message to the server via the client UI handler
+            client.handleMessageFromClientUI(msg); // Transmitting data
+        } else { // If client is null
+            // Log a fatal error indicating connection loss
+            appendLog("Fatal Error: No server connection!"); // Appending fatal error log
+        } // End of client check else block
+    } // End of clickLogin method
 
     /**
-     * UI Logic: Toggles the visible area to show the 'Forgot Username' form.
-     * Uses setManaged(false) to ensure the hidden pane doesn't occupy layout space.
+     * Processes messages received from the server.
      */
-    @FXML void showForgotArea(ActionEvent event) {
-        paneLogin.setVisible(false); paneLogin.setManaged(false);
-        paneForgot.setVisible(true); paneForgot.setManaged(true);
-    }
+    @Override // Overriding the display method from ChatIF (via BaseMenuController)
+    @SuppressWarnings("unchecked") // Suppressing warnings for generic list casting
+    public void display(Object message) { // Start of display method
+        // Transition to the JavaFX Application thread for UI updates
+        Platform.runLater(() -> { // Start of runLater lambda
+            
+            // Check if the received message is a list of results
+            if (message instanceof ArrayList) { // Start of ArrayList check
+                // Casting the message to an ArrayList of objects
+                ArrayList<Object> res = (ArrayList<Object>) message; // Casting object
+                // Extracting the status string from the first element
+                String status = res.get(0).toString(); // Getting status
+
+                // Using switch-case to handle different login statuses
+                switch (status) { // Start of switch block
+                    case "LOGIN_OCCASIONAL_SUCCESS": // If login succeeded
+                        appendLog("Welcome! Navigating to Guest Menu..."); // Logging success
+                        int userIdFromDB = (int) res.get(1); // Extracting DB user ID
+                        navigateToMenu(userIdFromDB); // Triggering navigation
+                        break; // Exiting switch
+
+                    default: // For any other status (e.g., error messages)
+                        appendLog("Server Response: " + status); // Logging server response
+                        break; // Exiting switch
+                } // End of switch block
+            } // End of ArrayList check
+            
+            // Handle cases where the message is a simple string response
+            else if (message != null) { // If message is not null
+                // Convert the message to a string for comparison
+                String response = message.toString(); // Extracting string
+                
+                // Using switch-case for string-based server responses
+                switch (response) { // Start of response switch
+                    case "RESET_USERNAME_SUCCESS": // If username reset worked
+                        appendLog("SUCCESS: Your username has been updated!"); // Logging reset success
+                        txtForgotContact.clear(); // Clearing the contact field
+                        txtNewUsername.clear(); // Clearing the new username field
+                        break; // Exiting switch
+                        
+                    default: // For any other generic server message
+                        appendLog("Server Message: " + response); // Logging message
+                        break; // Exiting switch
+                } // End of response switch
+            } // End of string message check
+            
+        }); // End of runLater lambda
+    } // End of display method
 
     /**
-     * UI Logic: Toggles the visible area back to the 'Login' form.
+     * Navigates to the guest menu after a successful login.
      */
-    @FXML void hideForgotArea(ActionEvent event) {
-        paneForgot.setVisible(false); paneForgot.setManaged(false);
-        paneLogin.setVisible(true); paneLogin.setManaged(true);
-    }
+    private void navigateToMenu(int userIdFromDB) { // Start of navigateToMenu method
+        try { // Start of try block for FXML loading
+            // Initializing the loader for the guest menu frame
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml")); // Setting FXML path
+            Parent root = loader.load(); // Loading the root element
+            
+            // Extract the controller from the loader for dependency injection
+            Object nextController = loader.getController(); // Getting controller instance
+            
+            // Check if the next controller follows the BaseMenuController architecture
+            if (nextController instanceof BaseMenuController) { // If it is a BaseMenuController
+                // Inject the client, role, and the new DB ID into the next screen
+                ((BaseMenuController) nextController).setClient(client, "Occasional", userIdFromDB); // Setting session data
+            } // End of injection check
+            
+            // Identify the current stage and set the new scene
+            Stage stage = (Stage) btnLogin.getScene().getWindow(); // Getting current stage
+            Scene scene = new Scene(root); // Creating new scene
+            
+            // Apply global CSS styling if the file exists
+            if (getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css") != null) { // Checking for CSS file
+                scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); // Adding stylesheet
+            } // End of CSS check
+            
+            // Configure and display the stage
+            stage.setTitle("Guest Dashboard"); // Setting window title
+            stage.setScene(scene); // Assigning scene to stage
+            stage.show(); // Displaying the window
+            
+        } catch (Exception e) { // Catching any navigation exceptions
+            e.printStackTrace(); // Printing technical stack trace
+            appendLog("Navigation Error: " + e.getMessage()); // Logging user-friendly error
+        } // End of try-catch block
+    } // End of navigateToMenu method
 
     /**
-     * Navigates the user to the Registration screen to create a new guest account.
+     * Navigates back to the main remote login portal.
      */
-    @FXML void clickRegister(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalRegistrationFrame.fxml"));
-            Parent root = loader.load();
-            ((OccasionalRegistrationController)loader.getController()).setClient(client);
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception e) { e.printStackTrace(); }
-    }
+    @FXML // Linking to FXML action
+    void clickBack(ActionEvent event) { // Start of clickBack method
+        try { // Start of try block
+            // Initializing loader for the portal screen
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml")); // Path to portal
+            Parent root = loader.load(); // Loading root
+            
+            // Pass the current session and client back to the previous screen
+            Object nextController = loader.getController(); // Getting controller
+            if (nextController instanceof BaseMenuController) { // Checking type
+                ((BaseMenuController) nextController).setClient(client, userType, userId); // Injecting session
+            } // End if
+            
+            // Switching the scene on the current stage
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Getting stage
+            stage.setScene(new Scene(root)); // Setting portal scene
+            stage.show(); // Displaying stage
+        } catch (Exception e) { // Handling errors
+            e.printStackTrace(); // Printing trace
+        } // End try-catch
+    } // End of clickBack method
 
     /**
-     * Returns the user to the main Bistro Portal selection screen.
+     * Navigates to the registration screen for guests.
      */
-    @FXML void clickBack(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
-            Parent root = loader.load();
-            ((RemoteLoginController)loader.getController()).setClient(client);
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            stage.setScene(new Scene(root));
-            stage.show();
-        } catch (Exception e) { e.printStackTrace(); }
-    }
+    @FXML // Linking to FXML action
+    void clickRegister(ActionEvent event) { // Start of clickRegister method
+        try { // Start of try block
+            // Loading the registration frame FXML
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalRegistrationFrame.fxml")); // Setting path
+            Parent root = loader.load(); // Loading root
+            
+            // Handle dependency injection for the registration screen
+            Object nextController = loader.getController(); // Getting controller
+            
+            // Prefer BaseMenuController injection if updated
+            if (nextController instanceof BaseMenuController) { // Start of Base check
+                ((BaseMenuController) nextController).setClient(client, userType, userId); // Injecting full session
+            } else { // Fallback for controllers not yet migrated to Base class
+                try { // Start of reflection attempt
+                    // Try calling setClient manually via reflection
+                    nextController.getClass().getMethod("setClient", ChatClient.class).invoke(nextController, client); // Invoking method
+                } catch (Exception ignored) { // Ignoring if method doesn't exist
+                } // End reflection try-catch
+            } // End check else
+
+            // Identifying the stage and showing the registration scene
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Getting stage
+            stage.setScene(new Scene(root)); // Setting scene
+            stage.show(); // Displaying stage
+        } catch (Exception e) { // Handling errors
+            e.printStackTrace(); // Printing trace
+        } // End try-catch
+    } // End of clickRegister method
 
     /**
-     * Thread-safe logging utility for the UI console.
-     * Ensures updates happen on the Application thread even if called from network threads.
-     * @param message The text to display in the log.
+     * Submits a request to reset a guest's username.
      */
-    public void appendLog(String message) { 
-        Platform.runLater(() -> txtLog.appendText("> " + message + "\n")); 
-    }
-}
+    @FXML // Linking to FXML action
+    void clickSubmitForgot(ActionEvent event) { // Start of clickSubmitForgot method
+        // Extracting input for the reset process
+        String contact = txtForgotContact.getText(); // Getting contact info
+        String newUsername = txtNewUsername.getText(); // Getting desired username
+        
+        // Basic input validation for reset
+        if (contact.isEmpty() || newUsername.isEmpty()) { // Checking for empty fields
+            appendLog("Error: Fields required."); // Logging error
+            return; // Terminating
+        } // End if empty
+
+        // Constraint check: Maximum username length
+        if (newUsername.length() > 10) { // If longer than 10 characters
+            appendLog("Error: Max 10 chars."); // Logging constraint error
+            return; // Terminating
+        } // End if length
+
+        // Building message for the username reset protocol
+        ArrayList<String> msg = new ArrayList<>(); // Initializing list
+        msg.add("RESET_OCCASIONAL_USERNAME"); // Adding command
+        msg.add(contact); // Adding contact payload
+        msg.add(newUsername); // Adding new name payload
+        
+        // Sending message if client is active
+        if (client != null) { // Null check
+            client.handleMessageFromClientUI(msg); // Transmitting reset request
+        } // End client check
+    } // End of clickSubmitForgot method
+
+    /**
+     * Shows the "Forgot Username" UI section.
+     */
+    @FXML // Linking to FXML action
+    void showForgotArea(ActionEvent event) { // Start of showForgotArea method
+        paneLogin.setVisible(false); // Hiding the login pane
+        paneLogin.setManaged(false); // Removing login pane from layout
+        paneForgot.setVisible(true); // Showing the forgot pane
+        paneForgot.setManaged(true); // Including forgot pane in layout
+    } // End of showForgotArea method
+
+    /**
+     * Hides the "Forgot Username" UI section and returns to login.
+     */
+    @FXML // Linking to FXML action
+    void hideForgotArea(ActionEvent event) { // Start of hideForgotArea method
+        paneForgot.setVisible(false); // Hiding the forgot pane
+        paneForgot.setManaged(false); // Removing forgot pane from layout
+        paneLogin.setVisible(true); // Showing the login pane
+        paneLogin.setManaged(true); // Including login pane in layout
+    } // End of hideForgotArea method
+
+    /**
+     * Appends a message to the UI log in a thread-safe manner.
+     */
+    public void appendLog(String message) { // Start of appendLog method
+        // Execute the update on the UI thread
+        Platform.runLater(() -> { // Start of runLater lambda
+            // Verify that the log component exists before writing
+            if (txtLog != null) { // Null check for log
+                txtLog.appendText("> " + message + "\n"); // Appending formatted message
+            } // End null check
+        }); // End runLater lambda
+    } // End of appendLog method
+
+} // End of OccasionalLoginController class

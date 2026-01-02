@@ -58,6 +58,30 @@ public class RestaurantManager {
             return false;
         }
     }
+    
+    /**
+     * Re-loads the restaurant data from the database into the memory cache.
+     * Useful after management updates (like changing opening hours).
+     * * @param restaurantId The ID of the restaurant to reload.
+     * @return true if re-initialization succeeded, false otherwise.
+     */
+    public static boolean reInitialize(int restaurantId) {
+        try {
+            // Load the full data using the existing DB controller
+            Restaurant updatedRestaurant = RestaurantDBController.loadFullRestaurantData(restaurantId);
+            
+            if (updatedRestaurant != null) {
+                currentRestaurant = updatedRestaurant;
+                System.out.println("Restaurant cache re-initialized successfully for ID: " + restaurantId);
+                return true;
+            }
+            return false;
+        } catch (SQLException e) {
+            System.err.println("Error during restaurant re-initialization: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     /**
      * Provides global access to the cached restaurant instance.

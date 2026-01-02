@@ -1,99 +1,100 @@
-package serverLogic.menuLogic;
+package serverLogic.menuLogic; // Defining the package for menu-related server logic handlers
 
-import java.io.IOException;
-import java.util.ArrayList;
+import java.io.IOException; // Importing for handling network communication errors
+import java.util.ArrayList; // Importing for dynamic list structure handling
 
-import common.Reservation;
-import common.ServiceResponse;
-import dbLogic.restaurantDB.CreateOrderController;
-import ocsf.server.ConnectionToClient;
+import common.Reservation; // Importing the Reservation DTO
+import common.ServiceResponse; // Importing the standardized response wrapper
+import dbLogic.restaurantDB.CreateOrderController; // Importing the business logic controller
+import ocsf.server.ConnectionToClient; // Importing the OCSF client connection handle
 
 /**
- * The CreateOrderHandler class is a specialized service handler within the server's 
- * command-routing architecture. It specifically manages the "CREATE_RESERVATION" command.
- * * Role: It acts as an intermediary that:
- * 1. Decapsulates the {@link Reservation} DTO from the incoming OCSF message.
- * 2. Coordinates with the database controller to execute business rules (availability, upgrades).
- * 3. Transmits a structured {@link ServiceResponse} back to the client.
- * * This design ensures that the {@link MainControllers.ServerController} remains 
- * clean and focused only on routing, while specific logic is handled here.
- * * @author Software Engineering Student
- * @version 1.0
+ * The CreateOrderHandler class manages the "CREATE_RESERVATION" command.
+ * It decapsulates the DTO, triggers the business logic, and returns the result.
  */
-public class CreateOrderHandler {
+public class CreateOrderHandler { // Start of CreateOrderHandler class definition
 
     /**
      * Entry point for processing a reservation creation request.
-     * Extracts the data, triggers the business logic, and responds to the client.
-     * * @param messageList The ArrayList protocol: [0] "CREATE_RESERVATION", [1] {@link Reservation} object.
-     * @param client      The specific OCSF {@link ConnectionToClient} handle.
+     * @param messageList The ArrayList protocol: [0] command, [1] Reservation object.
+     * @param client      The specific client connection handle.
      */
-    public void handle(ArrayList<Object> messageList, ConnectionToClient client) {
-        try {
-            /**
-             * STEP 1: Object Extraction
-             * The protocol expects a Reservation DTO at index 1.
-             * This object contains the user_id (int) and party details needed for the DB.
-             */
-            Reservation reservation = (Reservation) messageList.get(1);
+    public void handle(ArrayList<Object> messageList, ConnectionToClient client) { // Start of handle method
+        
+        try { // Start of the main try block for processing logic
+            
+            // --- STEP 1: OBJECT EXTRACTION ---
+            
+            // Extract the Reservation DTO from the protocol list at the expected index
+            Reservation reservation = (Reservation) messageList.get(1); // Casting object at index 1
 
-            /**
-             * STEP 2: Business Logic Delegation
-             * We delegate the complex work (checking table inventory, lookahead logic, 
-             * and SQL insertion) to the CreateOrderController.
-             * This controller returns a ServiceResponse, which is our standardized "envelope".
-             */
-            ServiceResponse result = CreateOrderController.processNewReservation(reservation);
+            // --- STEP 2: BUSINESS LOGIC DELEGATION ---
+            
+            // Delegate table allocation and DB persistence to the specialized controller
+            ServiceResponse result = CreateOrderController.processNewReservation(reservation); // Executing logic
 
-            /**
-             * STEP 3: Response Transmission
-             * We send the structured ServiceResponse back to the client.
-             * This allows the JavaFX UI to use the 'status' enum to decide which 
-             * popup (Success/Suggestion/Full) to show.
-             */
-            client.sendToClient(result);
+            // --- STEP 3: RESPONSE TRANSMISSION ---
+            
+            // Transmit the final ServiceResponse (Success/Suggestion/Full) back to the client UI
+            client.sendToClient(result); // Sending the result object via socket
 
-        } catch (ClassCastException e) {
-            /**
-             * Error Handling: Protocol Violation.
-             * Triggered if the object at index 1 is not a Reservation instance.
-             */
-            System.err.println("CreateOrderHandler Error: Expected Reservation object at index 1.");
-            sendErrorMessage(client, "INTERNAL_ERROR: Invalid reservation data format.");
-        } catch (IOException e) {
-            /**
-             * Error Handling: Network Failure.
-             * Triggered if the OCSF socket connection is lost during transmission.
-             */
-            System.err.println("CreateOrderHandler Error: Failed to send response to client.");
-            e.printStackTrace();
-        } catch (Exception e) {
-            /**
-             * General Exception Safety:
-             * Ensures the server provides feedback to the client even during unexpected logic failures.
-             */
-            e.printStackTrace();
-            sendErrorMessage(client, "INTERNAL_ERROR: Server encountered an unexpected issue.");
-        }
-    }
+        } // End of main processing logic
+        catch (ClassCastException e) { // Start of catch block for protocol format errors
+            
+            // Log technical error indicating the received object was not a Reservation
+            System.err.println("CreateOrderHandler Error: Expected Reservation object at index 1."); // Logging error
+            
+            // Inform the client about the invalid data format using a standardized error response
+            sendErrorMessage(client, "INTERNAL_ERROR: Invalid reservation data format."); // Sending error feedback
+            
+        } // End of ClassCastException catch
+        catch (IOException e) { // Start of catch block for socket communication errors
+            
+            // Log the network failure to the server console
+            System.err.println("CreateOrderHandler Error: Failed to send response to client."); // Logging error
+            
+            // Print the stack trace for technical troubleshooting
+            e.printStackTrace(); // Outputting technical details
+            
+        } // End of IOException catch
+        catch (Exception e) { // Start of catch block for any other unexpected runtime issues
+            
+            // Print the exception details to diagnose the failure
+            e.printStackTrace(); // Outputting technical trace
+            
+            // Send a generic internal error message to prevent the client from hanging
+            sendErrorMessage(client, "INTERNAL_ERROR: Server encountered an unexpected issue."); // Sending feedback
+            
+        } // End of generic Exception catch
+        
+    } // End of the handle method
 
     /**
      * Helper method to send standardized error responses to the client.
-     * Ensures that even in failure, the client receives a ServiceResponse object
-     * that it can parse without crashing.
-     * * @param client  The network connection to the client.
-     * @param message The descriptive error message.
+     * @param client  The network connection to the client.
+     * @param message The descriptive error message string.
      */
-    private void sendErrorMessage(ConnectionToClient client, String message) {
-        try {
-            // Create a failure-state response following the system protocol
-            ServiceResponse errorResponse = new ServiceResponse(
-                ServiceResponse.ReservationResponseStatus.INTERNAL_ERROR, 
-                message
-            );
-            client.sendToClient(errorResponse);
-        } catch (IOException e) {
-            System.err.println("Critical Error: Could not send error response to client: " + e.getMessage());
-        }
-    }
-}
+    private void sendErrorMessage(ConnectionToClient client, String message) { // Start of sendErrorMessage method
+        
+        try { // Start of inner try block for error reporting
+            
+            // Initialize a new ServiceResponse with an INTERNAL_ERROR status
+            ServiceResponse errorResponse = new ServiceResponse( // Start object initialization
+                ServiceResponse.ServiceStatus.INTERNAL_ERROR, // Setting status
+                message // Setting payload message
+            ); // End object initialization
+            
+            // Transmit the error response object back to the client
+            client.sendToClient(errorResponse); // Execution of send
+            
+        } // End of reporting try block
+        catch (IOException e) { // Catch block if the error report itself fails to send
+            
+            // Log a critical failure indicating that the client is unreachable even for error reporting
+            System.err.println("Critical Error: Could not send error response to client: " + e.getMessage()); // Log failure
+            
+        } // End of inner catch block
+        
+    } // End of the sendErrorMessage helper method
+    
+} // End of the CreateOrderHandler class definition

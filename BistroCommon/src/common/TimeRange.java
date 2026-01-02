@@ -36,39 +36,39 @@ public class TimeRange implements Serializable {
 
     /**
      * Core Algorithm: Determines if a given time string falls within this defined range.
-     * This method is designed to handle two distinct logical scenarios:
-     * 1. Standard ranges (e.g., 08:00 to 22:00).
-     * 2. Midnight-crossing ranges (e.g., 22:00 to 02:00).
+     * This method is designed to handle three distinct logical scenarios:
+     * 1. Closed: When open and close times are identical (e.g., 00:00 to 00:00).
+     * 2. Standard ranges: (e.g., 08:00 to 22:00).
+     * 3. Midnight-crossing ranges: (e.g., 22:00 to 02:00).
      *
      * @param timeStr The time to check in "HH:mm" format.
      * @return true if the time is within the range (inclusive), false otherwise.
      */
     public boolean isWithinRange(String timeStr) {
         try {
-            // Parse the input strings into Java 8 LocalTime objects for accurate comparison
             LocalTime target = LocalTime.parse(timeStr);
             LocalTime start = LocalTime.parse(openTime);
             LocalTime end = LocalTime.parse(closeTime);
             
+            if (start.equals(end)) {
+                return false; 
+            }
+
             /**
-             * SCENARIO 1: Standard Operational Hours
-             * Example: Opening at 08:00 and closing at 22:00.
-             * Logic: The target must be AFTER (or equal to) the start AND BEFORE (or equal to) the end.
+             * תיקון: 
+             * התחלה: כוללת (!isBefore -> >=)
+             * סוף: לא כוללת (isBefore -> <)
              */
             if (start.isBefore(end)) {
-                // Using !isBefore and !isAfter effectively creates an 'Inclusive' (>= and <=) check
-                return (!target.isBefore(start) && !target.isAfter(end));
+                // הלקוח יכול להזמין מ-08:00 ועד 22:59, אבל לא ב-23:00 בדיוק
+                return (!target.isBefore(start) && target.isBefore(end));
             } 
             
-            /**
-             * SCENARIO 2: Midnight Crossing / Late Night Hours
-             * Example: Opening at 22:00 and closing at 02:00 the next day.
-             * Logic: The target is valid if it is AFTER the start (late night) OR BEFORE the end (early morning).
-             */
-            return (!target.isBefore(start) || !target.isAfter(end));
+            // טיפול במעבר חצות (למשל 22:00 עד 02:00)
+            // מותר אם זה בין הפתיחה לחצות, או בין חצות לסגירה (לא כולל הסגירה)
+            return (!target.isBefore(start) || target.isBefore(end));
             
         } catch (DateTimeParseException e) {
-            // Logs formatting errors to the standard error stream for debugging
             System.err.println("TimeRange Error: Invalid time format - " + timeStr);
             return false;
         }
@@ -84,12 +84,11 @@ public class TimeRange implements Serializable {
         return closeTime; 
     }
 
-    /**
-     * Provides a human-readable representation of the time interval.
-     * @return A string in the format "HH:mm - HH:mm".
-     */
     @Override
     public String toString() {
+        if (openTime.equals(closeTime)) {
+            return "Closed";
+        }
         return openTime + " - " + closeTime;
     }
 }

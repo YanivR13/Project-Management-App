@@ -1,127 +1,122 @@
-package clientGUI.Controllers;
+package clientGUI.Controllers; // Defining the package where the main controllers reside
 
-import client.ChatClient;
-import clientGUI.Controllers.OccasionalControlls.OccasionalLoginController;
-import clientGUI.Controllers.SubscriberControlls.SubscriberLoginController;
-import javafx.event.ActionEvent;
-import common.ChatIF;
+import client.ChatClient; // Importing the main client class for network communication
+import clientGUI.Controllers.MenuControlls.BaseMenuController; // Importing the parent class for session logic
+import javafx.event.ActionEvent; // Importing ActionEvent to handle user clicks on buttons
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.TextArea;
-import javafx.stage.Stage;
-import javafx.application.Platform;
-import javafx.scene.Node;
+import javafx.fxml.FXMLLoader; // Importing the loader to instantiate FXML layout files
+import javafx.scene.Node; // Importing Node to access elements within the UI hierarchy
+import javafx.scene.Parent; // Importing Parent as the root node for scenes
+import javafx.scene.Scene; // Importing Scene to manage the content of the window
+import javafx.scene.control.TextArea; // Importing TextArea to display the system log
+import javafx.stage.Stage; // Importing Stage to manage the primary window
+import javafx.application.Platform; // Importing Platform for thread-safe UI updates
 
 /**
  * The RemoteLoginController handles the primary navigation logic for the landing screen.
- * It serves as a gateway, allowing users to choose between Subscriber and Occasional login paths.
- * * <p>Key Responsibilities:
- * 1. Handling initial UI interactions and scene transitions.
- * 2. Managing the lifecycle of the {@link ChatClient} and passing it to subsequent controllers.
- * 3. Logging system-level connection messages to the UI.
- * </p>
- * * @author Software Engineering Student
- * @version 1.0
+ * It serves as the entry point for both Occasional and Subscriber login paths.
  */
-public class RemoteLoginController implements ChatIF {
-    
-    /** The network client instance used for server communication throughout the session. */
-    private ChatClient client;
-    
-    /** Logger area for displaying connection status and error messages to the user. */
-    @FXML private TextArea txtLog;
+public class RemoteLoginController extends BaseMenuController { // Class start inheriting from BaseMenuController
+
+    // FXML injected UI component for logging connection status and messages
+    @FXML private TextArea txtLog; 
 
     /**
-     * Injects the persistent ChatClient instance into this controller.
-     * @param client The active network client.
+     * Event handler for the Occasional (Guest) login button.
+     * Triggers the navigation to the guest login interface.
      */
-    public void setClient(ChatClient client) { 
-        this.client = client; 
-    }
+    @FXML // Link method to FXML button action
+    void clickOccasional(ActionEvent event) { // Start of clickOccasional method
+        // Invoke the navigation engine with the specific path for guests
+        loadScreen(event, "OccasionalFXML/OccasionalLoginFrame.fxml", "Occasional Login"); 
+    } // End of clickOccasional method
 
     /**
-     * Event handler for the 'Occasional Guest' button.
-     * Navigates the user to the guest login/registration portal.
-     * * @param event The action event triggered by the button click.
+     * Event handler for the Subscriber login button.
+     * Triggers the navigation to the member login interface.
      */
-    @FXML
-    void clickOccasional(ActionEvent event) {
-        loadScreen(event, "OccasionalFXML/OccasionalLoginFrame.fxml", "Occasional Login");
-    }
+    @FXML // Link method to FXML button action
+    void clickSubscriber(ActionEvent event) { // Start of clickSubscriber method
+        // Invoke the navigation engine with the specific path for subscribers
+        loadScreen(event, "SubscriberFXML/SubscriberLoginFrame.fxml", "Subscriber Login"); 
+    } // End of clickSubscriber method
 
     /**
-     * Event handler for the 'Subscriber Login' button.
-     * Navigates the user to the registered subscriber portal.
-     * * @param event The action event triggered by the button click.
+     * Core Navigation Engine: Loads FXML files and propagates session data.
+     * This method ensures the 'client', 'userType', and 'userId' are passed forward.
      */
-    @FXML
-    void clickSubscriber(ActionEvent event) {
-        loadScreen(event, "SubscriberFXML/SubscriberLoginFrame.fxml", "Subscriber Login");
-    }
-
-    /**
-     * Core Navigation Engine: Dynamically loads and displays FXML-defined scenes.
-     * This method handles the complexity of FXML loading, CSS application, 
-     * and Controller Dependency Injection.
-     * * @param event    The event source used to identify the current window (Stage).
-     * @param fxmlFile The relative path to the FXML layout file.
-     * @param title    The title to be displayed on the new window stage.
-     */
-    private void loadScreen(ActionEvent event, String fxmlFile, String title) {
-        try {
-            // Initialize the FXML Loader for the requested screen
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/" + fxmlFile));
-            Parent root = loader.load();
+    private void loadScreen(ActionEvent event, String fxmlFile, String title) { // Start of loadScreen method
+        
+        try { // Start of try block to handle potential FXML loading errors
             
-            // Retrieve the controller instance associated with the loaded FXML
-            Object controller = loader.getController();
+            // Step 1: Initialize the loader with the relative path to the FXML file
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/" + fxmlFile)); // Creating loader
+            
+            // Step 2: Load the UI graph from the resource file
+            Parent root = loader.load(); // Loading the root node
+            
+            // Step 3: Access the controller instance created by the FXMLLoader
+            Object controller = loader.getController(); // Retrieving the target controller
             
             /**
-             * Dependency Injection Phase:
-             * We determine the controller type at runtime and inject the shared ChatClient.
-             * This ensures the network connection remains persistent across different frames.
+             * Dependency Injection:
+             * If the target controller inherits from BaseMenuController, push the session data.
              */
-            if (controller instanceof SubscriberLoginController) {
-                ((SubscriberLoginController) controller).setClient(client);
-            } else if (controller instanceof OccasionalLoginController) {
-                ((OccasionalLoginController) controller).setClient(client);
-            }
+            if (controller instanceof BaseMenuController) { // Check if controller is part of the session hierarchy
+                // Transmit the active client and current session context to the new screen
+                ((BaseMenuController) controller).setClient(client, userType, userId); // Performing injection
+            } // End of controller type check
 
-            // Stage and Scene Configuration
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
+            // Step 4: Identify the current Stage using the event source node
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Getting the window
             
-            // Apply global CSS styling for visual consistency
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
+            // Step 5: Create a new Scene with the loaded visual root
+            Scene scene = new Scene(root); // Initializing scene
             
-            stage.setTitle(title);
-            stage.setScene(scene);
-            stage.show();
+            // Step 6: Apply the global CSS styles if the resource file is found
+            if (getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css") != null) { // Check for CSS existence
+                scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); // Add CSS
+            } // End of CSS null check
             
-        } catch (Exception e) {
-            e.printStackTrace();
-            appendLog("Error loading screen: " + e.getMessage());
-        }
-    }
+            // Step 7: Update window properties and render the new scene
+            stage.setTitle(title); // Updating window title
+            stage.setScene(scene); // Setting the scene to the stage
+            stage.show(); // Displaying the window
+            
+        } catch (Exception e) { // Start of catch block for unexpected loading failures
+            
+            // Print the technical details to the system console for debugging
+            e.printStackTrace(); // Logging technical stack trace
+            
+            // Notify the user about the failure through the visible GUI log
+            appendLog("Error loading screen: " + e.getMessage()); // Appending error to log
+            
+        } // End of try-catch block
+        
+    } // End of loadScreen method
 
     /**
-     * Interface Implementation: Receives and logs messages from the server.
-     * @param message The incoming object from the server.
+     * Implementation of the ChatIF interface method to handle server messages.
      */
-    @Override 
-    public void display(Object message) { 
-        if (message != null) appendLog(message.toString()); 
-    }
+    @Override // Overriding display from ChatIF (inherited via BaseMenuController)
+    public void display(Object message) { // Start of display method
+        // If a message is received from the server, append it to the text log
+        if (message != null) { // Check if the message is not null
+            appendLog(message.toString()); // Convert object to string and log it
+        } // End of null check
+    } // End of display method
 
     /**
-     * Thread-safe logging method.
-     * Since network messages arrive on a background thread, updates to the UI
-     * components (TextArea) must be delegated to the JavaFX Application Thread.
-     * * @param message The string message to append to the log.
+     * Appends a message to the UI log area in a thread-safe manner.
      */
-    public void appendLog(String message) { 
-        Platform.runLater(() -> txtLog.appendText("> " + message + "\n")); 
-    }
-}
+    public void appendLog(String message) { // Start of appendLog method
+        // Use Platform.runLater to ensure the UI update occurs on the JavaFX Application Thread
+        Platform.runLater(() -> { // Start of lambda block
+            // Ensure the log component is actually injected before writing to it
+            if (txtLog != null) { // Checking if txtLog is initialized
+                txtLog.appendText("> " + message + "\n"); // Appending formatted text
+            } // End of component null check
+        }); // End of lambda block
+    } // End of appendLog method
+    
+} // End of RemoteLoginController class

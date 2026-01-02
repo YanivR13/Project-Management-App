@@ -1,113 +1,119 @@
-package clientGUI.Controllers;
+package clientGUI.Controllers; // Define the package location for the controller interfaces
 
-import client.ChatClient;
-import clientGUI.Controllers.MenuControlls.BaseMenuController;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
+import client.ChatClient; // Import the main communication client class
+import clientGUI.Controllers.MenuControlls.BaseMenuController; // Import the base controller for dependency injection
+import javafx.event.ActionEvent; // Import ActionEvent to handle UI button clicks
+import javafx.fxml.FXMLLoader; // Import FXMLLoader to load FXML layout files
+import javafx.scene.Node; // Import Node to access UI elements within the scene graph
+import javafx.scene.Parent; // Import Parent as the root for the scene
+import javafx.scene.Scene; // Import Scene for window content management
+import javafx.stage.Stage; // Import Stage for primary window management
 
 /**
  * The ICustomerActions interface defines the behavioral contract for customer-related activities.
- * It utilizes Java 8 default methods to provide a centralized navigation engine, 
- * reducing code duplication across different customer portal controllers (e.g., Subscriber vs Occasional).
- * * <p>This interface handles the transition between different functional frames in the 
- * restaurant management system while ensuring session data (client, userType, userId) 
- * is correctly propagated.</p>
- * * @author Software Engineering Student
- * @version 1.0
+ * It provides a centralized navigation engine via Java 8 default methods.
  */
-public interface ICustomerActions {
+public interface ICustomerActions { // Start of ICustomerActions interface definition
+
+    // =========================================================================
+    // SECTION 1: Navigation Shortcuts (Default Methods)
+    // =========================================================================
 
     /**
      * Navigates the user to the New Reservation screen.
-     * * @param client   The active OCSF network client.
-     * @param event    The ActionEvent from the UI button click.
-     * @param userType The category of the user (e.g., "Subscriber").
-     * @param userId   The unique database ID of the user.
      */
-    default void createNewReservation(ChatClient client, ActionEvent event, String userType, int userId) {
-        navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/NewReservationFrame.fxml", "Bistro - New Reservation");
-    }
+    default void createNewReservation(ChatClient client, ActionEvent event, String userType, int userId) { // Method start
+        // Call the central navigation engine with the specific FXML path and title
+        navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/NewReservationFrame.fxml", "Bistro - New Reservation"); // Execution
+    } // End of createNewReservation method
 
     /**
-     * Navigates the user to the Reservation Cancellation screen.
+     * Navigates the user to the Payment Code entry screen.
      */
-    default void payBill(ChatClient client, ActionEvent event, String userType, int userId) {   	
-    	navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/PayBillEntryFrame.fxml", "Bistro - Enter Payment Code");
-    }
+    default void payBill(ChatClient client, ActionEvent event, String userType, int userId) { // Method start
+        // Call the central navigation engine for the payment entry logic
+        navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/PayBillEntryFrame.fxml", "Bistro - Enter Payment Code"); // Execution
+    } // End of payBill method
 
     /**
-     * Navigates the user to the screen where they can view existing reservations or process payments.
+     * Navigates the user to the screen where they can view existing reservations.
      */
-    default void viewReservation(ChatClient client, ActionEvent event, String userType, int userId) {
-        navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/ViewReservationFrame.fxml", "Bistro - View & Pay");
-    }
+    default void viewReservation(ChatClient client, ActionEvent event, String userType, int userId) { // Method start
+        // Call the central navigation engine for the viewing/cancellation screen
+        navigateTo(client, event, userType, userId, "/clientGUI/fxmlFiles/MenuFXML/ViewReservationFrame.fxml", "Bistro - View & Pay"); // Execution
+    } // End of viewReservation method
+    
+    // =========================================================================
+    // SECTION 2: Abstract Actions (To be implemented by Subclasses)
+    // =========================================================================
+
+    /**
+     * Abstract method for retrieving reservation history.
+     */
+    void viewOrderHistory(ChatClient client, int userId); // Method signature (No implementation)
+
+    /**
+     * Abstract method for editing personal profile details.
+     */
+    void editPersonalDetails(ChatClient client, int userId); // Method signature (No implementation)
     
     /**
-     * Abstract method to be implemented for retrieving past reservation data from the DB.
+     * Sends a command to exit the digital waiting list.
      */
-    void viewOrderHistory(ChatClient client, int userId);
+    default void exitWaitingList(ChatClient client, String confirmationCode) { // Method start
+        // Logic left empty as per the original source provided
+    } // End of exitWaitingList method
+
+    // =========================================================================
+    // SECTION 3: The Central Navigation Engine
+    // =========================================================================
 
     /**
-     * Abstract method to be implemented for allowing users to update their profile info.
+     * The Central Navigation Engine: Handles FXML loading and Controller injection.
      */
-    void editPersonalDetails(ChatClient client, int userId);
-    
-    /**
-     * Sends a command to the server to remove a customer from a digital waiting list.
-     * Uses the OCSF communication protocol (ArrayList containing Command and Data).
-     * * @param client           The network client.
-     * @param confirmationCode The code identifying the specific waiting list entry.
-     */
-    default void exitWaitingList(ChatClient client, String confirmationCode) {
-    	
-    }
-
-    /**
-     * The Central Navigation Engine.
-     * Handles FXML loading, Controller initialization, and Stage switching.
-     * * @param client   The network client instance.
-     * @param event    The trigger event used to locate the current Window/Stage.
-     * @param userType User category string.
-     * @param userId   User database ID.
-     * @param path     The relative path to the FXML layout file.
-     * @param title    The text to display on the new window's title bar.
-     */
-    default void navigateTo(ChatClient client, ActionEvent event, String userType, int userId, String path, String title) {
-        try {
-            // Step 1: Initialize the FXML Loader with the target resource path
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(path));
-            Parent root = loader.load();
+    default void navigateTo(ChatClient client, ActionEvent event, String userType, int userId, String path, String title) { // Method start
+        
+        try { // Start of try block for safe FXML loading
             
-            // Step 2: Access the controller of the newly loaded scene
-            Object controller = loader.getController();
+            // Step 1: Initialize the FXML Loader with the target resource path provided in parameters
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(path)); // Creating loader instance
+            
+            // Step 2: Load the parent root element from the FXML file (The visual layout)
+            Parent root = loader.load(); // Loading the UI graph
+            
+            // Step 3: Access the controller associated with the newly loaded FXML scene
+            Object controller = loader.getController(); // Retrieving the controller instance
             
             /**
              * Dependency Injection:
-             * If the target controller inherits from BaseMenuController, we inject 
-             * the current session state to ensure continuity across the application.
+             * If the controller implements BaseMenuController, we push the session data through "The Pipe".
              */
-            if (controller instanceof BaseMenuController) {
-                ((BaseMenuController) controller).setClient(client, userType, userId);
-            }
+            if (controller instanceof BaseMenuController) { // Check if the controller is of type BaseMenuController
+                // Inject the client reference, user role, and user ID into the target controller
+                ((BaseMenuController) controller).setClient(client, userType, userId); // Performing injection
+            } // End of dependency injection check
 
-            // Step 3: Scene and Stage Transition
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
+            // Step 4: Identify the current Stage (Window) using the ActionEvent's source node
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Accessing the stage
             
-            // Apply global CSS for consistent look and feel
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
+            // Step 5: Create a new Scene container with the loaded visual root
+            Scene scene = new Scene(root); // Initializing the scene object
             
-            stage.setTitle(title);
-            stage.setScene(scene);
-            stage.show();
+            // Step 6: Apply the global CSS stylesheet to ensure consistent styling across all screens
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); // Style injection
             
-        } catch (Exception e) {
-            // Logs critical errors during scene loading (e.g., missing FXML or CSS files)
-            e.printStackTrace();
-        }
-    }
-}
+            // Step 7: Update window properties and switch the active scene
+            stage.setTitle(title); // Updating the title bar text
+            stage.setScene(scene); // Assigning the new scene to the stage
+            stage.show(); // Rendering the updated stage to the user
+            
+        } catch (Exception e) { // Start of catch block for unexpected errors
+            
+            // Print the technical stack trace to the console for debugging (FXML missing, CSS errors, etc.)
+            e.printStackTrace(); // Logging technical failure
+            
+        } // End of try-catch block
+        
+    } // End of navigateTo method
+    
+} // End of ICustomerActions interface

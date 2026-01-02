@@ -1,176 +1,163 @@
-package clientGUI.Controllers.OccasionalControlls;
+package clientGUI.Controllers.OccasionalControlls; // Define the package for occasional user controllers
 
-import java.util.ArrayList;
-import client.ChatClient;
-import common.ChatIF;
-import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.stage.Stage;
+import java.util.ArrayList; // Import ArrayList for message packaging
+import client.ChatClient; // Import the ChatClient for communication
+import clientGUI.Controllers.MenuControlls.BaseMenuController; // Import the base controller for inheritance
+import javafx.application.Platform; // Import for UI thread safety
+import javafx.event.ActionEvent; // Import for handling button actions
+import javafx.fxml.FXML; // Import for FXML injection
+import javafx.fxml.FXMLLoader; // Import for loading new FXML scenes
+import javafx.scene.Node; // Import for generic UI node elements
+import javafx.scene.Parent; // Import for the root of the scene graph
+import javafx.scene.Scene; // Import for managing the stage scene
+import javafx.scene.control.TextArea; // Import for multi-line text display
+import javafx.scene.control.TextField; // Import for text input fields
+import javafx.stage.Stage; // Import for window management
 
 /**
- * Controller class for the Occasional (Guest) Customer Registration interface.
- * This class serves as the logic layer for creating new guest profiles, implementing 
- * client-side input validation before transmitting data to the Bistro Server.
- * * <p>It implements {@link ChatIF} to allow the {@link client.ChatClient} to 
- * push server responses (success or error) back to this UI component.</p>
- * * @author Software Engineering Student
- * @version 1.0
+ * Controller class for the Occasional Customer Registration interface.
+ * Handles input validation and registration requests for guest users.
  */
-public class OccasionalRegistrationController implements ChatIF {
-    
-    /** The network communication client for OCSF. */
-    private ChatClient client;
+public class OccasionalRegistrationController extends BaseMenuController { // Class start extending BaseMenuController
 
-    /** Input fields for user credentials and contact information. */
-    @FXML private TextField txtNewUser, txtNewContact;
-    
-    /** UI Console for logging status updates and validation feedback. */
-    @FXML private TextArea txtLog;
+    // FXML injected UI components
+    @FXML private TextField txtNewUser; // TextField for the desired username
+    @FXML private TextField txtNewContact; // TextField for phone number or email
+    @FXML private TextArea txtLog; // Logger area for user feedback
 
     /**
-     * Injects the persistent ChatClient into this controller and registers
-     * this class as the active UI for handling server messages.
-     * * @param client The active network client instance.
+     * Executes automatically once the client and session data are ready.
      */
-    public void setClient(ChatClient client) {
-        this.client = client;
-        if (client != null) {
-            // Register this controller as the message handler for server responses
-            client.setUI(this);
-            appendLog("Ready for new guest registration.");
-        }
-    }
+    @Override // Overriding method from BaseMenuController
+    public void onClientReady() { // Start of onClientReady
+        // Log that the controller is initialized and ready for registration
+        appendLog("Ready for new guest registration."); // Logging status
+        // Log the identity of the current operator/user
+        appendLog("Operator Identity: " + userType + " (ID: " + userId + ")"); // Logging session info
+    } // End of onClientReady
 
     /**
-     * Event handler for the 'Create Account' action.
-     * Orchestrates three layers of client-side validation:
-     * 1. Existence check (Fields must not be blank).
-     * 2. Business constraints (Username length <= 10).
-     * 3. Formatting/Type detection (Phone vs. Email based on the first character).
-     * * @param event The ActionEvent triggered by the UI button.
+     * Processes the registration form submission.
      */
-    @FXML
-    void clickSubmitRegistration(ActionEvent event) {
-        // Retrieve and trim inputs to remove accidental leading/trailing whitespaces
-        String user = txtNewUser.getText().trim();
-        String contact = txtNewContact.getText().trim();
+    @FXML // Link to FXML action
+    void clickSubmitRegistration(ActionEvent event) { // Start of clickSubmitRegistration
+        // Retrieve and trim input values from the text fields
+        String user = txtNewUser.getText().trim(); // Get username
+        String contact = txtNewContact.getText().trim(); // Get contact info
 
-        // Layer 1: Mandatory Field Check
-        if (user.isEmpty() || contact.isEmpty()) {
-            appendLog("Error: All fields are required.");
-            return;
-        }
+        // Logic Check 1: Ensure no fields are empty
+        if (user.isEmpty() || contact.isEmpty()) { // Start if empty
+            appendLog("Error: All fields are required."); // Log error
+            return; // Terminate method
+        } // End if empty
 
-        // Layer 2: Business Constraint - Username fits the Database VARCHAR(10) limit
-        if (user.length() > 10) {
-            appendLog("Error: Username must be 10 characters or less.");
-            return;
-        }
+        // Logic Check 2: Max username length validation
+        if (user.length() > 10) { // Start if length > 10
+            appendLog("Error: Username must be 10 characters or less."); // Log error
+            return; // Terminate method
+        } // End if length check
 
-        // --- LAYER 3: TYPE IDENTIFICATION & FORMAT VALIDATION ---
+        // Identify the first character to determine validation type (Phone vs Email)
+        char firstChar = contact.charAt(0); // Extract first character
         
-        // Identify the contact type by inspecting the first character
-        char firstChar = contact.charAt(0);
-
-        if (Character.isDigit(firstChar)) {
-            /** * Scenario A: Input starts with a digit. System expects a PHONE NUMBER.
-             * Logic: Must be exactly 10 characters AND contain only digits (Regex: \d+).
-             */
-            if (contact.length() != 10 || !contact.matches("\\d+")) {
-                appendLog("Error: You started with a number. Phone must be exactly 10 digits.");
-                return;
-            }
-        } 
-        else {
-            /** * Scenario B: Input starts with a letter/symbol. System expects an EMAIL.
-             * Logic: Must contain the '@' symbol to be considered a valid identifier.
-             */
-            if (!contact.contains("@")) {
-                appendLog("Error: You started with a letter. Email must contain '@'.");
-                return;
-            }
-        }
+        // Logic Check 3: Digital contact validation (Phone)
+        if (Character.isDigit(firstChar)) { // Start if first char is digit
+            // Verify that the phone number is exactly 10 digits
+            if (contact.length() != 10 || !contact.matches("\\d+")) { // Internal check
+                appendLog("Error: You started with a number. Phone must be exactly 10 digits."); // Log error
+                return; // Terminate method
+            } // End internal check
+        } // End if digital
         
-        // --- END OF VALIDATION ---
+        // Logic Check 4: String contact validation (Email)
+        else { // Start if first char is a letter
+            // Verify that the email contains the '@' symbol
+            if (!contact.contains("@")) { // Internal check
+                appendLog("Error: You started with a letter. Email must contain '@'."); // Log error
+                return; // Terminate method
+            } // End internal check
+        } // End if letter
 
-        // Encapsulate validated data into the protocol format (Command + Payload)
-        ArrayList<String> message = new ArrayList<>();
-        message.add("REGISTER_OCCASIONAL"); // Server command
-        message.add(user);                  // New username
-        message.add(contact);               // Phone or Email identifier
-
-        // Transmit to server via the OCSF AbstractClient
-        if (client != null) {
-            appendLog("Sending registration request for: " + user);
-            client.handleMessageFromClientUI(message);
-        }
-    }
-
-    /**
-     * HOOK METHOD (ChatIF): Receives and processes server responses.
-     * Uses Platform.runLater to ensure UI components are updated on the JavaFX Application Thread.
-     * * @param message The data object (typically a String) received from the server.
-     */
-    @Override
-    public void display(Object message) {
-        Platform.runLater(() -> {
-            if (message != null) {
-                String response = message.toString();
-                appendLog("Server Response: " + response);
-
-                // Handle successful database transaction (Insertion into 'user' and 'occasional_customer' tables)
-                if (response.equals("REGISTRATION_SUCCESS")) {
-                    appendLog("SUCCESS: Account created! You can now go back and login.");
-                    
-                    // Reset UI fields for potential subsequent registrations
-                    txtNewUser.clear();
-                    txtNewContact.clear();
-                }
-            }
-        });
-    }
+        // Final Step: Transmit registration data to server if client is active
+        if (client != null) { // Start if client exists
+            appendLog("Sending registration request for: " + user); // Log transmission
+            ArrayList<String> message = new ArrayList<>(); // Initialize message list
+            message.add("REGISTER_OCCASIONAL"); // Add command header
+            message.add(user); // Add username
+            message.add(contact); // Add contact info
+            client.handleMessageFromClientUI(message); // Transmit through client
+        } else { // If client is null
+            appendLog("Fatal Error: No server connection!"); // Log fatal error
+        } // End if client check
+    } // End of clickSubmitRegistration
 
     /**
-     * Navigates back to the Guest Login portal.
-     * Re-injects the ChatClient into the target controller to maintain the socket connection.
-     * * @param event The ActionEvent from the 'Back' button.
+     * Processes messages received from the server.
      */
-    @FXML
-    void clickBack(ActionEvent event) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalLoginFrame.fxml"));
-            Parent root = loader.load();
-            
-            // Pass the persistent client reference back to the Login controller
-            ((OccasionalLoginController)loader.getController()).setClient(client);
+    @Override // Overriding display method from ChatIF
+    public void display(Object message) { // Start of display method
+        // Ensure UI updates happen on the main JavaFX thread
+        Platform.runLater(() -> { // Start of runLater lambda
+            if (message != null) { // Start if message exists
+                // Convert server response to String for processing
+                String response = message.toString(); // Casting to string
+                appendLog("Server Response: " + response); // Log raw response
 
-            // Configure the scene transition on the existing window
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
-            Scene scene = new Scene(root);
-            
-            // Re-apply global CSS styling for visual consistency
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm());
-            
-            stage.setScene(scene);
-            stage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-            appendLog("Navigation Error: " + e.getMessage());
-        }
-    }
+                // Refactored: Using switch-case for response handling
+                switch (response) { // Start of switch
+                    case "REGISTRATION_SUCCESS": // Success scenario
+                        appendLog("SUCCESS: Account created! You can now go back and login."); // Notify user
+                        txtNewUser.clear(); // Clear input field
+                        txtNewContact.clear(); // Clear input field
+                        break; // Exit switch
+
+                    default: // All other status messages
+                        // No additional action needed for general messages
+                        break; // Exit switch
+                } // End of switch
+            } // End if message exists
+        }); // End of runLater lambda
+    } // End of display method
 
     /**
-     * Appends a message to the UI Logger in a thread-safe manner.
-     * @param message The text string to display in the log.
+     * Navigates back to the Occasional login screen.
      */
-    public void appendLog(String message) {
-        Platform.runLater(() -> txtLog.appendText("> " + message + "\n"));
-    }
-}
+    @FXML // Link to FXML action
+    void clickBack(ActionEvent event) { // Start of clickBack
+        try { // Start of try block
+            // Initialize loader for the login frame
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalLoginFrame.fxml")); // Set path
+            Parent root = loader.load(); // Load root graph
+            
+            // Dependency Injection: Pass session data back to the login controller
+            Object nextController = loader.getController(); // Get controller instance
+            if (nextController instanceof BaseMenuController) { // Check if controller is valid
+                ((BaseMenuController) nextController).setClient(client, userType, userId); // Inject data
+            } // End of injection check
+
+            // Identify current stage and transition scenes
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Get current stage
+            Scene scene = new Scene(root); // Create new scene
+            // Apply global CSS stylesheet
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); // Add styling
+            
+            stage.setScene(scene); // Assign scene to stage
+            stage.show(); // Display the window
+        } catch (Exception e) { // Catch navigation exceptions
+            e.printStackTrace(); // Print technical trace
+            appendLog("Navigation Error: " + e.getMessage()); // Log user-friendly error
+        } // End of try-catch block
+    } // End of clickBack
+
+    /**
+     * Thread-safe method to update the GUI log area.
+     */
+    public void appendLog(String message) { // Start of appendLog
+        // Transition logic to the Application Thread
+        Platform.runLater(() -> { // Start of runLater lambda
+            if (txtLog != null) { // Check if log component is injected
+                txtLog.appendText("> " + message + "\n"); // Append formatted text
+            } // End if
+        }); // End of runLater lambda
+    } // End of appendLog
+} // End of OccasionalRegistrationController class

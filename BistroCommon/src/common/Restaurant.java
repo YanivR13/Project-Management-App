@@ -1,253 +1,171 @@
-package common;
+package common; // Defining the package location for the class
 
-import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.Serializable; // Importing for object serialization capabilities
+import java.time.LocalDate; // Importing for date handling
+import java.util.ArrayList; // Importing for dynamic list implementation
+import java.util.Collections; // Importing for utility methods like sorting
+import java.util.HashMap; // Importing for key-value pair storage
+import java.util.List; // Importing for list interface
+import java.util.Map; // Importing for map interface
 
 /**
  * Core Domain Entity representing a Restaurant in the system.
- * This class serves as a Data Transfer Object (DTO) shared between the Client and Server.
- * It encapsulates basic identification, operational scheduling, and physical table inventory management.
- * * <p>Implemented as {@link Serializable} to facilitate object streaming over OCSF socket connections.</p>
- * * @author Software Engineering Student
- * @version 1.0
  */
-public class Restaurant implements Serializable {
+public class Restaurant implements Serializable { // Defining the Restaurant class
     
-    /** Serial Version UID for cross-platform serialization compatibility. */
+    // Serial version identifier to ensure object compatibility during serialization
     private static final long serialVersionUID = 1L;
 
-    /** Unique Database Identifier (Primary Key in the 'restaurant' table). */
+    // Unique identifier for the restaurant instance in the database
     private int restaurantId;
     
-    /** Descriptive name of the restaurant for UI display purposes. */
+    // Human-readable name of the restaurant
     private String restaurantName;
     
-    /** * Regular weekly operating schedule. 
-     * Maps a day name (e.g., "Monday") to a {@link TimeRange} object defining opening/closing hours.
-     */
+    // Map storing standard weekly hours (Key: Day name, Value: TimeRange object)
     private Map<String, TimeRange> regularHours;
     
-    /** * Calendar-specific scheduling overrides.
-     * Maps a specific {@link LocalDate} to a {@link TimeRange}. 
-     * Used for holidays, special events, or emergency closures.
-     */
+    // Map storing date-specific overrides (Key: LocalDate, Value: TimeRange object)
     private Map<LocalDate, TimeRange> specialHours;
     
-    /** * Physical Table Inventory.
-     * Maps table seating capacity (Integer) to the total count of such tables available (Integer).
-     * Example: {4 -> 10} means there are ten tables that seat 4 people each.
-     */
+    // Map storing table inventory (Key: Seating capacity, Value: Total number of tables)
     private Map<Integer, Integer> tableInventory;
 
     /**
-     * Constructs a new Restaurant instance.
-     * Initializes empty HashMaps for scheduling and inventory to prevent NullPointerExceptions.
-     *
-     * @param restaurantId Unique database identifier.
-     * @param restaurantName Display name of the restaurant.
+     * Constructs a new Restaurant and initializes internal data structures.
      */
-    public Restaurant(int restaurantId, String restaurantName) {
-        this.restaurantId = restaurantId;
-        this.restaurantName = restaurantName;
-        this.regularHours = new HashMap<>();
-        this.specialHours = new HashMap<>();
-        this.tableInventory = new HashMap<>();
-    }
+    public Restaurant(int restaurantId, String restaurantName) { // Constructor start
+        this.restaurantId = restaurantId; // Assigning the unique ID
+        this.restaurantName = restaurantName; // Assigning the display name
+        this.regularHours = new HashMap<>(); // Initializing the regular hours map
+        this.specialHours = new HashMap<>(); // Initializing the special overrides map
+        this.tableInventory = new HashMap<>(); // Initializing the inventory map
+    } // Constructor end
 
     // --- Identification Getters ---
 
-    /** @return The unique restaurant ID. */
-    public int getRestaurantId() { return restaurantId; }
+    public int getRestaurantId() { // Method to retrieve restaurant ID
+        return restaurantId; // Returning the ID value
+    } // End method
     
-    /** @return The restaurant's display name. */
-    public String getRestaurantName() { return restaurantName; }
+    public String getRestaurantName() { // Method to retrieve restaurant name
+        return restaurantName; // Returning the name string
+    } // End method
 
     // --- Operating Hours Management ---
 
-    /**
-     * Defines or updates the standard operating hours for a specific day of the week.
-     * * @param day Standard day name (e.g., "Monday", "Tuesday").
-     * @param open Opening time in "HH:mm" format.
-     * @param close Closing time in "HH:mm" format.
-     */
-    public void setRegularHours(String day, String open, String close) {
-        regularHours.put(day, new TimeRange(open, close));
-    }
+    public void setRegularHours(String day, String open, String close) { // Method to set standard hours
+        regularHours.put(day, new TimeRange(open, close)); // Creating and mapping a new TimeRange
+    } // End method
 
-    /**
-     * Defines or updates an override schedule for a specific calendar date.
-     * * @param date The specific date for the override.
-     * @param open Opening time in "HH:mm" format.
-     * @param close Closing time in "HH:mm" format.
-     */
-    public void setSpecialHours(LocalDate date, String open, String close) {
-        specialHours.put(date, new TimeRange(open, close));
-    }
+    public void setSpecialHours(LocalDate date, String open, String close) { // Method to set date overrides
+        specialHours.put(date, new TimeRange(open, close)); // Creating and mapping a new override
+    } // End method
+    
+    public Map<String, TimeRange> getRegularHours() { // Method to get all regular hours
+        return regularHours; // Returning the underlying map
+    } // End method
+
+    public Map<LocalDate, TimeRange> getSpecialHours() { // Method to get all special overrides
+        return specialHours; // Returning the underlying map
+    } // End method
     
     /**
-     * Retrieves the standard weekly operating schedule.
-     * The map keys are day names (e.g., "Monday") and values are {@link TimeRange} objects.
-     * * @return A {@link Map} containing the regular weekly hours.
+     * Generates a formatted string representing the restaurant's schedule.
      */
-    public Map<String, TimeRange> getRegularHours() {
-        return regularHours;
-    }
+    public String getFormattedOpeningHours() { // Method start
+        StringBuilder sb = new StringBuilder("=== RESTAURANT OPERATING HOURS ===\n\n"); // Initializing string builder with header
+
+        sb.append("[ Standard Weekly Schedule ]\n"); // Adding section header
+        
+        // Check if regular hours exist or the map is empty
+        boolean noHoursDefined = (regularHours == null || regularHours.isEmpty()); // Evaluation
+        
+        if (noHoursDefined) { // If no hours are found
+            sb.append("No regular hours are currently defined.\n"); // Notify the user in the output
+        } else { // If hours are defined
+            String[] daysOrder = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}; // Hardcoded order for sorting
+            for (String day : daysOrder) { // Iterating through the week in order
+                TimeRange hours = regularHours.get(day); // Attempting to retrieve hours for the current day
+                if (hours != null) { // If hours are found for this specific day
+                    sb.append("• ").append(day).append(": ").append(hours.toString()).append("\n"); // Append the day and hours
+                } // End if
+            } // End loop
+        } // End else
+
+        LocalDate today = LocalDate.now(); // Capturing the current system date
+        LocalDate lookAheadLimit = today.plusDays(30); // Setting the limit for special alerts to 30 days
+        boolean hasSpecialAlerts = false; // Flag to track if any upcoming changes exist
+
+        for (Map.Entry<LocalDate, TimeRange> entry : specialHours.entrySet()) { // Iterating through special hours entries
+            LocalDate specialDate = entry.getKey(); // Extracting the date key
+            // Check if the date is within the range: Today <= specialDate <= lookAheadLimit
+            boolean isWithinRange = !specialDate.isBefore(today) && !specialDate.isAfter(lookAheadLimit); // Range logic
+            
+            if (isWithinRange) { // If the date falls within the next 30 days
+                if (!hasSpecialAlerts) { // If this is the first alert found
+                    sb.append("\n[ !!! IMPORTANT: UPCOMING SCHEDULE CHANGES !!! ]\n"); // Add the alert header
+                    hasSpecialAlerts = true; // Mark that alerts have been found
+                } // End if alert found
+                sb.append("• Date: ").append(specialDate).append(" (").append(specialDate.getDayOfWeek()).append(")\n") // Date details
+                  .append("  New Hours: ").append(entry.getValue().toString()).append(" *Overrides regular schedule*\n"); // Hour details
+            } // End if within range
+        } // End loop
+
+        if (!hasSpecialAlerts) { // If no special events were found in the loop
+            sb.append("\nNo special holiday or event hours in the next 14 days.\n"); // Inform the user
+        } // End if no alerts
+
+        sb.append("\n================================="); // Add closing footer
+        return sb.toString(); // Return the complete formatted string
+    } // Method end
 
     /**
-     * Retrieves the calendar-specific scheduling overrides.
-     * This map contains special hours for specific dates (holidays, events, etc.).
-     * * @return A {@link Map} containing the date-specific special hours.
+     * Checks if the restaurant is open at a given date and time.
      */
-    public Map<LocalDate, TimeRange> getSpecialHours() {
-        return specialHours;
-    }
+    public boolean isOpen(LocalDate date, String timeStr) { // Method start
+        TimeRange hours = specialHours.get(date); // Step 1: Look for an override for this specific date
+        
+        if (hours == null) { // Step 2: If no override exists, fall back to weekly schedule
+            // Convert DayOfWeek enum (e.g., MONDAY) to Title Case (e.g., Monday)
+            String rawDayName = date.getDayOfWeek().name(); // Get original name
+            String dayName = rawDayName.substring(0, 1) + rawDayName.substring(1).toLowerCase(); // Apply formatting logic
+            hours = regularHours.get(dayName); // Fetch hours for the formatted day name
+        } // End fallback check
+
+        // Step 3: Check if hours were found and if the provided time falls within that range
+        return (hours != null && hours.isWithinRange(timeStr)); // Logic validation
+    } // Method end
+
+    // --- Table Inventory Management ---
     
-    /**
-     * Generates a comprehensive, human-readable summary of the restaurant's schedule.
-     * This method fulfills two main requirements:
-     * 1. Displays the standard weekly operating hours for general information.
-     * 2. Identifies and highlights 'Special Hours' (overrides) for the next 14 days.
-     * * The logic ensures that if a special date exists (like a holiday), it is 
-     * explicitly marked as an override to the regular schedule.
-     * * @return A formatted String containing the full schedule and prioritized alerts.
-     */
-    public String getFormattedOpeningHours() {
-        // StringBuilder is used for efficient string manipulation in loops
-        StringBuilder sb = new StringBuilder("=== RESTAURANT OPERATING HOURS ===\n\n");
+    public void addTablesToInventory(int capacity, int count) { // Method to add/update table counts
+        int currentCount = tableInventory.getOrDefault(capacity, 0); // Get existing count or default to 0
+        tableInventory.put(capacity, currentCount + count); // Sum the values and update the map
+    } // End method
 
-        // --- SECTION 1: Standard Weekly Schedule ---
-        sb.append("[ Standard Weekly Schedule ]\n");
-        if (regularHours == null || regularHours.isEmpty()) {
-            sb.append("No regular hours are currently defined.\n");
-        } else {
-            // Iterating through the regularHours Map (e.g., Monday: 09:00 - 22:00)
-            for (Map.Entry<String, TimeRange> entry : regularHours.entrySet()) {
-                sb.append("• ").append(entry.getKey())
-                  .append(": ")
-                  .append(entry.getValue().toString())
-                  .append("\n");
-            }
-        }
-
-        // --- SECTION 2: Special Overrides Logic ---
-        // We define a 14-day window to show relevant upcoming schedule changes
-        LocalDate today = LocalDate.now();
-        LocalDate lookAheadLimit = today.plusDays(14);
-        boolean hasSpecialAlerts = false;
-
-        // Iterate through specialHours to find dates falling within the 14-day window
-        for (Map.Entry<LocalDate, TimeRange> entry : specialHours.entrySet()) {
-            LocalDate specialDate = entry.getKey();
-
-            // Verification: Check if the special date is between today and 2 weeks from now
-            if (!specialDate.isBefore(today) && !specialDate.isAfter(lookAheadLimit)) {
-                
-                // Add a header only if at least one special date is found
-                if (!hasSpecialAlerts) {
-                    sb.append("\n[ !!! IMPORTANT: UPCOMING SCHEDULE CHANGES !!! ]\n");
-                    hasSpecialAlerts = true;
-                }
-
-                // Logic: Explicitly state that this specific date overrides regular hours
-                sb.append("• Date: ").append(specialDate)
-                  .append(" (").append(specialDate.getDayOfWeek()).append(")\n")
-                  .append("  New Hours: ").append(entry.getValue().toString())
-                  .append(" *Overrides regular schedule*\n");
-            }
-        }
-
-        // Fallback message if no special dates are found in the near future
-        if (!hasSpecialAlerts) {
-            sb.append("\nNo special holiday or event hours in the next 14 days.\n");
-        }
-
-        sb.append("\n=================================");
-        return sb.toString();
-    }
+    public int getTableCountByCapacity(int capacity) { // Method to check how many tables exist for a size
+        return tableInventory.getOrDefault(capacity, 0); // Return count or 0 if capacity is unknown
+    } // End method
 
     /**
-     * Business Logic: Validates if the restaurant is operational at a specific timestamp.
-     * The method prioritizes 'Special Hours' (overrides) over 'Regular Hours'.
-     *
-     * @param date The calendar date to check.
-     * @param timeStr The time string (HH:mm) to validate against opening hours.
-     * @return true if the restaurant is open, false otherwise.
+     * Algorithm to find the smallest table that can accommodate the group size.
      */
-    public boolean isOpen(LocalDate date, String timeStr) {
-        // Step 1: Check for specific date overrides (Holiday/Special hours)
-        TimeRange hours = specialHours.get(date);
+    public int getBestFitCapacity(int requestedSize) { // Method start
+        List<Integer> capacities = new ArrayList<>(tableInventory.keySet()); // Convert keys (sizes) into a list
         
-        // Step 2: If no specific override exists, fall back to the regular weekly schedule
-        if (hours == null) {
-            // Format the DayOfWeek enum to a Title Case string (e.g., MONDAY -> Monday)
-            String dayName = date.getDayOfWeek().name().substring(0, 1) + 
-                             date.getDayOfWeek().name().substring(1).toLowerCase(); 
-            hours = regularHours.get(dayName);
-        }
-
-        // Step 3: Validate the time against the identified range
-        return (hours != null && hours.isWithinRange(timeStr));
-    }
-
-    // --- Table Inventory & Upgrade Logic ---
-    
-    /**
-     * Populates the restaurant's physical table setup.
-     * * @param capacity Seating capacity per table.
-     * @param count Number of tables of this capacity to add.
-     */
-    public void addTablesToInventory(int capacity, int count) {
-        int currentCount = tableInventory.getOrDefault(capacity, 0);
-        tableInventory.put(capacity, currentCount + count);
-    }
-
-    /**
-     * @param capacity The table size to query.
-     * @return Total count of tables for the specified capacity.
-     */
-    public int getTableCountByCapacity(int capacity) {
-        return tableInventory.getOrDefault(capacity, 0);
-    }
-
-    /**
-     * Business Logic Algorithm: Table Best-Fit Selection.
-     * Identifies the most efficient table capacity for a requested party size.
-     * * <p>Algorithm logic:
-     * 1. Collect all available capacities.
-     * 2. Sort them in ascending order.
-     * 3. Return the smallest capacity that can accommodate the 'requestedSize'.
-     * </p>
-     * * @param requestedSize Number of guests in the reservation.
-     * @return The optimal table capacity, or -1 if the party size exceeds restaurant limits.
-     */
-    public int getBestFitCapacity(int requestedSize) {
-        // Extract all existing table sizes from the inventory
-        List<Integer> capacities = new ArrayList<>(tableInventory.keySet());
+        Collections.sort(capacities); // Sort sizes in ascending order (smallest to largest)
         
-        // Sort to ensure we find the smallest possible fit first
-        Collections.sort(capacities);
+        for (int capacity : capacities) { // Loop through available sorted sizes
+            if (capacity >= requestedSize) { // Check if this table size is enough for the party
+                return capacity; // Return the first (and therefore smallest) fit found
+            } // End if
+        } // End loop
         
-        for (int capacity : capacities) {
-            // Find the first capacity that is equal to or larger than the guest count
-            if (capacity >= requestedSize) {
-                return capacity;
-            }
-        }
-        
-        // Return error code if no table is large enough
-        return -1; 
-    }
+        return -1; // Return -1 if no table in the entire inventory is large enough
+    } // Method end
 
-    /**
-     * Returns a copy of the current table inventory.
-     * @return A map representing capacity -> table count.
-     */
-    public Map<Integer, Integer> getFullInventory() {
-        return new HashMap<>(tableInventory);
-    }
-}
+    public Map<Integer, Integer> getFullInventory() { // Method to retrieve the entire table setup
+        return new HashMap<>(tableInventory); // Return a protective copy of the inventory map
+    } // End method
+} // End of Restaurant class

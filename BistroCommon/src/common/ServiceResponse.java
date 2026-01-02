@@ -1,84 +1,84 @@
-package common;
+package common; // Define the package where the class belongs
 
-import java.io.Serializable;
+import java.io.Serializable; // Import the Serializable interface for network transmission
 
 /**
  * ServiceResponse serves as a generic communication envelope for messages sent 
  * from the Server to the Client.
- * It standardizes the feedback loop for the reservation process, ensuring the 
- * Client can consistently interpret successes, suggestions, or failures.
- * * <p>This class implements {@link Serializable} to allow transmission over OCSF 
- * network streams.</p>
- * * @author Software Engineering Student
- * @version 1.0
  */
-public class ServiceResponse implements Serializable {
+public class ServiceResponse implements Serializable { // Class definition implementing Serializable
     
-    /** Serial version UID for maintaining compatibility during the serialization process. */
+    // Serial version UID to ensure compatibility during the serialization/deserialization process
     private static final long serialVersionUID = 1L;
 
     /**
      * Enum defining the specific outcomes of a reservation request handled by the Server.
      */
-    public enum ReservationResponseStatus {
-        /** Case 1: Availability confirmed. The booking is recorded in the Database. */
+    public enum ServiceStatus { // Start of ServiceStatus enumeration
+        
+        // Case: The reservation was successfully placed and saved in the DB
         RESERVATION_SUCCESS,    
         
-        /** Case 2: Requested slot is full, but an alternative time within the next 3 days was found. */
+        // Case: Slot is full, but an alternative date/time is suggested
         RESERVATION_SUGGESTION, 
         
-        /** Case 3: Absolute capacity reached. No tables available in the requested or alternative slots. */
+        // Case: No availability found for requested or alternative slots
         RESERVATION_FULL,
         
-        /** Case 4: Order: The order was placed outside the restaurant's operating hours. */
+        // Case: The requested time falls outside of restaurant operating hours
         RESERVATION_OUT_OF_HOURS,
+        
+        // Case: A general update operation was completed successfully
+        UPDATE_SUCCESS,
 
-        /** General system failure, Database connection loss, or SQL execution error. */
+        // Case: A technical failure occurred (SQL error, connection loss, etc.)
         INTERNAL_ERROR          
-    }
+    } // End of ServiceStatus enumeration
 
-    /** The categorical status of the server's response. */
-    private ReservationResponseStatus status;
+    // Field to store the specific outcome category of the response
+    private ServiceStatus status;
     
-    /** * A polymorphic data field that holds context-specific information based on the status:
-     * <ul>
-     * <li>For {@code SUCCESS}: Contains the Long confirmation code.</li>
-     * <li>For {@code SUGGESTION}: Contains the String of the recommended DateTime.</li>
-     * <li>For {@code ERROR}: Contains a String describing the technical failure.</li>
-     * </ul>
-     */
+    // Polymorphic field to hold the payload (ID, Date string, or Error message)
     private Object data; 
 
     /**
-     * Constructs a new ServiceResponse.
-     * * @param status The outcome category defined by the {@link ReservationResponseStatus} enum.
-     * @param data The payload associated with the response (ID, Date string, or Error message).
+     * Constructs a new ServiceResponse with the specified status and data payload.
      */
-    public ServiceResponse(ReservationResponseStatus status, Object data) {
+    public ServiceResponse(ServiceStatus status, Object data) { // Constructor start
+        // Assign the provided service status to the class member
         this.status = status;
+        
+        // Assign the provided data object (payload) to the class member
         this.data = data;
-    }
+    } // Constructor end
 
     /**
-     * @return The current status of the response.
+     * Retrieves the status of the server response.
+     * @return ServiceStatus enum value
      */
-    public ReservationResponseStatus getStatus() { 
+    public ServiceStatus getStatus() { 
+        // Return the current value of the status field
         return status; 
-    }
+    } // End method
 
     /**
-     * @return The payload object. Needs to be cast based on the status type.
+     * Retrieves the data payload associated with this response.
+     * @return Object containing the payload
      */
     public Object getData() { 
+        // Return the current value of the data field
         return data; 
-    }
+    } // End method
 
     /**
-     * Overridden to provide a human-readable representation of the response for logging.
-     * @return A string summary of the response status and its data.
+     * Provides a human-readable string summary of the response.
      */
-    @Override
-    public String toString() {
-        return "ServiceResponse [Status=" + status + ", Data=" + data + "]";
-    }
-}
+    @Override // Indicates that this method overrides the default Object implementation
+    public String toString() { // Start of toString method
+        // Using a clear and standard format to represent the object state
+        return "ServiceResponse [" + 
+               "Status=" + status + 
+               ", Data=" + data + 
+               "]";
+    } // End method
+} // End of ServiceResponse class
