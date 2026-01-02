@@ -1,4 +1,4 @@
-package clientGUI.Controllers;
+package terminalGUI.Controllers.TerminalControllers;
 
 import client.ChatClient;
 import clientGUI.Controllers.OccasionalControlls.OccasionalLoginController;

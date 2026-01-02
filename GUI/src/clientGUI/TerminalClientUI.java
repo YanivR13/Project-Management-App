@@ -1,12 +1,12 @@
 package clientGUI;
 
 import client.ChatClient;
-import clientGUI.Controllers.TerminalLoginController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import terminalGUI.Controllers.TerminalControllers.TerminalLoginController;
 import terminalGUI.Controllers.TerminalControllers.TerminalMenuController;
 
 /**
