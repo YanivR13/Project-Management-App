@@ -1,12 +1,16 @@
 package terminalGUI.Controllers.TerminalControllers;
 
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
-
+import javafx.stage.Stage;
 import client.ChatClient;
 import common.ChatIF;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;;
 
 /**
@@ -72,8 +76,30 @@ public class TerminalMenuController implements ChatIF {
      */
     @FXML
     private void handleJoinWaitingList(ActionEvent event) {
-        // TODO: implement waiting list registration flow
-    }
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource(
+                    "/clientGUI/fxmlFiles/Terminal/TerminalWaitingListSizeFrame.fxml"
+                )
+            );
+
+            Parent root = loader.load();
+
+            // Inject ChatClient
+            TerminalWaitingListSizeController controller =
+                    loader.getController();
+            controller.setClient(client);
+
+            Stage stage = (Stage) ((Node) event.getSource())
+                    .getScene().getWindow();
+
+            stage.setScene(new Scene(root));
+            stage.setTitle("Join Waiting List");
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }    }
     
     /**
      * Handles "I'm Here" button click.
