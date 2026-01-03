@@ -272,7 +272,21 @@ public class ServerController extends AbstractServer { // Class start inheriting
                     String sClose = (String) messageList.get(4); // Extract close time
                     new UpdateSpecialHoursHandler().handle(restId, sDate, sOpen, sClose, client); // Dispatch
                     break; // Exit case
-
+                    
+                case "PROCESS_TERMINAL_ARRIVAL":
+                	try {
+                        ArrayList<Object> dataList = (ArrayList<Object>) msg;
+                        long code = (Long) dataList.get(1);
+                        String result = VisitController.processTerminalArrival(code);
+                        client.sendToClient(result);
+                    } catch (Exception e) {
+                        serverUI.appendLog("Critical error: " + e.getMessage());
+                        try { 
+                            client.sendToClient("DATABASE_ERROR"); // Inform the UI of the failure 
+                        } catch (IOException io) { io.printStackTrace(); }
+                    }
+                	break;
+                    
                 default: // Fallback for unknown protocols
                     serverUI.appendLog("Unknown command received: " + command); // Log error
                     try { // Start error response

@@ -106,7 +106,25 @@ public class TerminalMenuController implements ChatIF {
      */
     @FXML
     private void handleArrival(ActionEvent event) {
-        // TODO: implement arrival confirmation flow
+    	try {
+            // 1. Load the Arrival Code Entry screen
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalArrivalFrame.fxml"));
+            Parent root = loader.load();
+
+            // 2. Access the new controller and inject the ChatClient
+            VisitUIController controller = loader.getController();
+            controller.setClient(client);
+            controller.onClientReady(); // Register this screen to receive server messages
+
+            // 3. Switch the Scene
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Bistro - Customer Arrival");
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
