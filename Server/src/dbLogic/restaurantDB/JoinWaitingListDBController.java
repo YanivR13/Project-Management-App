@@ -11,7 +11,7 @@ import common.Reservation;
 /**
  * Handles DB operations related to the waiting_list_entry table.
  */
-public class WaitingListDBController {
+public class JoinWaitingListDBController {
 
     /**
      * Inserts a new entry into the waiting list.

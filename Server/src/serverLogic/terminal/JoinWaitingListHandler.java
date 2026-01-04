@@ -10,7 +10,7 @@ import common.Reservation;
 import common.ServiceResponse;
 import common.ServiceResponse.ServiceStatus;
 import dbLogic.restaurantDB.CreateOrderController;
-import dbLogic.restaurantDB.WaitingListDBController;
+import dbLogic.restaurantDB.JoinWaitingListDBController;
 import ocsf.server.ConnectionToClient;
 
 public class JoinWaitingListHandler {
@@ -65,7 +65,7 @@ public class JoinWaitingListHandler {
                     }
 
                     // ניסיון מאוחר → waiting list
-                    WaitingListDBController.insertWaitingListEntry(reservation,(Long) response.getData());
+                    JoinWaitingListDBController.insertWaitingListEntry(reservation,(Long) response.getData());
 
                     client.sendToClient(new ServiceResponse(ServiceStatus.UPDATE_SUCCESS,"Added to waiting list"));
                     return;

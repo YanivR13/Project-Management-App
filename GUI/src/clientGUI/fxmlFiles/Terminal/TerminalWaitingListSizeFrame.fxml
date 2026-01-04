@@ -9,8 +9,8 @@
    <children>
       <Label layoutX="136.0" layoutY="26.0" text="Join Waiting List" />
       <Label layoutX="99.0" layoutY="51.0" text="Please enter number of diners" />
-      <TextField fx:id="txtAmount" layoutX="123.0" layoutY="82.0" prefHeight="26.0" prefWidth="110.0" />
-      <Button fx:id="btnContinue" layoutX="69.0" layoutY="121.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="86.0" text="Continue" />
+      <TextField fx:id="txtDiners" layoutX="123.0" layoutY="82.0" prefHeight="26.0" prefWidth="110.0" />
+      <Button fx:id="btnContinue" layoutX="69.0" layoutY="121.0" mnemonicParsing="false" onAction="#handleContinue" prefHeight="26.0" prefWidth="86.0" text="Continue" />
       <Button fx:id="btnBack" layoutX="202.0" layoutY="121.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="86.0" text="Back" />
    </children>
 </AnchorPane>

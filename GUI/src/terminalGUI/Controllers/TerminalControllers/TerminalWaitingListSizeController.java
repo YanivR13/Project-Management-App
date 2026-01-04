@@ -61,6 +61,7 @@ public class TerminalWaitingListSizeController implements ChatIF {
 
     	
     	if (client != null) {
+    		System.out.println("Sending JOIN_WAITING_LIST message: " + msg);
     	    client.handleMessageFromClientUI(msg);
     	} else {
     	    showError("No server connection");
