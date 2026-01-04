@@ -4,6 +4,8 @@ import java.util.ArrayList;
 
 import client.ChatClient;
 import common.ChatIF;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,6 +18,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 /**
  * Controller for the Arrival Terminal screen.
@@ -25,6 +28,8 @@ import javafx.stage.Stage;
 public class VisitUIController implements ChatIF {
 	
     private ChatClient client;
+    
+    private Timeline statusTimer;
 
     // FXML injected UI components
     @FXML private TextField txtCode; // Field for entering confirmation code
@@ -74,21 +79,6 @@ public class VisitUIController implements ChatIF {
     }
 
     /**
-     * Callback method called by ChatClient when the server responds.
-     */
-    @Override
-    public void display(Object message) {
-        if (message instanceof String) {
-            String response = (String) message;
-            
-            // Ensure UI updates happen on the JavaFX Application Thread
-            Platform.runLater(() -> {
-                handleServerResponse(response);
-            });
-        }
-    }
-
-    /**
      * Internal logic to process the string response from the Server.
      */
     private void handleServerResponse(String response) {
@@ -98,10 +88,11 @@ public class VisitUIController implements ChatIF {
             showAlert("Arrival Failed", "Invalid confirmation code or booking not confirmed.", AlertType.ERROR);
         } 
         else if (response.equals("TOO_EARLY")) {
-            showAlert("Too Early", "You arrived more than 60 minutes early. Please come back later.", AlertType.INFORMATION);
+            showAlert("Too Early", "You arrived more than 20 minutes early. Please come back later.", AlertType.INFORMATION);
         } 
         else if (response.equals("TABLE_NOT_READY_WAIT")) {
             showAlert("Welcome", "Your table is not ready yet. Please wait, we will notify you via SMS.", AlertType.INFORMATION);
+            startPollingForStatus(Long.parseLong(txtCode.getText().trim()));
             // Optional: returnToMainMenu();
         } 
         else if (response.startsWith("SUCCESS_TABLE_")) {
@@ -113,7 +104,59 @@ public class VisitUIController implements ChatIF {
             showAlert("System Error", "Communication with database failed. Please see the host.", AlertType.ERROR);
         }
     }
+    
+    /**
+     * Starts a background timer that asks the server for the status every few seconds.
+     */
+    private void startPollingForStatus(long code) {
+        if (statusTimer != null) statusTimer.stop();
 
+        statusTimer = new Timeline(new KeyFrame(Duration.seconds(5), event -> {
+            // Prepare request to check status
+            ArrayList<Object> message = new ArrayList<>();
+            message.add("CHECK_STATUS_UPDATE");
+            message.add(code);
+            
+            // Send to server (the response will be handled in the display() method)
+            client.handleMessageFromClientUI(message);
+        }));
+        
+        statusTimer.setCycleCount(Timeline.INDEFINITE);
+        statusTimer.play();
+    }
+    
+    /**
+     * Updated display method to handle polling quietly.
+     */
+    @Override
+    public void display(Object message) {
+        if (message instanceof String) {
+            String response = (String) message;
+            
+            Platform.runLater(() -> {
+                if (response.equals("NOTIFIED")) {
+                    if (statusTimer != null) statusTimer.stop();
+                    showTableReadyPopup();
+                } 
+                else if (response.equals("WAITING_AT_RESTAURANT") || response.equals("WAITING")) {
+                }
+                else {
+                    handleServerResponse(response);
+                }
+            });
+        }
+    }
+
+    private void showTableReadyPopup() {
+        if (statusTimer != null) statusTimer.stop();
+
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Table Ready!");
+        alert.setHeaderText("Good news!");
+        alert.setContentText("Your table is now ready! Please enter your code again to get your table number.");
+        alert.showAndWait();
+    }
+    
     /**
      * Helper for standardized alerts.
      */

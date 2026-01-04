@@ -23,7 +23,7 @@ public class PaymentController {
 	public static Visit getVisitDetails(long code) {
 		// Query to find an active visit by its confirmation code
 	    String query = "SELECT * FROM visit WHERE confirmation_code = ? AND status = ?";
-	    Connection conn = DBController.getInstance().getConnection(); // שליפת החיבור הקיים בלי לסגור אותו
+	    Connection conn = DBController.getInstance().getConnection(); 
 	    
 	    try (PreparedStatement pstmt = conn.prepareStatement(query)) {
 	        pstmt.setLong(1, code);
@@ -67,10 +67,18 @@ public class PaymentController {
         // 3. Reset table availability. Note: `table` is a reserved keyword in SQL, requiring backticks
         String updateTable = "UPDATE `table` SET is_available = 'true' WHERE table_id = (SELECT table_id FROM visit WHERE confirmation_code = ?)";
 
+        String getTableIdSql = "SELECT table_id FROM visit WHERE confirmation_code = ?";     
         
         try {
         	// Disable auto-commit to manage the transaction manually
-            conn.setAutoCommit(false); // התחלת Transaction
+            conn.setAutoCommit(false); 
+            int tableId = -1;
+            
+            try (PreparedStatement psCap = conn.prepareStatement(getTableIdSql)) {
+                psCap.setLong(1, bill.getConfirmationCode());
+                ResultSet rs = psCap.executeQuery();
+                if (rs.next()) tableId = rs.getInt("table_id");
+            }
 
             try (PreparedStatement psBill = conn.prepareStatement(updateBill);
                  PreparedStatement psVisit = conn.prepareStatement(updateVisit);
@@ -92,7 +100,13 @@ public class PaymentController {
                 psTable.executeUpdate();
             
                 // Commit all changes if no exceptions occurred
-                conn.commit(); // ביצוע כל השינויים
+                conn.commit(); 
+                
+                // TRIGGER: Notify the seating engine that resources are free
+                if (tableId != -1) {
+                    VisitController.handleTableFreed(tableId);
+                }
+                
                 return true;
             } catch (SQLException e) {
             	// Rollback changes in case of any SQL error during the process

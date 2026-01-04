@@ -286,6 +286,18 @@ public class ServerController extends AbstractServer { // Class start inheriting
                         } catch (IOException io) { io.printStackTrace(); }
                     }
                 	break;
+                	
+                case "CHECK_STATUS_UPDATE":
+                    ArrayList<Object> statusRequest = (ArrayList<Object>) msg;
+                    long confirmationCode = (long) statusRequest.get(1);
+                    String statusResult = VisitController.checkCurrentStatus(confirmationCode);
+                    try {
+                        client.sendToClient(statusResult);
+                    } catch (IOException e) {
+                        System.err.println("Error sending status update to client: " + e.getMessage());
+                        e.printStackTrace();
+                    }
+                    break;
                     
                 default: // Fallback for unknown protocols
                     serverUI.appendLog("Unknown command received: " + command); // Log error
