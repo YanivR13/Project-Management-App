@@ -3,8 +3,8 @@ package clientGUI.Controllers.OccasionalControlls; // Defining the package for o
 import java.util.ArrayList; // Importing ArrayList for data list management
 import client.ChatClient; // Importing the ChatClient for communication
 import clientGUI.Controllers.MenuControlls.BaseMenuController; // Importing the base controller for inheritance
+import common.LoginSource;
 import clientGUI.Controllers.RemoteLoginController; // Importing the remote login controller reference
-import commonLogin.LoginSource; // New: Importing Eden's login source enumeration
 import javafx.application.Platform; // Importing Platform for UI thread safety
 import javafx.event.ActionEvent; // Importing ActionEvent for UI interaction
 import javafx.fxml.FXML; // Importing FXML annotation for UI injection

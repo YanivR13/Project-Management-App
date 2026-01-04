@@ -8,6 +8,8 @@ import serverLogic.managmentLogic.UpdateHoursHandler; // Import handler for regu
 import serverLogic.managmentLogic.UpdateSpecialHoursHandler; // Import handler for special hours updates
 import serverLogic.menuLogic.*; // Import all menu-related logic handlers
 import serverLogic.serverRestaurant.RestaurantManager; // Import the RAM-based restaurant manager
+import serverLogic.terminal.JoinWaitingListHandler;
+
 import java.util.ArrayList; // Import for dynamic list structures
 import java.util.List; // Import for generic list interfaces
 import java.util.Map; // Import for key-value pair mapping
@@ -237,6 +239,10 @@ public class ServerController extends AbstractServer { // Class start inheriting
                 case "UPDATE_SUBSCRIBER_DETAILS": // Delegate to profile update handler
                     new EditDetailsHandler().handle(messageList, client); // Dispatch
                     break; // Exit case
+                    
+                case "JOIN_WAITING_LIST":
+                	new JoinWaitingListHandler().handle(messageList, client);
+                	break;
                     
                 case "GET_RESTAURANT_WORKTIMES": // Fetch RAM-cached operating hours
                     try { // Start handling

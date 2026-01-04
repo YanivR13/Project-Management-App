@@ -99,7 +99,8 @@ public class TerminalMenuController implements ChatIF {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }    }
+        }    
+    }
     
     /**
      * Handles "I'm Here" button click.

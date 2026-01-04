@@ -1,4 +1,4 @@
-package commonLogin;
+package common;
 
 /**
  * Represents the source from which a login flow was initiated.

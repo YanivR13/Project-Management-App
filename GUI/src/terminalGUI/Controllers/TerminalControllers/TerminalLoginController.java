@@ -4,7 +4,7 @@ import client.ChatClient; // Importing the main client class for communication
 import clientGUI.Controllers.OccasionalControlls.OccasionalLoginController; // Importing the guest controller for casting
 import clientGUI.Controllers.SubscriberControlls.SubscriberLoginController; // Importing the member controller for casting
 import common.ChatIF; // Importing the interface for server-side responses
-import commonLogin.LoginSource; // Importing Eden's login source enumeration
+import common.LoginSource;
 import javafx.event.ActionEvent; // Importing ActionEvent for UI interaction handling
 import javafx.fxml.FXML; // Importing FXML annotation for UI component injection
 import javafx.fxml.FXMLLoader; // Importing FXMLLoader for loading login frames

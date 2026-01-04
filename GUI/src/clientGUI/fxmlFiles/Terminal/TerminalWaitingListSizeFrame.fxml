@@ -5,13 +5,12 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 
-
 <AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="197.0" prefWidth="359.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="terminalGUI.Controllers.TerminalControllers.TerminalWaitingListSizeController">
    <children>
       <Label layoutX="136.0" layoutY="26.0" text="Join Waiting List" />
       <Label layoutX="99.0" layoutY="51.0" text="Please enter number of diners" />
-      <TextField layoutX="123.0" layoutY="82.0" prefHeight="26.0" prefWidth="110.0" />
-      <Button layoutX="69.0" layoutY="121.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="86.0" text="Continue" />
-      <Button layoutX="202.0" layoutY="121.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="86.0" text="Back" />
+      <TextField fx:id="txtAmount" layoutX="123.0" layoutY="82.0" prefHeight="26.0" prefWidth="110.0" />
+      <Button fx:id="btnContinue" layoutX="69.0" layoutY="121.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="86.0" text="Continue" />
+      <Button fx:id="btnBack" layoutX="202.0" layoutY="121.0" mnemonicParsing="false" prefHeight="26.0" prefWidth="86.0" text="Back" />
    </children>
 </AnchorPane>
