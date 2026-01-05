@@ -175,6 +175,7 @@ public class CreateOrderController { // Start of CreateOrderController class def
         // Query Logic: A table is occupied if a reservation exists within a 4-hour window (+/- 2 hours)
         String query = "SELECT COUNT(*) FROM reservation " +
                        "WHERE number_of_guests = ? " +
+                       "AND status != 'CANCELLED' "+
                        "AND reservation_datetime > DATE_SUB(?, INTERVAL 2 HOUR) " +
                        "AND reservation_datetime < DATE_ADD(?, INTERVAL 2 HOUR)"; // SQL query string
         

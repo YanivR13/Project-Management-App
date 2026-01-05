@@ -68,7 +68,7 @@ public class viewReservationController {
 	 * @return true if the update was successful (rows affected > 0), false otherwise.
 	 */
 	public static boolean cancelReservationByCode(long confirmationCode) {
-	    String query = "UPDATE reservation SET status = 'CANCELED' WHERE confirmation_code = ?";
+	    String query = "UPDATE reservation SET status = 'CANCELLED' WHERE confirmation_code = ?";
 
 	    Connection conn = DBController.getInstance().getConnection();
 	    
