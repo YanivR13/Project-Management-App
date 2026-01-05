@@ -198,6 +198,27 @@ public class ServerController extends AbstractServer {
                     } 
                     break; 
                     
+                case "CANCEL_WAITING_LIST_BY_CODE": 
+                    try { 
+                        // Extract the code as a long instead of userId as an int 
+                        long thecodeToCancel = (long) messageList.get(1); 
+                        
+                        // Pass the long confirmation code to the updated DB controller
+                        int result = dbLogic.restaurantDB.CancelWaitingListController.cancelWaitingEntry(thecodeToCancel); 
+                        
+                        if (result == 1) { 
+                            client.sendToClient("CANCEL_WAITING_SUCCESS"); 
+                        } else if (result == 0) { 
+                            client.sendToClient("NOT_ON_WAITING_LIST"); 
+                        } else { 
+                            client.sendToClient("SERVER_ERROR"); 
+                        } 
+                    } catch (Exception e) { 
+                        serverUI.appendLog("Critical error in CANCEL_WAITING_LIST: " + e.getMessage()); 
+                        try { client.sendToClient("SERVER_ERROR"); } catch (IOException io) { io.printStackTrace(); } 
+                    } 
+                    break;
+                    
                 case "GET_RESERVATIONS_HISTORY": 
                     new ReservationHistoryHandler().handle(messageList, client); 
                     break; 
