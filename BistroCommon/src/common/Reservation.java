@@ -16,7 +16,7 @@ public class Reservation implements Serializable { // Begin class definition imp
      */
     public enum ReservationStatus { // Define internal Enum for reservation states
         ACTIVE,   // Represents an active and confirmed reservation
-        CANCELED, // Represents a reservation that has been revoked
+        CANCELLED, // Represents a reservation that has been revoked
         WAITING_AT_RESTAURANT,
         NOTIFIED,
         NO_SHOW,

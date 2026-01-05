@@ -10,7 +10,14 @@
             <Font name="System Bold" size="18.0" />
          </font>
       </Label>
-      <Label text="Double-click a cell to edit opening/closing times. Use 00:00 for closed days." textFill="#7f8c8d" />
+      
+      <Label text="NOTE: To set the restaurant as CLOSED, please enter '00:00' for both opening and closing times." textFill="#e67e22">
+         <font>
+            <Font name="System Bold Italic" size="13.0" />
+         </font>
+      </Label>
+      
+      <Label text="Double-click a cell to edit opening/closing times." textFill="#7f8c8d" />
       
       <TableView fx:id="tableHours" prefHeight="300.0" prefWidth="600.0">
         <columns>
@@ -20,7 +27,7 @@
         </columns>
       </TableView>
       
-      <Button mnemonicParsing="false" onAction="#updateRegularHours" prefHeight="40.0" prefWidth="200.0" 
+      <Button mnemonicParsing="false" onAction="#updateRegularHours" prefHeight="40.0" prefWidth="250.0" 
               style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold;" 
               text="Save All Changes to DB" />
    </children>

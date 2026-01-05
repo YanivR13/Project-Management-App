@@ -39,7 +39,6 @@ public class VisitUIController implements ChatIF {
     
     /**
      * Injects the shared ChatClient instance into the controller.
-     *
      * @param client Active network client
      */
     public void setClient(ChatClient client) {

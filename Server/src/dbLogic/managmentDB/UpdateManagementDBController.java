@@ -187,4 +187,128 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
         
         return -1; // Return -1 if both lookup and insertion failed
     } // End of getOrCreateTimeRange method
+    
+    /**
+     * Deletes all special operating hour overrides for a specific restaurant.
+     * This effectively resets the restaurant to follow only its regular weekly schedule.
+     * * @param restaurantId The unique ID of the restaurant.
+     * @return true if the deletion was successful and committed; false otherwise.
+     */
+    public static boolean deleteAllSpecialHours(int restaurantId) { // Start of the method
+        // Retrieve the active database connection from the singleton controller
+        Connection conn = DBController.getInstance().getConnection(); // Get connection
+
+        // SQL command to remove all records matching the restaurant ID from the special hours table
+        String sql = "DELETE FROM restaurant_special_hours WHERE restaurant_id = ?"; //
+
+        try { // Start transaction block
+            // Disable auto-commit to manually control the transaction boundary
+            conn.setAutoCommit(false); //
+
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) { // Prepare statement
+                // Bind the restaurant ID to the placeholder
+                pstmt.setInt(1, restaurantId); 
+
+                // Execute the deletion query
+                pstmt.executeUpdate(); 
+            } // End statement try
+
+            // Commit the transaction to persist the changes in the database
+            conn.commit(); //
+            return true; // Return success
+
+        } catch (SQLException e) { // Handle potential database errors
+            try { // Rollback logic in case of failure to maintain data integrity
+                if (conn != null) { 
+                    conn.rollback(); //
+                } 
+            } catch (SQLException ex) { 
+                ex.printStackTrace(); 
+            } 
+            e.printStackTrace(); // Log the original exception details
+            return false; // Return failure
+        } finally { // Cleanup block
+            try { // Restore the connection state for future operations
+                conn.setAutoCommit(true); //
+            } catch (SQLException e) { 
+                e.printStackTrace(); 
+            } 
+        } // End finally
+    } // End of deleteAllSpecialHours method
+    
+    /**
+     * Creates a new subscriber in the system using an atomic SQL transaction.
+     * @param phone The 10-digit phone number.
+     * @param email The customer's email.
+     * @return A Long (the new subscriber_id) if successful, or a String error message if a duplicate exists.
+     */
+    public static Object createNewSubscriber(String phone, String email) { // Method start
+        // Get connection from the singleton controller
+        Connection conn = DBController.getInstance().getConnection(); 
+        
+        // SQL 1: Check if phone already exists
+        String checkSql = "SELECT user_id FROM user WHERE phone_number = ?";
+        
+        // SQL 2: Insert into user table and get back the user_id
+        String insertUserSql = "INSERT INTO user (phone_number, email) VALUES (?, ?)";
+        
+        // SQL 3: Insert into subscriber table
+        // username and qr_code remain NULL as requested. status is set to 'Active'.
+        String insertSubSql = "INSERT INTO subscriber (user_id, subscriber_id, status) VALUES (?, ?, 'Active')";
+
+        try { // Start transaction block
+            conn.setAutoCommit(false); // Disable auto-commit for atomicity
+
+            // --- STEP 1: Check for existing phone number ---
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+                checkStmt.setString(1, phone);
+                try (ResultSet rs = checkStmt.executeQuery()) {
+                    if (rs.next()) { // If a record is found
+                        return "Phone number already exists in the system."; // Return error message
+                    }
+                }
+            }
+
+            // --- STEP 2: Insert into 'user' table ---
+            int newUserId = -1;
+            try (PreparedStatement userStmt = conn.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS)) {
+                userStmt.setString(1, phone);
+                userStmt.setString(2, email);
+                userStmt.executeUpdate();
+                
+                try (ResultSet keys = userStmt.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        newUserId = keys.getInt(1); // Capture the auto-generated user_id
+                    }
+                }
+            }
+
+            if (newUserId == -1) throw new SQLException("Failed to generate User ID.");
+
+            // --- STEP 3: Insert into 'subscriber' table ---
+            // We will generate the subscriber_id based on a simple timestamp/random logic or DB sequence
+            long generatedSubId = (long)(Math.random() * 900000) + 100000; // Example 6-digit subscriber ID
+
+            try (PreparedStatement subStmt = conn.prepareStatement(insertSubSql)) {
+                subStmt.setInt(1, newUserId); // Foreign key to user table
+                subStmt.setLong(2, generatedSubId); // The unique subscriber_id
+                subStmt.executeUpdate();
+            }
+
+            // --- STEP 4: Finalize Transaction ---
+            conn.commit(); // Save changes
+            return generatedSubId; // Return the ID to the handler
+
+        } catch (SQLException e) { // Catch any SQL errors
+            try {
+                if (conn != null) conn.rollback(); // Undo changes on failure
+            } catch (SQLException ex) { ex.printStackTrace(); }
+            e.printStackTrace();
+            return "Critical database error occurred.";
+        } finally { // Restore connection state
+            try {
+                conn.setAutoCommit(true); //
+            } catch (SQLException e) { e.printStackTrace(); }
+        } // End finally
+    } // End method
 } // End of class

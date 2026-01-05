@@ -40,6 +40,17 @@
             <Button mnemonicParsing="false" onAction="#updateSpecialHours" prefHeight="40.0" prefWidth="250.0" 
                     style="-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold;" 
                     text="Apply Special Hours" />
+
+            <Button mnemonicParsing="false" onAction="#deleteAllSpecialHours" prefHeight="40.0" prefWidth="250.0" 
+                    style="-fx-background-color: #c0392b; -fx-text-fill: white; -fx-font-weight: bold;" 
+                    text="Delete All Special Hours" />
+            
+            <Label text="* To set the restaurant as CLOSED for this date, select '00:00' for both times." textFill="#e74c3c">
+               <font>
+                  <Font name="System Bold" size="12.0" />
+               </font>
+            </Label>
+            
             <Label text="* This will override regular hours for the selected date only." textFill="#7f8c8d">
                <font>
                   <Font name="System Italic" size="11.0" />
