@@ -52,6 +52,7 @@ public class SubscriberLoginHandler {
                 ArrayList<Object> response = new ArrayList<>();
                 response.add("LOGIN_SUCCESS");
                 response.add(userId);
+                client.setInfo("userId", userId);
                 
                 // Transmit serialized object back to the client
                 client.sendToClient(response);

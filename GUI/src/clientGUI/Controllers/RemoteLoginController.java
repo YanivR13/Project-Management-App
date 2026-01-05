@@ -4,7 +4,7 @@ import client.ChatClient; // Importing the main client class for network communi
 import clientGUI.Controllers.MenuControlls.BaseMenuController; // Importing the parent class for session logic
 import clientGUI.Controllers.OccasionalControlls.OccasionalLoginController; // New: Importing guest controller for type check
 import clientGUI.Controllers.SubscriberControlls.SubscriberLoginController; // New: Importing subscriber controller for type check
-import commonLogin.LoginSource; // New: Importing the LoginSource enum for navigation logic
+import common.LoginSource;
 import javafx.event.ActionEvent; // Importing ActionEvent to handle user clicks
 import javafx.fxml.FXML; // Importing FXML annotation for injection
 import javafx.fxml.FXMLLoader; // Importing the loader to instantiate FXML files

@@ -51,7 +51,8 @@ public class OccasionalLoginHandler {
                 // Success Scenario: Encapsulate the confirmation and the retrieved UserID
                 ArrayList<Object> response = new ArrayList<>();
                 response.add("LOGIN_OCCASIONAL_SUCCESS");
-                response.add(userId); 
+                response.add(userId);
+                client.setInfo("userId", userId);
                 
                 // Transmit the successful response back to the client
                 client.sendToClient(response);

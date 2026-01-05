@@ -81,4 +81,18 @@ public class ServiceResponse implements Serializable { // Class definition imple
                ", Data=" + data + 
                "]";
     } // End method
+    
+    /**
+     * Retrieves the human-readable message carried by this response.
+     * <p>
+     * This method is primarily intended for UI consumption (alerts, popups, logs),
+     * and safely converts the internal data payload into a string representation.
+     * If no payload exists, an empty string is returned.
+     *
+     * @return A user-friendly message describing the response outcome
+     */
+    public String getMessage() { // Start of getMessage method
+        return data != null ? data.toString() : "";
+    } // End method
+
 } // End of ServiceResponse class

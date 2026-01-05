@@ -3,8 +3,8 @@ package clientGUI.Controllers.SubscriberControlls; // Defining the package for s
 import java.util.ArrayList; // Importing ArrayList for dynamic message lists
 import client.ChatClient; // Importing the main client communication class
 import clientGUI.Controllers.MenuControlls.BaseMenuController; // Importing the parent controller for inheritance
+import common.LoginSource;
 import clientGUI.Controllers.RemoteLoginController; // Importing reference to the portal login controller
-import commonLogin.LoginSource; // New: Importing Eden's login source enumeration
 import javafx.event.ActionEvent; // Importing ActionEvent for UI interaction handling
 import javafx.fxml.FXML; // Importing FXML annotation for UI element injection
 import javafx.fxml.FXMLLoader; // Importing FXMLLoader for loading layout files
