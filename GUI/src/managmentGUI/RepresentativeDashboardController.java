@@ -8,6 +8,7 @@ import java.util.Map; // Importing for map interface
 
 import clientGUI.Controllers.MenuControlls.BaseMenuController; // Importing the base menu controller for session data
 import common.TimeRange; // Importing the TimeRange domain entity
+import common.Restaurant;
 import common.ServiceResponse; // Importing the server response envelope
 import javafx.application.Platform; // Importing for UI thread management
 import javafx.collections.FXCollections; // Importing for observable collection utilities
@@ -43,6 +44,10 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     @FXML private DatePicker dpSpecialDate; // Date selector for special hours overrides
     @FXML private ComboBox<String> comboSpecialOpen; // Dropdown for special opening time
     @FXML private ComboBox<String> comboSpecialClose; // Dropdown for special closing time
+    
+ // --- Fields for CreateNewSubscriber sub-screen ---
+    @FXML private TextField txtPhone; // Linked to fx:id="txtPhone" in the new FXML
+    @FXML private TextField txtEmail; // Linked to fx:id="txtEmail" in the new FXML
 
     // Observable list to maintain live data for the hours table
     private ObservableList<DayScheduleRow> scheduleData = FXCollections.observableArrayList(); // List initialization
@@ -63,6 +68,30 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             showRegularHoursScreen(null); // Initial screen load
         } // End if block
     } // End of onClientReady method
+    
+    /**
+     * Sends a request to the server to fetch the current restaurant operating hours.
+     * This method is triggered by the "Show the updated work times" button in the FXML.
+     */
+    @FXML // Annotation to link this method to the FXML button action
+    void showCurrentWorkTimes(ActionEvent event) { // Method signature triggered by the UI button click
+        
+        // --- 1. Protocol Construction ---
+        ArrayList<Object> message = new ArrayList<>(); // Create a list to hold the communication protocol components
+        message.add("GET_RESTAURANT_WORKTIMES"); // Add the specific command string that the ServerController's switch-case expects
+        
+        // --- 2. Local Feedback ---
+        appendLog("Requesting current work times from server..."); // Log the action to the dashboard's txtLog for user feedback
+        
+        // --- 3. Transmission ---
+        if (client != null) { // Defensive check to ensure the OCSF client is initialized and connected
+            client.handleMessageFromClientUI(message); // Send the protocol message to the server through the communication bridge
+        } // End of if block
+        else { // If the client reference is null
+            appendLog("Error: Client connection is not initialized."); // Inform the representative that the connection is missing
+        } // End of else block
+        
+    } // End of showCurrentWorkTimes method
 
     /**
      * Utility method to load FXML sub-screens into the central contentPane.
@@ -243,12 +272,97 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         // Send request to the server
         client.handleMessageFromClientUI(msg); // Transmitting
     } // End method
+    
+    /**
+     * Sends a request to the server to wipe all special operating hours from the database.
+     * Includes a confirmation dialog to prevent accidental data loss.
+     */
+    @FXML // Link to the "Delete All Special Hours" button in the FXML
+    void deleteAllSpecialHours(ActionEvent event) { // Method triggered by the UI button
+        
+        // --- 1. User Confirmation Dialog ---
+        // Create a confirmation alert to ensure the user actually intends to delete everything
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION); // Initialize alert 
+        confirmAlert.setTitle("Confirm Mass Deletion"); // Set window title
+        confirmAlert.setHeaderText("Permanently Delete All Special Hours?"); // Set header text
+        confirmAlert.setContentText("This action will remove every special hour override currently saved. Are you sure?"); // Set body text
+        
+        // Display the alert and wait for the user to click a button (OK or Cancel)
+        java.util.Optional<ButtonType> result = confirmAlert.showAndWait(); // Capture user decision
+        
+        // Check if the user clicked the 'OK' button
+        if (result.isPresent() && result.get() == ButtonType.OK) { // Logic gate for deletion
+            
+            // --- 2. Protocol Construction ---
+            // Prepare the ArrayList protocol expected by the ServerController 
+            ArrayList<Object> message = new ArrayList<>(); // Initialize the message list
+            message.add("DELETE_ALL_SPECIAL_HOURS"); // Add the command string (to be implemented in server)
+            message.add(1); // Add the hardcoded restaurant ID as used in other update methods
+
+            // --- 3. Local Feedback & Transmission ---
+            appendLog("Requesting server to clear all special hour records..."); // Update local log
+            
+            if (client != null) { // Check if the OCSF client bridge is active
+                client.handleMessageFromClientUI(message); // Transmit the request to the server
+            } // End of inner if
+            
+        } else { // If the user clicked 'Cancel' or closed the alert
+            appendLog("Deletion canceled by user."); // Log the cancellation locally
+        } // End of outer if-else
+        
+    } // End of deleteAllSpecialHours method
 
     // --- 6. Sub-Menu Navigation Handlers ---
 
     @FXML void createNewSubscriber(ActionEvent event) { // Triggered by menu
         loadSubScreen("/managmentGUI/ActionsFXML/CreateNewSubscriber.fxml"); // Loading sub-view
     } // End method
+    
+    /**
+     * Processes the creation of a new subscriber account.
+     * Performs GUI-level validation before transmitting data to the server.
+     */
+    @FXML // Annotation to link this method to the button in CreateNewSubscriber.fxml
+    void processCreateSubscriber(ActionEvent event) { // Start of the method
+        
+        // --- 1. Data Retrieval ---
+        // Extract text from the input fields and remove leading/trailing whitespace
+        String phone = txtPhone.getText().trim(); // Getting phone input
+        String email = txtEmail.getText().trim(); // Getting email input
+
+        // --- 2. GUI Validation: Phone Number ---
+        // Check if the phone consists of exactly 10 numeric digits using Regex
+        if (!phone.matches("\\d{10}")) { // If the phone is NOT exactly 10 digits
+            // Show an error alert to the representative
+            new Alert(Alert.AlertType.ERROR, "Invalid Phone: Must be exactly 10 digits (0-9).").show(); 
+            return; // Exit the method to prevent sending invalid data
+        }
+
+        // --- 3. GUI Validation: Email Address ---
+        // Check if the email contains at least one '@' symbol
+        if (!email.contains("@")) { // If the email is missing the '@' character
+            // Show an error alert to the representative
+            new Alert(Alert.AlertType.ERROR, "Invalid Email: Must contain an '@' symbol.").show();
+            return; // Exit the method
+        }
+
+        // --- 4. Protocol Construction ---
+        // If validation passes, prepare the standard ArrayList protocol for the server
+        ArrayList<Object> message = new ArrayList<>(); // Initialize the message list
+        message.add("CREATE_NEW_SUBSCRIBER"); // Add the unique command header
+        message.add(phone); // Add the validated phone number as the second element
+        message.add(email); // Add the validated email address as the third element
+
+        // --- 5. Transmission ---
+        // Log the attempt locally in the dashboard logger
+        appendLog("Sending registration request for phone: " + phone); 
+        
+        // Send the message to the server via the OCSF client bridge
+        if (client != null) { // Defensive check for active connection
+            client.handleMessageFromClientUI(message); // Transmit to server
+        } // End of if block
+        
+    } // End of processCreateSubscriber method
 
     @FXML void viewSubscribersList(ActionEvent event) { // Triggered by menu
         loadSubScreen("/managmentGUI/ActionsFXML/SubscribersList.fxml"); // Loading sub-view
@@ -296,24 +410,51 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     } // End method
     
     /**
-     * Processes server responses regarding operational updates.
+     * Processes server responses regarding operational updates and data requests.
+     * Updated to handle the results of new subscriber registration.
      */
-    @Override // Overriding from BaseMenuController/ChatIF
-    public void display(Object message) { // Start method
-        // Handle generic server feedback envelopes
-        if (message instanceof ServiceResponse) { // Start check
+    @Override // Overriding from ChatIF/BaseMenuController
+    public void display(Object message) { 
+        
+        // --- SCENARIO 1: Handling ServiceResponse (Update confirmations, errors, or IDs) ---
+        if (message instanceof ServiceResponse) { 
             ServiceResponse response = (ServiceResponse) message; // Casting object
-            // Ensure UI updates occur on the JavaFX Application Thread
-            Platform.runLater(() -> { // Start runLater lambda
-                // Append the raw server status to the dashboard log
-                appendLog("Server Response: " + response.getStatus()); // Logging status
-                // Logic: Show success alert if the update was confirmed
-                if (response.getStatus() == ServiceResponse.ServiceStatus.UPDATE_SUCCESS) { // If success
-                    new Alert(Alert.AlertType.INFORMATION, "Success! Operating hours updated.").show(); // Inform user
-                } // End inner if
-            }); // End lambda
-        } // End outer if
-    } // End method
+            
+            // UI updates must be on the JavaFX Application Thread
+            Platform.runLater(() -> { 
+                
+                // If the response is a success (RESERVATION_SUCCESS or UPDATE_SUCCESS)
+                if (response.getStatus() == ServiceResponse.ServiceStatus.UPDATE_SUCCESS) {
+                    
+                    // Check if the payload is a Long (Our new Subscriber ID)
+                    if (response.getData() instanceof Long) {
+                        Long newSubscriberId = (Long) response.getData();
+                        // Display the successful ID directly in the logger as requested
+                        appendLog("SUCCESS: New Subscriber created! Generated ID: " + newSubscriberId); 
+                        new Alert(Alert.AlertType.INFORMATION, "Subscriber Created Successfully!\nID: " + newSubscriberId).show();
+                    } else {
+                        // Standard success message (like hours update)
+                        appendLog("Server Response: " + response.getStatus());
+                        new Alert(Alert.AlertType.INFORMATION, "Success! System updated.").show(); 
+                    }
+                } 
+                // If the response contains an error (INTERNAL_ERROR)
+                else if (response.getStatus() == ServiceResponse.ServiceStatus.INTERNAL_ERROR) {
+                    // Display the specific error message (e.g., "Phone already exists")
+                    appendLog("SERVER ERROR: " + response.getData());
+                    new Alert(Alert.AlertType.ERROR, "Operation Failed: " + response.getData()).show();
+                }
+            }); 
+        } 
+        
+        // --- SCENARIO 2: Handling Restaurant object (Work times) ---
+        else if (message instanceof Restaurant) { 
+            Restaurant rest = (Restaurant) message; //
+            Platform.runLater(() -> { 
+                appendLog(rest.getFormattedOpeningHours()); //
+            });
+        }
+    }
 
     /**
      * Thread-safe helper to update the UI log area.

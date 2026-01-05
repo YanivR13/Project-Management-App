@@ -113,7 +113,7 @@ public class Restaurant implements Serializable { // Defining the Restaurant cla
         } // End loop
 
         if (!hasSpecialAlerts) { // If no special events were found in the loop
-            sb.append("\nNo special holiday or event hours in the next 14 days.\n"); // Inform the user
+            sb.append("\nNo special holiday or event hours in the next 30 days.\n"); // Inform the user
         } // End if no alerts
 
         sb.append("\n================================="); // Add closing footer

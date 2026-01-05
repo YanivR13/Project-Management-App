@@ -4,6 +4,8 @@ import java.io.IOException; // Import for handling network input/output errors
 import java.sql.SQLException; // Import for handling database-related exceptions
 import java.time.LocalDate; // Import for modern date management
 
+import serverLogic.managmentLogic.CreateSubscriberHandler;
+import serverLogic.managmentLogic.DeleteSpecialHoursHandler;
 import serverLogic.managmentLogic.UpdateHoursHandler; // Import handler for regular hours updates
 import serverLogic.managmentLogic.UpdateSpecialHoursHandler; // Import handler for special hours updates
 import serverLogic.menuLogic.*; // Import all menu-related logic handlers
@@ -272,6 +274,21 @@ public class ServerController extends AbstractServer { // Class start inheriting
                     String sClose = (String) messageList.get(4); // Extract close time
                     new UpdateSpecialHoursHandler().handle(restId, sDate, sOpen, sClose, client); // Dispatch
                     break; // Exit case
+                    
+                case "DELETE_ALL_SPECIAL_HOURS": // Protocol command sent from the Representative Dashboard
+                    int targetRestId = (int) messageList.get(1); // Extract the restaurant ID from the incoming ArrayList
+                    // Create and invoke the handler to process the deletion logic
+                    new DeleteSpecialHoursHandler().handle(targetRestId, client); // Delegate work to the handler class
+                    break; // Exit the switch block for this command
+                    
+                case "CREATE_NEW_SUBSCRIBER": // Command received from RepresentativeDashboardController
+                    // Extract phone and email from the ArrayList
+                    String phone = (String) messageList.get(1); 
+                    String email = (String) messageList.get(2);
+                    
+                    // Dispatch the request to the new handler (which we will create next)
+                    new CreateSubscriberHandler().handle(phone, email, client); 
+                    break; // Exit the switch block
 
                 default: // Fallback for unknown protocols
                     serverUI.appendLog("Unknown command received: " + command); // Log error
