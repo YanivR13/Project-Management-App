@@ -8,6 +8,7 @@ import client.ChatClient;
 import common.ChatIF;
 import common.LoginSource;
 import common.ServiceResponse;
+import common.ServiceResponse.ServiceStatus;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -90,40 +91,19 @@ public class TerminalWaitingListSizeController implements ChatIF {
 
 	    ServiceResponse response = (ServiceResponse) message;
 
-	    switch (response.getStatus()) {
+	    if (response.getStatus() == ServiceStatus.UPDATE_SUCCESS) {
 
-	        case RESERVATION_SUCCESS:
-	            long code = (Long) response.getData();
-	            showPopup(
-	                "Reservation Confirmed",
-	                "A table is available now!\nConfirmation code: " + code,
-	                Alert.AlertType.INFORMATION
-	            );
-	            break;
+	        String confirmationCode = response.getData().toString();
 
-	        case UPDATE_SUCCESS:
-	            showPopup(
-	                "Waiting List",
-	                "You were added to the waiting list.\nWe will notify you soon.",
-	                Alert.AlertType.INFORMATION
-	            );
-	            break;
+	        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+	        alert.setTitle("Waiting List");
+	        alert.setHeaderText(null);
+	        alert.setContentText(
+	            "You have been added to the waiting list.\n\n" +
+	            "Confirmation code: " + confirmationCode
+	        );
 
-	        case RESERVATION_FULL:
-	            showPopup(
-	                "No Availability",
-	                "No tables available in the next 2 hours.",
-	                Alert.AlertType.WARNING
-	            );
-	            break;
-
-	        case INTERNAL_ERROR:
-	            showPopup(
-	                "Error",
-	                response.getMessage(),
-	                Alert.AlertType.ERROR
-	            );
-	            break;
+	        alert.showAndWait();
 	    }
 	}
 

@@ -39,10 +39,13 @@ import dbLogic.systemLogin.*;
 public class ServerController extends AbstractServer { 
 
     private ServerIF serverUI; 
+    
+    private static ServerController serverInstance;
 
     public ServerController(int port, ServerIF serverUI) { 
         super(port); 
-        this.serverUI = serverUI; 
+        this.serverUI = serverUI;
+        serverInstance = this;
     } 
 
     @Override 
@@ -85,7 +88,13 @@ public class ServerController extends AbstractServer {
     @Override 
     protected void clientDisconnected(ConnectionToClient client) { 
         serverUI.appendLog("Client disconnected: " + client); 
-    } 
+    }
+    
+    public static void log(String msg) {
+        if (serverInstance != null && serverInstance.serverUI != null) {
+            serverInstance.serverUI.appendLog(msg);
+        }
+    }
 
     @Override 
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) { 
