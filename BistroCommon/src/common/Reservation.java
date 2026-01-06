@@ -19,7 +19,7 @@ public class Reservation implements Serializable { // Begin class definition imp
         CANCELLED, // Represents a reservation that has been revoked
         WAITING_AT_RESTAURANT,
         NOTIFIED,
-        NO_SHOW,
+        NOSHOW,
         ARRIVED   // Represents a state where the customer has reached the restaurant
     } // End of Enum definition
 
