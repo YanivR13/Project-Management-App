@@ -48,23 +48,57 @@ public class ServerController extends AbstractServer {
         serverInstance = this;
     } 
 
-    @Override 
-    protected void serverStarted() { 
-        serverUI.appendLog("Server started."); 
-        try { 
-            DBController dbController = DBController.getInstance(); 
-            dbController.connectToDB(); 
-            serverUI.appendLog("Connected to database successfully."); 
+ @Override 
+     protected void serverStarted() { 
+         serverUI.appendLog("Server started."); 
+         try { 
+             DBController dbController = DBController.getInstance(); 
+             dbController.connectToDB(); 
+             serverUI.appendLog("Connected to database successfully."); 
 
-            if (RestaurantManager.initialize(1)) { 
-                serverUI.appendLog("Restaurant data initialized in RAM (Inventory & Hours)."); 
-            } else { 
-                serverUI.appendLog("Warning: Restaurant data could not be loaded. Check if DB is empty."); 
-            } 
-        } catch (SQLException e) { 
-            serverUI.appendLog("Failed to connect to database: " + e.getMessage()); 
-            e.printStackTrace(); 
-        } 
+             if (RestaurantManager.initialize(1)) { 
+                 serverUI.appendLog("Restaurant data initialized in RAM (Inventory & Hours)."); 
+             } else { 
+                 serverUI.appendLog("Warning: Restaurant data could not be loaded. Check if DB is empty."); 
+             } 
+            
+             // Automation Part
+             startAutomationThread();
+             serverUI.appendLog("Automation Engine: ACTIVE (Checking late arrivals & stay limits)");
+             // ---------------------------
+
+         } catch (SQLException e) { 
+             serverUI.appendLog("Failed to connect to database: " + e.getMessage()); 
+             e.printStackTrace(); 
+         } 
+     } 
+
+    /**
+     * Function helper to start thread
+     */
+    private void startAutomationThread() {
+        Thread automationThread = new Thread(() -> {
+            while (true) {
+                try {
+                    // Waiting 1 minute between every check
+                    Thread.sleep(60000); 
+
+                    // Cancel of late reservation and waiting list trigger 
+                    DBController.getInstance().cancelLateReservations();
+                    
+                    // >120?
+                    DBController.getInstance().checkStayDurationAlerts();
+
+                } catch (InterruptedException e) {
+                    serverUI.appendLog("Automation thread stopped.");
+                    break; 
+                } catch (Exception e) {
+                    serverUI.appendLog("Automation Error: " + e.getMessage());
+                }
+            }
+        });
+        automationThread.setDaemon(true); // Ensures thread stops when server is closed 
+        automationThread.start();
     } 
 
     @Override 
@@ -321,4 +355,5 @@ public class ServerController extends AbstractServer {
             } catch (Exception e) { serverUI.appendLog("Error notifying client: " + e.getMessage()); } 
         } 
     } 
+
 }
