@@ -10,6 +10,7 @@ import java.util.Date; // Importing Date for legacy support if needed
 import java.util.Map; // Importing Map for storing day-to-range associations
 import MainControllers.DBController; // Importing the singleton DB controller
 import common.TimeRange; // Importing the TimeRange domain model
+import dbLogic.restaurantDB.WaitingListController;
 
 /**
  * Controller for managing database updates for the restaurant management system.
