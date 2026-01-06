@@ -12,8 +12,4 @@ public class GenerateTimeReportsHandler {
     public void handle(ArrayList<Object> messageList,ConnectionToClient client) {
     	
     }
-    
-    
-
-	
 }
