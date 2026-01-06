@@ -273,6 +273,12 @@ public class ServerController extends AbstractServer {
                 case "JOIN_WAITING_LIST":
                 	new JoinWaitingListHandler().handle(messageList, client);
                 	break;
+                
+                case "GET_TIME_REPORTS":
+                	break;
+                
+                case "GET_SUBSCRIBER_REPORTS":
+                	break;
                     
                 case "GET_RESTAURANT_WORKTIMES": 
                     try { 

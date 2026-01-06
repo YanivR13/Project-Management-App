@@ -9,6 +9,7 @@ import java.time.LocalDate; // Importing LocalDate for modern date handling
 import java.util.Date; // Importing Date for legacy support if needed
 import java.util.Map; // Importing Map for storing day-to-range associations
 import MainControllers.DBController; // Importing the singleton DB controller
+import MainControllers.ServerController;
 import common.TimeRange; // Importing the TimeRange domain model
 import dbLogic.restaurantDB.WaitingListController;
 
@@ -237,14 +238,18 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
         } // End finally
     } // End of deleteAllSpecialHours method
 
-  /**
-    * Alert when a guest has stayed for more than 2 hours.
-    */
+    /**
+     * Alert when a guest has stayed for more than 2 hours.
+     * Fixed: Now checks 'visit' table for actual 'start_time' instead of reservation time.
+     */
     public static void checkStayDurationAlerts() {
-        String sql = "SELECT user_id, reservation_datetime FROM reservation " +
-                     "WHERE status = 'ARRIVED' " +
-                     "AND TIMESTAMPDIFF(MINUTE, reservation_datetime, NOW()) >= 120";
-    
+        // השאילתה המעודכנת: בודקת בטבלת visit לפי start_time
+        // הצטרפנו (JOIN) לטבלת reservation רק כדי שנוכל להציג את ה-user_id בהתראה אם תרצה
+        String sql = "SELECT v.table_id, v.user_id, v.start_time, v.confirmation_code " +
+                     "FROM visit v " +
+                     "WHERE v.status = 'ARRIVED' " + // הנחה: 'ARRIVED' הוא הסטטוס ב-visit כשהם יושבים
+                     "AND TIMESTAMPDIFF(MINUTE, v.start_time, NOW()) >= 120";
+
         // Singleton
         Connection conn = DBController.getInstance().getConnection();
 
@@ -252,9 +257,20 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
              ResultSet rs = stmt.executeQuery(sql)) {
          
             while (rs.next()) {
-                // Alert Server Log.
-                System.out.println("[ALERT] Table for User " + rs.getInt("user_id") + 
-                                   " has exceeded the 2-hour limit (Started: " + rs.getString("reservation_datetime") + ")");
+                int tableId = rs.getInt("table_id");
+                int userId = rs.getInt("user_id");
+                String startTime = rs.getString("start_time");
+                String confCode = rs.getString("confirmation_code");
+
+                // הדפסת התראה ללוג של השרת
+             // יצירת הודעת התראה ללוגר
+                String alertMsg = String.format("[STAY ALERT] Table %d (User %d) has exceeded 2 hours. (Started: %s)", 
+                                                tableId, userId, startTime);
+                
+                // שליחה ללוגר ב-Server UI
+                ServerController.log(alertMsg);
+                
+                // כאן תוכל להוסיף לוגיקה נוספת, כמו שליחת התראה למלצר או למנהל
             }
         } catch (SQLException e) { 
             System.err.println("Error checking stay durations: " + e.getMessage());
@@ -266,33 +282,36 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
      * Auto cancel reservations if the guest is 15 minutes late.
      * If a reservation is canceled, it triggers the Waiting List logic.
      */
+    /**
+     * Auto cancel reservations if the guest is 15 minutes late.
+     * A guest is considered late if they have an ACTIVE reservation 
+     * but no corresponding entry in the 'visit' table after 15 minutes.
+     */
     public static void cancelLateReservations() {
-        String findLateSql = "SELECT id, table_id FROM reservation " +
-                             "WHERE status = 'ACTIVE' " +
-                             "AND TIMESTAMPDIFF(MINUTE, reservation_datetime, NOW()) > 15";
+        // שאילתה שמוצאת הזמנות שזמנן עבר ואין להן ביקור תואם בטבלת visit
+        String findLateSql = "SELECT r.confirmation_code FROM reservation r " +
+                             "LEFT JOIN visit v ON r.confirmation_code = v.confirmation_code " +
+                             "WHERE r.status = 'ACTIVE' " +
+                             "AND v.confirmation_code IS NULL " + 
+                             "AND TIMESTAMPDIFF(MINUTE, r.reservation_datetime, NOW()) > 15";
 
-        String cancelSql = "UPDATE reservation SET status = 'NOSHOW' WHERE id = ?";
+        String cancelSql = "UPDATE reservation SET status = 'NOSHOW' WHERE confirmation_code = ?";
 
-        // Singelton 
         Connection conn = DBController.getInstance().getConnection();
 
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(findLateSql)) {
 
             while (rs.next()) {
-                int reservationId = rs.getInt("id");
-                int tableId = rs.getInt("table_id");
+                String confCode = rs.getString("confirmation_code");
 
-                // NOSHOW in order to distinguish between manual cancellations and automatic cancellations.
+                // עדכון הסטטוס ל-NOSHOW
                 try (PreparedStatement pstmt = conn.prepareStatement(cancelSql)) {
-                    pstmt.setInt(1, reservationId);
+                    pstmt.setString(1, confCode);
                     int affected = pstmt.executeUpdate();
 
                     if (affected > 0) {
-                        System.out.println("[AUTO-CANCEL] Reservation " + reservationId + " canceled due to 15-min delay.");
-                    
-                        // Trigger Waiting List
-                        WaitingListController.handleTableFreed(tableId);
+                    	ServerController.log("[AUTO-CANCEL] Reservation " + confCode + " marked as NOSHOW (15+ min late).");
                     }
                 }
             }

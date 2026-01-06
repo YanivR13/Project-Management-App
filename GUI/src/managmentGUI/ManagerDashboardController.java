@@ -25,11 +25,10 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
     /**
      * מתודה להנפקת דוחות זמנים.
      * שולחת בקשה לשרת לקבלת נתוני פעילות המסעדה.
-     
+     */
     @FXML
     void generateTimeReports(ActionEvent event) {
         // בניית הפרוטוקול לשליחה לשרת (דומה למבנה של עדכון שעות) 
-    	/**
         ArrayList<Object> message = new ArrayList<>();
         message.add("GET_TIME_REPORTS"); // פקודה לשרת
         message.add(1); // מזהה המסעדה (כפי שנעשה ב-UpdateRegularHours) 
@@ -42,8 +41,8 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
     } 
 
     
-     * מתודה להנפקת דוחות מנויים.
-     * שולחת בקשה לשרת לקבלת סטטיסטיקות על מנויי המערכת.
+     // מתודת להנפקת דוחות מנויים.
+     // שולחת בקשה לשרת לקבלת סטטיסטיקות על מנויי המערכת.
      
     @FXML
     void generateSubscriberReports(ActionEvent event) {
@@ -57,7 +56,6 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
             client.handleMessageFromClientUI(message);
         }
     }
-    */
     
     @Override
     public void display(Object message) {
