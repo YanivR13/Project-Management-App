@@ -251,6 +251,41 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
             }
         } catch (SQLException e) { e.printStackTrace(); }
     }
+
+    /**
+     * Auto cancel reservations if the guest is 15 minutes late.
+     * If a reservation is canceled, it triggers the Waiting List logic.
+     */
+    public void cancelLateReservations() {
+        String findLateSql = "SELECT id, table_id FROM reservation " +
+                             "WHERE status = 'ACTIVE' " +
+                             "AND TIMESTAMPDIFF(MINUTE, reservation_datetime, NOW()) > 15";
+
+        String cancelSql = "UPDATE reservation SET status = 'NOSHOW' WHERE id = ?";
+
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery(findLateSql)) {
+
+            while (rs.next()) {
+                int reservationId = rs.getInt("id");
+                int tableId = rs.getInt("table_id");
+
+                try (PreparedStatement pstmt = getConnection().prepareStatement(cancelSql)) {
+                    pstmt.setInt(1, reservationId);
+                    int affected = pstmt.executeUpdate();
+
+                    if (affected > 0) {
+                        System.out.println("[AUTO-CANCEL] Reservation " + reservationId + " canceled due to 15-min delay.");
+                    
+                        // Triggers Waiting List for cancelled reservation.
+                        WaitingListController.handleTableFreed(tableId);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
     
     /**
      * Creates a new subscriber in the system using an atomic SQL transaction.
@@ -329,3 +364,4 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     } // End method
 
 } // End of class
+
