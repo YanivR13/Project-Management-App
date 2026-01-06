@@ -235,6 +235,22 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
             } 
         } // End finally
     } // End of deleteAllSpecialHours method
+
+    /**
+     *	Alert when a guest has stayed for more than 2 hours.
+     */
+    public void checkStayDurationAlerts() {
+        String sql = "SELECT user_id, reservation_datetime FROM reservation " +
+                     "WHERE status = 'ARRIVED' " +
+                     "AND TIMESTAMPDIFF(MINUTE, reservation_datetime, NOW()) >= 120";
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                System.out.println("[ALERT] Table for User " + rs.getInt("user_id") + 
+                                   " has exceeded the 2-hour limit (Started: " + rs.getString("reservation_datetime") + ")");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+    }
     
     /**
      * Creates a new subscriber in the system using an atomic SQL transaction.
@@ -311,4 +327,5 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
             } catch (SQLException e) { e.printStackTrace(); }
         } // End finally
     } // End method
+
 } // End of class
