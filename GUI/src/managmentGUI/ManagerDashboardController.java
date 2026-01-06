@@ -5,6 +5,10 @@ import java.util.ArrayList;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
 /**
  * קונטרולר עבור דשבורד מנהל.
@@ -21,39 +25,30 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
         super.onClientReady();// הפעלת הלוגיקה הקיימת של הנציג 
         appendLog("Manager Mode Active: Additional reporting tools enabled.");
     }
-
-    /**
-     * מתודה להנפקת דוחות זמנים.
-     * שולחת בקשה לשרת לקבלת נתוני פעילות המסעדה.
-     */
-    @FXML
-    void generateTimeReports(ActionEvent event) {
-        // בניית הפרוטוקול לשליחה לשרת (דומה למבנה של עדכון שעות) 
-        ArrayList<Object> message = new ArrayList<>();
-        message.add("GET_TIME_REPORTS"); // פקודה לשרת
-        message.add(1); // מזהה המסעדה (כפי שנעשה ב-UpdateRegularHours) 
-
-        appendLog("Requesting Time Reports from server...");
-        
-        if (client != null) {
-            client.handleMessageFromClientUI(message); // שליחה דרך ה-OCSF
-        }
-    } 
-
     
-     // מתודת להנפקת דוחות מנויים.
-     // שולחת בקשה לשרת לקבלת סטטיסטיקות על מנויי המערכת.
-     
     @FXML
-    void generateSubscriberReports(ActionEvent event) {
-        ArrayList<Object> message = new ArrayList<>();
-        message.add("GET_SUBSCRIBER_REPORTS");
-        message.add(1); // מזהה המסעדה
+    public void openMonthSelection(ActionEvent event) {
+        try {
+            // טעינת הקובץ של מסך בחירת חודש
+        	FXMLLoader loader = new FXMLLoader(
+        		    getClass().getResource("/managmentGUI/ActionsFXML/monthSelection.fxml")
+        		);
 
-        appendLog("Requesting Subscriber Reports from server...");
-
-        if (client != null) {
-            client.handleMessageFromClientUI(message);
+            Parent root = loader.load();
+            
+            MonthSelectionController ctrl = loader.getController();
+            ctrl.setClient(this.client); 
+            
+            // יצירת חלון חדש
+            Stage stage = new Stage();
+            stage.setTitle("Month Selection");
+            stage.setScene(new Scene(root));
+            stage.show();
+            
+        } catch (Exception e) {
+            // אם לא נפתח – תוצג הודעה במסך עצמו
+            System.out.println("Failed to open month screen: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     

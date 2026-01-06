@@ -6,6 +6,8 @@ import java.time.LocalDate; // Import for modern date management
 
 import serverLogic.managmentLogic.CreateSubscriberHandler;
 import serverLogic.managmentLogic.DeleteSpecialHoursHandler;
+import serverLogic.managmentLogic.GenerateSubReportsHandler;
+import serverLogic.managmentLogic.GenerateTimeReportsHandler;
 import serverLogic.managmentLogic.UpdateHoursHandler; // Import handler for regular hours updates
 import serverLogic.managmentLogic.UpdateSpecialHoursHandler; // Import handler for special hours updates
 import serverLogic.menuLogic.*; // Import all menu-related logic handlers
@@ -274,11 +276,14 @@ public class ServerController extends AbstractServer {
                 	new JoinWaitingListHandler().handle(messageList, client);
                 	break;
                 
-                case "GET_TIME_REPORTS":
-                	break;
+                case "GET_TIME_REPORTS": {
+                    new GenerateTimeReportsHandler().handle(messageList, client);
+                    break;
+                }
                 
-                case "GET_SUBSCRIBER_REPORTS":
-                	break;
+                case "GET_SUBSCRIBER_REPORTS": 
+                    new GenerateSubReportsHandler().handle(messageList, client);
+                    break;
                     
                 case "GET_RESTAURANT_WORKTIMES": 
                     try { 
