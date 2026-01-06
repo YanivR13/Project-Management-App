@@ -56,32 +56,26 @@ public class JoinWaitingListDBController {
             "SET status = ?, notification_time = NOW() " +
             "WHERE confirmation_code = ?";
 
-        try (Connection conn = DBController.getInstance().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        Connection conn = DBController.getInstance().getConnection(); 
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, newStatus);
             ps.setLong(2, confirmationCode);
-
             ps.executeUpdate();
         }
     }
     
     public static String getStatusByCode(long confirmationCode) throws Exception {
-
-        String sql =
-            "SELECT status FROM waiting_list_entry WHERE confirmation_code = ?";
-
-        try (Connection conn = DBController.getInstance().getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
+        String sql = "SELECT status FROM waiting_list_entry WHERE confirmation_code = ?";
+        
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, confirmationCode);
-
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return rs.getString("status");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("status");
+                }
             }
         }
-
         return null;
     }
 

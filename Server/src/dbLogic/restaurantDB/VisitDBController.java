@@ -69,21 +69,14 @@ public class VisitDBController {
 
 
 	public static List<WaitingListEntry> getWaitingEntriesOrderedByEntryTime() throws SQLException {
-
 	    List<WaitingListEntry> waitingList = new ArrayList<>();
+	    String sql = "SELECT confirmation_code, entry_time, number_of_guests, user_id, status, notification_time " +
+	                 "FROM waiting_list_entry WHERE status = 'WAITING' ORDER BY entry_time ASC";
 
-	    String sql =
-	        "SELECT confirmation_code, entry_time, number_of_guests, user_id, status, notification_time " +
-	        "FROM waiting_list_entry " +
-	        "WHERE status = 'WAITING' " +
-	        "ORDER BY entry_time ASC";
-
-	    try (Connection conn = DBController.getInstance().getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql);
+	    Connection conn = DBController.getInstance().getConnection();
+	    try (PreparedStatement ps = conn.prepareStatement(sql);
 	         ResultSet rs = ps.executeQuery()) {
-
 	        while (rs.next()) {
-
 	            WaitingListEntry entry = new WaitingListEntry(
 	                rs.getLong("confirmation_code"),
 	                rs.getString("entry_time"),
@@ -92,11 +85,9 @@ public class VisitDBController {
 	                rs.getString("status"),
 	                rs.getString("notification_time")
 	            );
-
 	            waitingList.add(entry);
 	        }
 	    }
-
 	    return waitingList;
 	}
 

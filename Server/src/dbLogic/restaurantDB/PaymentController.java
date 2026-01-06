@@ -58,17 +58,21 @@ public class PaymentController {
 	public static boolean finalizePayment(Bill bill) {
         Connection conn = DBController.getInstance().getConnection();
         
+        try {
+            if (conn == null || conn.isClosed()) {
+                System.err.println("Database connection is closed. Payment failed.");
+                return false;
+            }
+        } catch (SQLException e) { e.printStackTrace(); return false; }
+        
         // 1. Update bill details and set as paid
-        String updateBill = "UPDATE bill SET base_amount = ?, discount_percent = ?, final_amount = ?, is_paid = 1, payment_time = NOW() WHERE bill_id = ?";
-        
+        String updateBill = "UPDATE bill SET base_amount = ?, discount_percent = ?, final_amount = ?, is_paid = 1, payment_time = NOW() WHERE bill_id = ?";        
         // 2. Set visit status to FINISHED
-        String updateVisit = "UPDATE visit SET status = 'FINISHED' WHERE confirmation_code = ?";
-        
+        String updateVisit = "UPDATE visit SET status = 'FINISHED' WHERE confirmation_code = ?";        
         // 3. Reset table availability. Note: `table` is a reserved keyword in SQL, requiring backticks
-        String updateTable = "UPDATE `table` SET is_available = 'true' WHERE table_id = (SELECT table_id FROM visit WHERE confirmation_code = ?)";
-
-        String getTableIdSql = "SELECT table_id FROM visit WHERE confirmation_code = ?";     
+        String updateTable = "UPDATE `table` SET is_available = ? WHERE table_id = ?";
         
+        String getTableIdSql = "SELECT table_id FROM visit WHERE confirmation_code = ?";        
         try {
         	// Disable auto-commit to manage the transaction manually
             conn.setAutoCommit(false); 
@@ -96,8 +100,11 @@ public class PaymentController {
                 psVisit.executeUpdate();
 
                 // Execute Table Release
-                psTable.setLong(1, bill.getConfirmationCode());
-                psTable.executeUpdate();
+                if(tableId!=-1) {
+                	psTable.setBoolean(1, true);
+                	psTable.setInt(2, tableId);
+                    psTable.executeUpdate();
+                }
             
                 // Commit all changes if no exceptions occurred
                 conn.commit(); 
@@ -109,13 +116,14 @@ public class PaymentController {
                 
                 return true;
             } catch (SQLException e) {
-            	// Rollback changes in case of any SQL error during the process
-                conn.rollback(); 
+            	if (conn != null) conn.rollback(); 
                 e.printStackTrace();
                 return false;
             } finally {
             	//Restore default auto-commit behavior
-                conn.setAutoCommit(true);
+            	if (conn != null && !conn.isClosed()) {
+                    conn.setAutoCommit(true);
+                }
             }
         } catch (SQLException e) {
             e.printStackTrace();

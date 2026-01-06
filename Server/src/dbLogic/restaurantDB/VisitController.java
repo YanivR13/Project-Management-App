@@ -111,7 +111,7 @@ public class VisitController {
      */
     private static boolean isSeatingSafe(Connection conn, int guests) throws SQLException {
         // Count total available tables
-        ResultSet rsAvail = conn.prepareStatement("SELECT COUNT(*) FROM `table` WHERE is_available = 'true' AND capacity >= " + guests).executeQuery();
+        ResultSet rsAvail = conn.prepareStatement("SELECT COUNT(*) FROM `table` WHERE is_available = 1 AND capacity >= " + guests).executeQuery();
         int available = rsAvail.next() ? rsAvail.getInt(1) : 0;
 
         // Count all guests (Reservations/Walk-ins) currently in 'NOTIFIED' status
@@ -225,7 +225,7 @@ public class VisitController {
     // --- Database Helper Methods ---
 
     private static int findSuitableTable(int guests) throws SQLException {
-        String query = "SELECT table_id FROM `table` WHERE is_available = 'true' AND capacity >= ? ORDER BY capacity ASC LIMIT 1";
+        String query = "SELECT table_id FROM `table` WHERE is_available = 1 AND capacity >= ? ORDER BY capacity ASC LIMIT 1";
         try (PreparedStatement ps = DBController.getInstance().getConnection().prepareStatement(query)) {
             ps.setInt(1, guests);
             ResultSet rs = ps.executeQuery();
@@ -245,7 +245,7 @@ public class VisitController {
     private static void updateTableAvailability(Connection conn, int id, String isAvailable) throws SQLException {
         String sql = "UPDATE `table` SET is_available = ? WHERE table_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, isAvailable);
+        	ps.setBoolean(1, true);
             ps.setInt(2, id);
             ps.executeUpdate();
         }
