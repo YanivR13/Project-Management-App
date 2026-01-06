@@ -84,11 +84,11 @@ public class ServerController extends AbstractServer {
                     Thread.sleep(60000); 
 
                     // Cancel of late reservation and waiting list trigger 
-                    DBController.getInstance().cancelLateReservations();
+                    UpdateManagementDBController.cancelLateReservations();
                     
                     // >120?
-                    DBController.getInstance().checkStayDurationAlerts();
-
+                    UpdateManagementDBController.checkStayDurationAlerts();
+                    
                 } catch (InterruptedException e) {
                     serverUI.appendLog("Automation thread stopped.");
                     break; 

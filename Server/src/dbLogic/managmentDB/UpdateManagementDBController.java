@@ -240,7 +240,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
   /**
     * Alert when a guest has stayed for more than 2 hours.
     */
-    public void checkStayDurationAlerts() {
+    public static void checkStayDurationAlerts() {
         String sql = "SELECT user_id, reservation_datetime FROM reservation " +
                      "WHERE status = 'ARRIVED' " +
                      "AND TIMESTAMPDIFF(MINUTE, reservation_datetime, NOW()) >= 120";
@@ -266,7 +266,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
      * Auto cancel reservations if the guest is 15 minutes late.
      * If a reservation is canceled, it triggers the Waiting List logic.
      */
-    public void cancelLateReservations() {
+    public static void cancelLateReservations() {
         String findLateSql = "SELECT id, table_id FROM reservation " +
                              "WHERE status = 'ACTIVE' " +
                              "AND TIMESTAMPDIFF(MINUTE, reservation_datetime, NOW()) > 15";
