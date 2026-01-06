@@ -3,11 +3,13 @@ package terminalGUI.Controllers.TerminalControllers;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Map;
 
 import client.ChatClient;
 import common.ChatIF;
 import common.LoginSource;
 import common.ServiceResponse;
+import common.ServiceResponse.ServiceStatus;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -82,6 +84,7 @@ public class TerminalWaitingListSizeController implements ChatIF {
 		Platform.runLater(() -> handleServerMessage(message));
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void handleServerMessage(Object message) {
 
 	    if (!(message instanceof ServiceResponse)) {
@@ -90,42 +93,47 @@ public class TerminalWaitingListSizeController implements ChatIF {
 
 	    ServiceResponse response = (ServiceResponse) message;
 
-	    switch (response.getStatus()) {
-
-	        case RESERVATION_SUCCESS:
-	            long code = (Long) response.getData();
-	            showPopup(
-	                "Reservation Confirmed",
-	                "A table is available now!\nConfirmation code: " + code,
-	                Alert.AlertType.INFORMATION
-	            );
-	            break;
-
-	        case UPDATE_SUCCESS:
-	            showPopup(
-	                "Waiting List",
-	                "You were added to the waiting list.\nWe will notify you soon.",
-	                Alert.AlertType.INFORMATION
-	            );
-	            break;
-
-	        case RESERVATION_FULL:
-	            showPopup(
-	                "No Availability",
-	                "No tables available in the next 2 hours.",
-	                Alert.AlertType.WARNING
-	            );
-	            break;
-
-	        case INTERNAL_ERROR:
-	            showPopup(
-	                "Error",
-	                response.getMessage(),
-	                Alert.AlertType.ERROR
-	            );
-	            break;
+	    if (response.getStatus() != ServiceStatus.UPDATE_SUCCESS) {
+	        return;
 	    }
+
+	    Object data = response.getData();
+
+	    // ✅ תרחיש כניסה מיידית למסעדה
+	    if (data instanceof Map) {
+	        Map<String, Object> map = (Map<String, Object>) data;
+
+	        if ("IMMEDIATE".equals(map.get("mode"))) {
+
+	            long confirmationCode = ((Number) map.get("confirmationCode")).longValue();
+	            int tableId = ((Number) map.get("tableId")).intValue();
+
+	            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+	            alert.setTitle("Table Available");
+	            alert.setHeaderText(null);
+	            alert.setContentText(
+	                "A table is available – you can enter now.\n\n" +
+	                "Table number: " + tableId + "\n" +
+	                "Confirmation code: " + confirmationCode
+	            );
+	            alert.showAndWait();
+	            return;
+	        }
+	    }
+
+	    // ✅ כל שאר המקרים: נכנס לרשימת המתנה
+	    String confirmationCode = data.toString();
+
+	    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+	    alert.setTitle("Waiting List");
+	    alert.setHeaderText(null);
+	    alert.setContentText(
+	        "You have been added to the waiting list.\n\n" +
+	        "Confirmation code: " + confirmationCode
+	    );
+	    alert.showAndWait();
 	}
+
 
 	
 	private void showPopup(String title, String message, AlertType type) {

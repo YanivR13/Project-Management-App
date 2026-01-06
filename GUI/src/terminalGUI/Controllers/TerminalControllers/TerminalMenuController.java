@@ -68,8 +68,19 @@ public class TerminalMenuController implements ChatIF {
      */
     @FXML
     private void handleManageReservation(ActionEvent event) {
-        // TODO: implement reservation management flow
-    }
+    	try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/ManageReservationFrame.fxml"));
+            Parent root = loader.load();
+
+            ManageReservationController controller = loader.getController();
+            controller.setClient(client);
+
+            Stage stage = (Stage) btnManageReservation.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }    }
     
     /**
      * Handles "Join Waiting List" button click.

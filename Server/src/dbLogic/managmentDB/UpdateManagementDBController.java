@@ -10,6 +10,7 @@ import java.util.Date; // Importing Date for legacy support if needed
 import java.util.Map; // Importing Map for storing day-to-range associations
 import MainControllers.DBController; // Importing the singleton DB controller
 import common.TimeRange; // Importing the TimeRange domain model
+import dbLogic.restaurantDB.WaitingListController;
 
 /**
  * Controller for managing database updates for the restaurant management system.
@@ -235,6 +236,71 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
             } 
         } // End finally
     } // End of deleteAllSpecialHours method
+
+  /**
+    * Alert when a guest has stayed for more than 2 hours.
+    */
+    public static void checkStayDurationAlerts() {
+        String sql = "SELECT user_id, reservation_datetime FROM reservation " +
+                     "WHERE status = 'ARRIVED' " +
+                     "AND TIMESTAMPDIFF(MINUTE, reservation_datetime, NOW()) >= 120";
+    
+        // Singleton
+        Connection conn = DBController.getInstance().getConnection();
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+         
+            while (rs.next()) {
+                // Alert Server Log.
+                System.out.println("[ALERT] Table for User " + rs.getInt("user_id") + 
+                                   " has exceeded the 2-hour limit (Started: " + rs.getString("reservation_datetime") + ")");
+            }
+        } catch (SQLException e) { 
+            System.err.println("Error checking stay durations: " + e.getMessage());
+            e.printStackTrace(); 
+        }
+    }
+
+    /**
+     * Auto cancel reservations if the guest is 15 minutes late.
+     * If a reservation is canceled, it triggers the Waiting List logic.
+     */
+    public static void cancelLateReservations() {
+        String findLateSql = "SELECT id, table_id FROM reservation " +
+                             "WHERE status = 'ACTIVE' " +
+                             "AND TIMESTAMPDIFF(MINUTE, reservation_datetime, NOW()) > 15";
+
+        String cancelSql = "UPDATE reservation SET status = 'NOSHOW' WHERE id = ?";
+
+        // Singelton 
+        Connection conn = DBController.getInstance().getConnection();
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(findLateSql)) {
+
+            while (rs.next()) {
+                int reservationId = rs.getInt("id");
+                int tableId = rs.getInt("table_id");
+
+                // NOSHOW in order to distinguish between manual cancellations and automatic cancellations.
+                try (PreparedStatement pstmt = conn.prepareStatement(cancelSql)) {
+                    pstmt.setInt(1, reservationId);
+                    int affected = pstmt.executeUpdate();
+
+                    if (affected > 0) {
+                        System.out.println("[AUTO-CANCEL] Reservation " + reservationId + " canceled due to 15-min delay.");
+                    
+                        // Trigger Waiting List
+                        WaitingListController.handleTableFreed(tableId);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error during auto-cancel process: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     
     /**
      * Creates a new subscriber in the system using an atomic SQL transaction.
@@ -311,4 +377,8 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
             } catch (SQLException e) { e.printStackTrace(); }
         } // End finally
     } // End method
+
 } // End of class
+
+
+

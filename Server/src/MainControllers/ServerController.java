@@ -39,29 +39,66 @@ import dbLogic.systemLogin.*;
 public class ServerController extends AbstractServer { 
 
     private ServerIF serverUI; 
+    
+    private static ServerController serverInstance;
 
     public ServerController(int port, ServerIF serverUI) { 
         super(port); 
-        this.serverUI = serverUI; 
+        this.serverUI = serverUI;
+        serverInstance = this;
     } 
 
-    @Override 
-    protected void serverStarted() { 
-        serverUI.appendLog("Server started."); 
-        try { 
-            DBController dbController = DBController.getInstance(); 
-            dbController.connectToDB(); 
-            serverUI.appendLog("Connected to database successfully."); 
+ @Override 
+     protected void serverStarted() { 
+         serverUI.appendLog("Server started."); 
+         try { 
+             DBController dbController = DBController.getInstance(); 
+             dbController.connectToDB(); 
+             serverUI.appendLog("Connected to database successfully."); 
 
-            if (RestaurantManager.initialize(1)) { 
-                serverUI.appendLog("Restaurant data initialized in RAM (Inventory & Hours)."); 
-            } else { 
-                serverUI.appendLog("Warning: Restaurant data could not be loaded. Check if DB is empty."); 
-            } 
-        } catch (SQLException e) { 
-            serverUI.appendLog("Failed to connect to database: " + e.getMessage()); 
-            e.printStackTrace(); 
-        } 
+             if (RestaurantManager.initialize(1)) { 
+                 serverUI.appendLog("Restaurant data initialized in RAM (Inventory & Hours)."); 
+             } else { 
+                 serverUI.appendLog("Warning: Restaurant data could not be loaded. Check if DB is empty."); 
+             } 
+            
+             // Automation Part
+             startAutomationThread();
+             serverUI.appendLog("Automation Engine: ACTIVE (Checking late arrivals & stay limits)");
+             // ---------------------------
+
+         } catch (SQLException e) { 
+             serverUI.appendLog("Failed to connect to database: " + e.getMessage()); 
+             e.printStackTrace(); 
+         } 
+     } 
+
+    /**
+     * Function helper to start thread
+     */
+    private void startAutomationThread() {
+        Thread automationThread = new Thread(() -> {
+            while (true) {
+                try {
+                    // Waiting 1 minute between every check
+                    Thread.sleep(60000); 
+
+                    // Cancel of late reservation and waiting list trigger 
+                    UpdateManagementDBController.cancelLateReservations();
+                    
+                    // >120?
+                    UpdateManagementDBController.checkStayDurationAlerts();
+                    
+                } catch (InterruptedException e) {
+                    serverUI.appendLog("Automation thread stopped.");
+                    break; 
+                } catch (Exception e) {
+                    serverUI.appendLog("Automation Error: " + e.getMessage());
+                }
+            }
+        });
+        automationThread.setDaemon(true); // Ensures thread stops when server is closed 
+        automationThread.start();
     } 
 
     @Override 
@@ -85,7 +122,13 @@ public class ServerController extends AbstractServer {
     @Override 
     protected void clientDisconnected(ConnectionToClient client) { 
         serverUI.appendLog("Client disconnected: " + client); 
-    } 
+    }
+    
+    public static void log(String msg) {
+        if (serverInstance != null && serverInstance.serverUI != null) {
+            serverInstance.serverUI.appendLog(msg);
+        }
+    }
 
     @Override 
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) { 
@@ -198,6 +241,27 @@ public class ServerController extends AbstractServer {
                     } 
                     break; 
                     
+                case "CANCEL_WAITING_LIST_BY_CODE": 
+                    try { 
+                        // Extract the code as a long instead of userId as an int 
+                        long thecodeToCancel = (long) messageList.get(1); 
+                        
+                        // Pass the long confirmation code to the updated DB controller
+                        int result = dbLogic.restaurantDB.CancelWaitingListController.cancelWaitingEntry(thecodeToCancel); 
+                        
+                        if (result == 1) { 
+                            client.sendToClient("CANCEL_WAITING_SUCCESS"); 
+                        } else if (result == 0) { 
+                            client.sendToClient("NOT_ON_WAITING_LIST"); 
+                        } else { 
+                            client.sendToClient("SERVER_ERROR"); 
+                        } 
+                    } catch (Exception e) { 
+                        serverUI.appendLog("Critical error in CANCEL_WAITING_LIST: " + e.getMessage()); 
+                        try { client.sendToClient("SERVER_ERROR"); } catch (IOException io) { io.printStackTrace(); } 
+                    } 
+                    break;
+                    
                 case "GET_RESERVATIONS_HISTORY": 
                     new ReservationHistoryHandler().handle(messageList, client); 
                     break; 
@@ -291,4 +355,5 @@ public class ServerController extends AbstractServer {
             } catch (Exception e) { serverUI.appendLog("Error notifying client: " + e.getMessage()); } 
         } 
     } 
+
 }

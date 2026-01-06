@@ -35,8 +35,9 @@ public class WaitingListEntry implements Serializable { // Defining the class an
     public enum WaitingStatus { // Beginning of WaitingStatus enum definition
         WAITING,   // The customer is currently in the queue
         NOTIFIED,  // The customer has been alerted that a table is ready
-        CANCELLED, // The customer or system removed the entry
-        ARRIVED    // The customer has arrived and been seated
+        CANCELLED, // The customer removed the entry
+        ARRIVED,    // The customer has arrived and been seated
+        NOSHOW      //The customer didn't arrived to the table
     } // End of WaitingStatus enum definition
 
     /**
@@ -91,5 +92,13 @@ public class WaitingListEntry implements Serializable { // Defining the class an
     public String getStatus() { // Start of getStatus method
         return status;          // Returning the status string
     } // End of method
+    
+    /**
+     * Retrieves the number of guests for this waiting list entry.
+     * @return int numberOfGuests
+     */
+    public int getNumberOfGuests() {
+        return numberOfGuests;
+    }
 
 } // End of WaitingListEntry class
