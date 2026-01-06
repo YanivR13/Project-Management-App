@@ -12,6 +12,9 @@ import dbLogic.restaurantDB.SeatingAvailabilityController;
 import dbLogic.restaurantDB.TableDBController;
 import dbLogic.restaurantDB.VisitDBController;
 import ocsf.server.ConnectionToClient;
+import java.util.HashMap;
+import java.util.Map;
+
 
 public class JoinWaitingListHandler {
 
@@ -74,17 +77,15 @@ public class JoinWaitingListHandler {
 
 
                 // insert waiting list entry
-                JoinWaitingListDBController.insertWaitingListEntry(
-                    confirmationCode,
-                    userId,
-                    numberOfGuests,
-                    "ARRIVED"
-                );
+                Map<String, Object> data = new HashMap<>();
+                data.put("mode", "IMMEDIATE");
+                data.put("confirmationCode", confirmationCode);
+                data.put("tableId", chosenTableId);
 
                 client.sendToClient(
                     new ServiceResponse(
                         ServiceStatus.UPDATE_SUCCESS,
-                        confirmationCode
+                        data
                     )
                 );
                 return;

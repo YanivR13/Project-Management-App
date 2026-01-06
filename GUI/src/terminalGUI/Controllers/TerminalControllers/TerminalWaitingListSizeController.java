@@ -3,6 +3,7 @@ package terminalGUI.Controllers.TerminalControllers;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Map;
 
 import client.ChatClient;
 import common.ChatIF;
@@ -83,6 +84,7 @@ public class TerminalWaitingListSizeController implements ChatIF {
 		Platform.runLater(() -> handleServerMessage(message));
 	}
 	
+	@SuppressWarnings("unchecked")
 	private void handleServerMessage(Object message) {
 
 	    if (!(message instanceof ServiceResponse)) {
@@ -91,21 +93,47 @@ public class TerminalWaitingListSizeController implements ChatIF {
 
 	    ServiceResponse response = (ServiceResponse) message;
 
-	    if (response.getStatus() == ServiceStatus.UPDATE_SUCCESS) {
-
-	        String confirmationCode = response.getData().toString();
-
-	        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-	        alert.setTitle("Waiting List");
-	        alert.setHeaderText(null);
-	        alert.setContentText(
-	            "You have been added to the waiting list.\n\n" +
-	            "Confirmation code: " + confirmationCode
-	        );
-
-	        alert.showAndWait();
+	    if (response.getStatus() != ServiceStatus.UPDATE_SUCCESS) {
+	        return;
 	    }
+
+	    Object data = response.getData();
+
+	    // ✅ תרחיש כניסה מיידית למסעדה
+	    if (data instanceof Map) {
+	        Map<String, Object> map = (Map<String, Object>) data;
+
+	        if ("IMMEDIATE".equals(map.get("mode"))) {
+
+	            long confirmationCode = ((Number) map.get("confirmationCode")).longValue();
+	            int tableId = ((Number) map.get("tableId")).intValue();
+
+	            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+	            alert.setTitle("Table Available");
+	            alert.setHeaderText(null);
+	            alert.setContentText(
+	                "A table is available – you can enter now.\n\n" +
+	                "Table number: " + tableId + "\n" +
+	                "Confirmation code: " + confirmationCode
+	            );
+	            alert.showAndWait();
+	            return;
+	        }
+	    }
+
+	    // ✅ כל שאר המקרים: נכנס לרשימת המתנה
+	    String confirmationCode = data.toString();
+
+	    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+	    alert.setTitle("Waiting List");
+	    alert.setHeaderText(null);
+	    alert.setContentText(
+	        "You have been added to the waiting list.\n\n" +
+	        "Confirmation code: " + confirmationCode
+	    );
+	    alert.showAndWait();
 	}
+
 
 	
 	private void showPopup(String title, String message, AlertType type) {
