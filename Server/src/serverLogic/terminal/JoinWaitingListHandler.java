@@ -1,6 +1,7 @@
 package serverLogic.terminal;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,10 +27,25 @@ public class JoinWaitingListHandler {
             // 1) number of guests
             int numberOfGuests = (int) messageList.get(1);
 
-            // 2) user id
+         // 2) user id
             Integer userId = (Integer) client.getInfo("userId");
             if (userId == null) {
                 sendError(client, "User not authenticated");
+                return;
+            }
+
+            // -----------------------------------------------------------
+            // תוספת חדשה: בדיקה אם המשתמש כבר מופיע ברשימה כפעיל
+            // -----------------------------------------------------------
+            try {
+                if (JoinWaitingListDBController.isUserAlreadyActive(userId)) {
+                    // אנחנו שולחים "ALREADY_IN_LIST" כדי שה-Client ידע להציג הודעה מתאימה
+                    sendError(client, "ALREADY_IN_LIST"); 
+                    return; 
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                sendError(client, "DATABASE_ERROR");
                 return;
             }
 

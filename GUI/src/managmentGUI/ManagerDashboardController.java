@@ -55,30 +55,39 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
             ArrayList<Object> responseList = (ArrayList<Object>) message;
             String header = (String) responseList.get(0);
 
-            // 1. בדיקה עבור דוח זמנים
+         // 1. בדיקה עבור דוח זמנים
             if ("REPORT_TIME_DATA_SUCCESS".equals(header)) {
                 List<Map<String, Object>> data = (List<Map<String, Object>>) responseList.get(1);
                 Platform.runLater(() -> {
-                    appendLog("Time Report Data Received Successfully.");
-                    showGraph(data);
+                    if (data == null || data.isEmpty()) {
+                        showErrorAlert("No Data Found", "No time and delay records were found for the selected month.");
+                        // לא נכתב כלום ללוג כאן
+                    } else {
+                        appendLog("Time Report Data Received Successfully.");
+                        showGraph(data);
+                    }
                 });
             } 
-            // 2. בדיקה עבור דוח מנויים (החלק החדש)
+            // 2. בדיקה עבור דוח מנויים
             else if ("RECEIVE_SUBSCRIBER_REPORTS".equals(header)) {
                 List<Map<String, Object>> subData = (List<Map<String, Object>>) responseList.get(1);
                 Platform.runLater(() -> {
                     if (subData == null || subData.isEmpty()) {
-                        appendLog("No subscriber data found for the selected month.");
+                        showErrorAlert("No Data Found", "No subscriber or waiting list activity found for the selected month.");
+                        // לא נכתב כלום ללוג כאן
                     } else {
                         appendLog("Subscriber Report Data Received Successfully.");
-                        showSubGraph(subData); // פתיחת גרף המנויים
+                        showSubGraph(subData);
                     }
                 });
             }
-            // 3. בדיקה אם קיבלנו שגיאת דוח
+            // 3. בדיקה אם קיבלנו שגיאת דוח כללית מהשרת
             else if ("REPORT_ERROR".equals(header)) {
                 String errorMsg = (String) responseList.get(1);
-                Platform.runLater(() -> appendLog("Error: " + errorMsg));
+                Platform.runLater(() -> {
+                    showErrorAlert("System Error", "Error: " + errorMsg);
+                    // לא נכתב כלום ללוג כאן
+                });
             }
             else {
                 super.display(message); 
@@ -127,5 +136,13 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
                 e.printStackTrace();
             }
         });
+    }
+    
+    private void showErrorAlert(String title, String content) {
+        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }
