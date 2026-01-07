@@ -133,7 +133,7 @@ public class ServerController extends AbstractServer {
     }
 
     @Override 
-    protected void handleMessageFromClient(Object msg, ConnectionToClient client) { 
+    protected void handleMessageFromClient(Object msg, ConnectionToClient client) throws IOException { 
                 
         serverUI.appendLog("Message received: " + msg + " from " + client); 
 
@@ -358,6 +358,19 @@ public class ServerController extends AbstractServer {
                         client.sendToClient(new ServiceResponse(ServiceStatus.INTERNAL_ERROR, "ERROR: Unknown Command '" + command + "'")); 
                     } catch (Exception e) { serverUI.appendLog("Failed to send Error message: " + e.getMessage()); } 
                     break; 
+                    
+                case "GET_ALL_ACTIVE_RESERVATIONS":
+                    List<common.Reservation> allActive = dbLogic.restaurantDB.viewReservationController.getAllActiveReservations();
+                    client.sendToClient(allActive);
+                    break;
+                 
+                case "GET_ALL_ACTIVE_VISITS":
+                    // Calling the SQL logic in VisitDBController to get seated diners
+                    List<common.Visit> currentVisits = dbLogic.restaurantDB.VisitDBController.getAllActiveVisits();
+                    // Sending the list back to the representative's dashboard
+                    client.sendToClient(currentVisits);
+                    break;    
+                    
             } 
         } else { 
             serverUI.appendLog("Received unexpected message type: " + msg.getClass().getSimpleName()); 

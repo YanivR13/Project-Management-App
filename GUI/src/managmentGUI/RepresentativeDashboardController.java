@@ -368,17 +368,51 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         loadSubScreen("/managmentGUI/ActionsFXML/SubscribersList.fxml"); // Loading sub-view
     } // End method
 
-    @FXML void viewActiveReservations(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/ActiveReservations.fxml"); // Loading sub-view
-    } // End method
+    
+    
+    
+    @FXML 
+    void viewActiveReservations(ActionEvent event) {
+        loadSubScreen("/managmentGUI/ActionsFXML/ActiveReservations.fxml"); 
 
+        if (client != null) {
+            appendLog("Requesting all active reservations from server...");
+            ArrayList<String> msg = new ArrayList<>();
+            msg.add("GET_ALL_ACTIVE_RESERVATIONS");
+            client.handleMessageFromClientUI(msg);
+        }
+    }
+    
+    
+    
+    
+    
+   
     @FXML void viewWaitingList(ActionEvent event) { // Triggered by menu
         loadSubScreen("/managmentGUI/ActionsFXML/WaitingList.fxml"); // Loading sub-view
     } // End method
 
-    @FXML void viewCurrentDiners(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/CurrentDiners.fxml"); // Loading sub-view
-    } // End method
+    
+    @FXML
+    void viewCurrentDiners(ActionEvent event) {
+        // 1. Load the sub-screen visual layout into the contentPane
+        loadSubScreen("/managmentGUI/ActionsFXML/CurrentDiners.fxml"); 
+        
+        // 2. Request the active diners list from the server
+        if (client != null) {
+            appendLog("Requesting current seated diners list from server...");
+            ArrayList<String> msg = new ArrayList<>();
+            msg.add("GET_ALL_ACTIVE_VISITS");
+            client.handleMessageFromClientUI(msg);
+        }
+    }
+    
+    
+    
+    
+    
+    
+    
     
     /**
      * Allows staff members to access the customer-facing portal.
@@ -418,29 +452,19 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         
         // --- SCENARIO 1: Handling ServiceResponse (Update confirmations, errors, or IDs) ---
         if (message instanceof ServiceResponse) { 
-            ServiceResponse response = (ServiceResponse) message; // Casting object
-            
-            // UI updates must be on the JavaFX Application Thread
+            ServiceResponse response = (ServiceResponse) message;
             Platform.runLater(() -> { 
-                
-                // If the response is a success (RESERVATION_SUCCESS or UPDATE_SUCCESS)
                 if (response.getStatus() == ServiceResponse.ServiceStatus.UPDATE_SUCCESS) {
-                    
-                    // Check if the payload is a Long (Our new Subscriber ID)
                     if (response.getData() instanceof Long) {
                         Long newSubscriberId = (Long) response.getData();
-                        // Display the successful ID directly in the logger as requested
                         appendLog("SUCCESS: New Subscriber created! Generated ID: " + newSubscriberId); 
                         new Alert(Alert.AlertType.INFORMATION, "Subscriber Created Successfully!\nID: " + newSubscriberId).show();
                     } else {
-                        // Standard success message (like hours update)
                         appendLog("Server Response: " + response.getStatus());
                         new Alert(Alert.AlertType.INFORMATION, "Success! System updated.").show(); 
                     }
                 } 
-                // If the response contains an error (INTERNAL_ERROR)
                 else if (response.getStatus() == ServiceResponse.ServiceStatus.INTERNAL_ERROR) {
-                    // Display the specific error message (e.g., "Phone already exists")
                     appendLog("SERVER ERROR: " + response.getData());
                     new Alert(Alert.AlertType.ERROR, "Operation Failed: " + response.getData()).show();
                 }
@@ -449,14 +473,80 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         
         // --- SCENARIO 2: Handling Restaurant object (Work times) ---
         else if (message instanceof Restaurant) { 
-            Restaurant rest = (Restaurant) message; //
+            Restaurant rest = (Restaurant) message;
             Platform.runLater(() -> { 
-                appendLog(rest.getFormattedOpeningHours()); //
+                appendLog(rest.getFormattedOpeningHours());
+            });
+        }
+
+        // --- SCENARIO 3: NEW! Handling List of Active Reservations ---
+        else if (message instanceof List) {
+            List<?> list = (List<?>) message;
+            
+           
+            Platform.runLater(() -> {
+                // Check if the list contains Reservation objects
+                if (!list.isEmpty() && list.get(0) instanceof common.Reservation) {
+                    appendLog("Received " + list.size() + " active reservations from server.");
+                    
+                    /**
+                     * Dynamically find the TableView inside the contentPane.
+                     * Note: Ensure your ActiveReservations.fxml has fx:id="reservationsTable"
+                     */
+                    TableView<common.Reservation> table = (TableView<common.Reservation>) contentPane.lookup("#reservationsTable");
+                    
+                    if (table != null) {
+                        // Convert the List to an ObservableList and bind it to the table
+                        table.setItems(FXCollections.observableArrayList((List<common.Reservation>) list));
+                        appendLog("Table populated successfully.");
+                    } else {
+                        // Log error if the FXML sub-screen does not contain the expected table ID
+                        appendLog("Error: Could not find TableView with ID 'reservationsTable' in the current screen.");
+                    }
+                }
+            });
+        }
+     // --- SCENARIO 4: Handling List of Active Visits (Current Diners) ---
+        else if (message instanceof List) {
+            List<?> list = (List<?>) message;
+            
+            Platform.runLater(() -> {
+                if (!list.isEmpty()) {
+                    // Check if this is a list of Visits
+                    if (list.get(0) instanceof common.Visit) {
+                        appendLog("Received " + list.size() + " seated diners from server.");
+                        
+                        /**
+                         * Find the TableView inside the loaded sub-screen.
+                         * Note: Ensure CurrentDiners.fxml has fx:id="dinersTable"
+                         */
+                        TableView<common.Visit> table = (TableView<common.Visit>) contentPane.lookup("#dinersTable");
+                        
+                        if (table != null) {
+                            // Populate the table with the active visits
+                            table.setItems(FXCollections.observableArrayList((List<common.Visit>) list));
+                            appendLog("Diners table updated successfully.");
+                        } else {
+                            appendLog("Error: Could not find TableView with ID 'dinersTable'.");
+                        }
+                    }
+                    // Add other list scenarios (like Reservations) here...
+                }
             });
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     /**
+     * 
+     * 
      * Thread-safe helper to update the UI log area.
      */
     protected void appendLog(String msg) { // Start method

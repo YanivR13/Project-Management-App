@@ -11,6 +11,8 @@ import java.util.List;
 
 import MainControllers.DBController;
 import common.WaitingListEntry;
+import common.Visit;
+
 
 public class VisitDBController {
 
@@ -90,5 +92,37 @@ public class VisitDBController {
 	    }
 	    return waitingList;
 	}
+	/**
+     * Fetches all currently seated diners (Active Visits) from the database.
+     * This is used by the Representative Dashboard.
+     */
+    public static List<Visit> getAllActiveVisits() {
+        List<Visit> activeVisits = new ArrayList<>();
+        
+        // Querying for all visits where status is 'ACTIVE' (seated but haven't paid)
+        String query = "SELECT confirmation_code, table_id, user_id, bill_id, start_time, status " +
+                       "FROM visit WHERE status = 'ACTIVE'";
+
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement pstmt = conn.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                // Map DB row to Visit object
+                Visit v = new Visit(
+                    rs.getLong("confirmation_code"),
+                    rs.getInt("table_id"),
+                    rs.getInt("user_id"),
+                    rs.getLong("bill_id"),
+                    rs.getString("start_time"),
+                    Visit.VisitStatus.ACTIVE
+                );
+                activeVisits.add(v);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return activeVisits;
+    }
 
 }

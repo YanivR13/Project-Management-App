@@ -5,7 +5,7 @@ import java.util.List;
 
 public class CardReaderController {
     
-    // נתוני חיבור ל-Database (וודא שהסיסמה תואמת למה שהגדרת ב-Workbench)
+  
     private final String url = "jdbc:mysql://localhost:3306/prototypedb";
     private final String username = "root";
     private final String password = "Ya212104483"; 
@@ -13,11 +13,12 @@ public class CardReaderController {
     private String currentSubscriberID;
 
     /**
-     * פונקציה 1: אימות מנוי
-     * בודקת אם ה-ID קיים בטבלת subscriber לפי עמודת subscriber_id
+     * Function 1: Subscriber validation
+     * Checks whether the ID exists in the subscriber table according to the subscriber_id column
      */
+
     public boolean validateSubscriber(String id) {
-        // השאילתה משתמשת בשם העמודה המדויק שראינו ב-Workbench
+       
         String query = "SELECT * FROM subscriber WHERE subscriber_id = ?"; 
         
         try (Connection conn = DriverManager.getConnection(url, username, password);
@@ -28,18 +29,22 @@ public class CardReaderController {
             
             if (rs.next()) {
                 this.currentSubscriberID = id;
-                return true; // נמצאה התאמה ב-DB
+                return true; // A match was found in the DB
+
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return false; // לא נמצא מנוי או שיש שגיאת חיבור
-    }
+        return false; // No subscriber was found or there is a connection error
 
+    }
+    
+    
     /**
-     * פונקציה 2: איבדתי קוד אישור 
-     * שולפת את כל הקודים עבור המנוי המחובר
+     * Function 2: I lost the verification code
+     * Retrieves all codes for the connected subscriber
      */
+
     public List<String> getLostConfirmationCodes() {
         List<String> activeCodes = new ArrayList<>();
 
@@ -64,23 +69,26 @@ public class CardReaderController {
     }
     
     /**
-     * פונקציה 3: אימות קוד אישור והגעה
-     * בודקת שהקוד פעיל (ACTIVE) ומעדכנת אותו ל-COMPLETED
+     * Function 3: Verification of confirmation code and check-in
+     * Checks that the code is active (ACTIVE) and updates it to COMPLETED
      */
+
     public String verifyConfirmationCode(String code) {
 
     	String checkQuery = "SELECT * FROM orders WHERE confirmation_code = ? AND subscriber_id = ? AND status = 'ACTIVE'";
         String updateQuery = "UPDATE orders SET status = 'COMPLETED' WHERE confirmation_code = ? AND subscriber_id = ?";
 
         try (Connection conn = DriverManager.getConnection(url, username, password)) {
-            // שלב א: בדיקת קיום הקוד בסטטוס ACTIVE
+        	// Step 1: Check if the code exists with ACTIVE status
+
             try (PreparedStatement pstmt = conn.prepareStatement(checkQuery)) {
                 pstmt.setString(1, code);
                 pstmt.setString(2, currentSubscriberID);
                 ResultSet rs = pstmt.executeQuery();
 
                 if (rs.next()) {
-                    // שלב ב: עדכון הסטטוס ב-DB (הקוד נוצל)
+                	// Step 2: Update the status in the DB (the code has been used)
+
                     try (PreparedStatement updatePstmt = conn.prepareStatement(updateQuery)) {
                         updatePstmt.setString(1, code);
                         updatePstmt.setString(2, currentSubscriberID);
