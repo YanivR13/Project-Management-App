@@ -4,6 +4,7 @@ import java.io.IOException; // Importing for handling input/output exceptions du
 import java.time.LocalDate; // Importing for date handling
 import java.util.ArrayList; // Importing for dynamic list structures
 import java.util.HashMap; // Importing for key-value pair storage
+import java.util.List;
 import java.util.Map; // Importing for map interface
 
 import clientGUI.Controllers.MenuControlls.BaseMenuController; // Importing the base menu controller for session data
@@ -536,14 +537,6 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     /**
      * 
      * 
