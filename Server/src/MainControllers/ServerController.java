@@ -6,6 +6,8 @@ import java.time.LocalDate; // Import for modern date management
 
 import serverLogic.managmentLogic.CreateSubscriberHandler;
 import serverLogic.managmentLogic.DeleteSpecialHoursHandler;
+import serverLogic.managmentLogic.GenerateSubReportsHandler;
+import serverLogic.managmentLogic.GenerateTimeReportsHandler;
 import serverLogic.managmentLogic.UpdateHoursHandler; // Import handler for regular hours updates
 import serverLogic.managmentLogic.UpdateSpecialHoursHandler; // Import handler for special hours updates
 import serverLogic.menuLogic.*; // Import all menu-related logic handlers
@@ -131,7 +133,7 @@ public class ServerController extends AbstractServer {
     }
 
     @Override 
-    protected void handleMessageFromClient(Object msg, ConnectionToClient client) { 
+    protected void handleMessageFromClient(Object msg, ConnectionToClient client) throws IOException { 
                 
         serverUI.appendLog("Message received: " + msg + " from " + client); 
 
@@ -273,6 +275,15 @@ public class ServerController extends AbstractServer {
                 case "JOIN_WAITING_LIST":
                 	new JoinWaitingListHandler().handle(messageList, client);
                 	break;
+                
+                case "GET_TIME_REPORTS": {
+                    new GenerateTimeReportsHandler().handle(messageList, client);
+                    break;
+                }
+                
+                case "GET_SUBSCRIBER_REPORTS": 
+                    new GenerateSubReportsHandler().handle(messageList, client);
+                    break;
                     
                 case "GET_RESTAURANT_WORKTIMES": 
                     try { 
@@ -347,6 +358,19 @@ public class ServerController extends AbstractServer {
                         client.sendToClient(new ServiceResponse(ServiceStatus.INTERNAL_ERROR, "ERROR: Unknown Command '" + command + "'")); 
                     } catch (Exception e) { serverUI.appendLog("Failed to send Error message: " + e.getMessage()); } 
                     break; 
+                    
+                case "GET_ALL_ACTIVE_RESERVATIONS":
+                    List<common.Reservation> allActive = dbLogic.restaurantDB.viewReservationController.getAllActiveReservations();
+                    client.sendToClient(allActive);
+                    break;
+                 
+                case "GET_ALL_ACTIVE_VISITS":
+                    // Calling the SQL logic in VisitDBController to get seated diners
+                    List<common.Visit> currentVisits = dbLogic.restaurantDB.VisitDBController.getAllActiveVisits();
+                    // Sending the list back to the representative's dashboard
+                    client.sendToClient(currentVisits);
+                    break;    
+                    
             } 
         } else { 
             serverUI.appendLog("Received unexpected message type: " + msg.getClass().getSimpleName()); 

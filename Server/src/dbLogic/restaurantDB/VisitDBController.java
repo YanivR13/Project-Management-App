@@ -11,6 +11,8 @@ import java.util.List;
 
 import MainControllers.DBController;
 import common.WaitingListEntry;
+import common.Visit;
+
 
 public class VisitDBController {
 
@@ -69,21 +71,14 @@ public class VisitDBController {
 
 
 	public static List<WaitingListEntry> getWaitingEntriesOrderedByEntryTime() throws SQLException {
-
 	    List<WaitingListEntry> waitingList = new ArrayList<>();
+	    String sql = "SELECT confirmation_code, entry_time, number_of_guests, user_id, status, notification_time " +
+	                 "FROM waiting_list_entry WHERE status = 'WAITING' ORDER BY entry_time ASC";
 
-	    String sql =
-	        "SELECT confirmation_code, entry_time, number_of_guests, user_id, status, notification_time " +
-	        "FROM waiting_list_entry " +
-	        "WHERE status = 'WAITING' " +
-	        "ORDER BY entry_time ASC";
-
-	    try (Connection conn = DBController.getInstance().getConnection();
-	         PreparedStatement ps = conn.prepareStatement(sql);
+	    Connection conn = DBController.getInstance().getConnection();
+	    try (PreparedStatement ps = conn.prepareStatement(sql);
 	         ResultSet rs = ps.executeQuery()) {
-
 	        while (rs.next()) {
-
 	            WaitingListEntry entry = new WaitingListEntry(
 	                rs.getLong("confirmation_code"),
 	                rs.getString("entry_time"),
@@ -92,12 +87,42 @@ public class VisitDBController {
 	                rs.getString("status"),
 	                rs.getString("notification_time")
 	            );
-
 	            waitingList.add(entry);
 	        }
 	    }
-
 	    return waitingList;
 	}
+	/**
+     * Fetches all currently seated diners (Active Visits) from the database.
+     * This is used by the Representative Dashboard.
+     */
+    public static List<Visit> getAllActiveVisits() {
+        List<Visit> activeVisits = new ArrayList<>();
+        
+        // Querying for all visits where status is 'ACTIVE' (seated but haven't paid)
+        String query = "SELECT confirmation_code, table_id, user_id, bill_id, start_time, status " +
+                       "FROM visit WHERE status = 'ACTIVE'";
+
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement pstmt = conn.prepareStatement(query);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                // Map DB row to Visit object
+                Visit v = new Visit(
+                    rs.getLong("confirmation_code"),
+                    rs.getInt("table_id"),
+                    rs.getInt("user_id"),
+                    rs.getLong("bill_id"),
+                    rs.getString("start_time"),
+                    Visit.VisitStatus.ACTIVE
+                );
+                activeVisits.add(v);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return activeVisits;
+    }
 
 }

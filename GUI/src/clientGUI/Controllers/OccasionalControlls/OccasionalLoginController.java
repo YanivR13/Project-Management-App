@@ -197,8 +197,53 @@ public class OccasionalLoginController extends BaseMenuController { // Class sta
     } // End method
 
     // --- UI Utility Methods ---
-    @FXML void clickRegister(ActionEvent event) { /* Standard registration navigation remains same */ } // Stub
-    @FXML void clickSubmitForgot(ActionEvent event) { /* Standard reset logic remains same */ } // Stub
+    @FXML void clickRegister(ActionEvent event) { 
+    	try {
+            // טעינת ה-FXML של מסך ההרשמה
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/OccasionalFXML/OccasionalRegistrationFrame.fxml"));
+            Parent root = loader.load();
+
+            // הזרקת הנתונים (הצינור - Pipe) לקונטרולר החדש
+            Object nextController = loader.getController();
+            if (nextController instanceof BaseMenuController) {
+                ((BaseMenuController) nextController).setClient(client, userType, userId);
+            }
+
+            // עדכון המסך (שימוש במתודה הקיימת אצלך updateStage)
+            updateStage(root, "Guest Registration");
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            appendLog("Error loading registration screen: " + e.getMessage());
+        }
+    } 
+    @FXML 
+    void clickSubmitForgot(ActionEvent event) {
+        // 1. שליפת הנתונים מהשדות שהמשתמש מילא ב-paneForgot
+        String contact = txtForgotContact.getText().trim();
+        String newName = txtNewUsername.getText().trim();
+
+        // 2. בדיקה שהשדות לא ריקים לפני ששולחים לשרת
+        if (contact.isEmpty() || newName.isEmpty()) {
+            appendLog("Error: Please fill in both contact info and new username.");
+            return;
+        }
+
+        // 3. בניית ההודעה לשרת לפי הפורמט שהגדרת ב-Switch Case בשרת
+        if (client != null) {
+            appendLog("Sending reset request for contact: " + contact);
+            
+            ArrayList<String> message = new ArrayList<>();
+            message.add("RESET_OCCASIONAL_USERNAME"); // הפקודה שהשרת שלך מצפה לה
+            message.add(contact);  // נתון ראשון (זיהוי)
+            message.add(newName);  // נתון שני (שם חדש)
+            
+            // שליחה לשרת
+            client.handleMessageFromClientUI(message);
+        } else {
+            appendLog("Connection error: Client is null.");
+        }
+    }
     @FXML void showForgotArea(ActionEvent event) { paneLogin.setVisible(false); paneLogin.setManaged(false); paneForgot.setVisible(true); paneForgot.setManaged(true); } // UI toggle
     @FXML void hideForgotArea(ActionEvent event) { paneForgot.setVisible(false); paneForgot.setManaged(false); paneLogin.setVisible(true); paneLogin.setManaged(true); } // UI toggle
 

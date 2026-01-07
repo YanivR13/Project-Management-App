@@ -85,4 +85,31 @@ public class viewReservationController {
 	        return false;
 	    }
 	}
+	
+	
+
+	public static List<Reservation> getAllActiveReservations() {
+	    List<Reservation> activeReservations = new ArrayList<>();
+	    String query = "SELECT confirmation_code, reservation_datetime, number_of_guests, user_id, status " +
+	                   "FROM reservation WHERE status = 'ACTIVE' ORDER BY reservation_datetime ASC";
+
+	    Connection conn = DBController.getInstance().getConnection();
+	    try (PreparedStatement pstmt = conn.prepareStatement(query);
+	         ResultSet rs = pstmt.executeQuery()) {
+
+	        while (rs.next()) {
+	            Reservation res = new Reservation(
+	                rs.getInt("user_id"),
+	                rs.getString("reservation_datetime"),
+	                rs.getInt("number_of_guests")
+	            );
+	            res.setConfirmationCode(rs.getLong("confirmation_code"));
+	            activeReservations.add(res);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return activeReservations;
+	}
+	
 }
