@@ -2,11 +2,10 @@ package dbLogic.restaurantDB;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 
 import MainControllers.DBController;
-import common.Reservation;
 
 /**
  * Handles DB operations related to the waiting_list_entry table.
@@ -16,39 +15,68 @@ public class JoinWaitingListDBController {
     /**
      * Inserts a new entry into the waiting list.
      *
-     * @param confirmationCode Reservation confirmation code
+     * @param confirmationCode Unique confirmation code
      * @param userId           User ID
      * @param numberOfGuests   Number of guests
-     * @param entryTime        Time the user entered the waiting list
+     * @param status           Entry status (WAITING / ARRIVED)
      * @throws SQLException if a DB error occurs
      */
     public static void insertWaitingListEntry(
-            Reservation reservation,
-            long confirmationCode
+            long confirmationCode,
+            int userId,
+            int numberOfGuests,
+            String status
     ) throws SQLException {
 
         String sql =
             "INSERT INTO waiting_list_entry " +
             "(confirmation_code, entry_time, number_of_guests, user_id, status, notification_time) " +
-            "VALUES (?, ?, ?, ?, ?, NULL)";
+            "VALUES (?, NOW(), ?, ?, ?, NULL)";
 
-        Connection conn = null;
-        PreparedStatement pstmt = null;
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
-        try {
-            conn = DBController.getInstance().getConnection();
-            pstmt = conn.prepareStatement(sql);
 
-            pstmt.setLong(1, confirmationCode);
-            pstmt.setObject(2, reservation.getReservationDateTime()); 
-            pstmt.setInt(3, reservation.getNumberOfGuests());
-            pstmt.setInt(4, reservation.getUserId());
-            pstmt.setString(5, "WAITING");
+        	ps.setLong(1, confirmationCode);
+        	ps.setInt(2, numberOfGuests);
+        	ps.setInt(3, userId);
+        	ps.setString(4, status);
 
-            pstmt.executeUpdate();
-
-        } finally {
-            if (pstmt != null) pstmt.close();
+        	ps.executeUpdate();
         }
     }
+    
+    public static void updateStatus(
+            long confirmationCode,
+            String newStatus
+    ) throws Exception {
+
+        String sql =
+            "UPDATE waiting_list_entry " +
+            "SET status = ?, notification_time = NOW() " +
+            "WHERE confirmation_code = ?";
+
+        Connection conn = DBController.getInstance().getConnection(); 
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newStatus);
+            ps.setLong(2, confirmationCode);
+            ps.executeUpdate();
+        }
+    }
+    
+    public static String getStatusByCode(long confirmationCode) throws Exception {
+        String sql = "SELECT status FROM waiting_list_entry WHERE confirmation_code = ?";
+        
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, confirmationCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("status");
+                }
+            }
+        }
+        return null;
+    }
+
 }

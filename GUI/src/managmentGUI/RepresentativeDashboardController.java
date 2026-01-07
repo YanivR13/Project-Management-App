@@ -459,7 +459,7 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     /**
      * Thread-safe helper to update the UI log area.
      */
-    private void appendLog(String msg) { // Start method
+    protected void appendLog(String msg) { // Start method
         // Verify component existence and redirect to the UI thread
         if (txtLog != null) { // Null check
             Platform.runLater(() -> txtLog.appendText("> " + msg + "\n")); // Appending text

@@ -92,5 +92,13 @@ public class WaitingListEntry implements Serializable { // Defining the class an
     public String getStatus() { // Start of getStatus method
         return status;          // Returning the status string
     } // End of method
+    
+    /**
+     * Retrieves the number of guests for this waiting list entry.
+     * @return int numberOfGuests
+     */
+    public int getNumberOfGuests() {
+        return numberOfGuests;
+    }
 
 } // End of WaitingListEntry class
