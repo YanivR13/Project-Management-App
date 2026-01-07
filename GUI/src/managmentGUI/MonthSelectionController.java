@@ -1,5 +1,6 @@
 package managmentGUI;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import client.ChatClient;              // <<< זה ה-client האמיתי של OCSF
@@ -73,22 +74,23 @@ public class MonthSelectionController {
      */
     @FXML
     void generateSubscriberReports(ActionEvent event) {
-
         String selectedMonth = monthCombo.getValue();
-
         if (selectedMonth == null) {
-            showPopup("Error", "Please select month first");
+            // אופציונלי: הצגת הודעה למשתמש לבחור חודש
             return;
         }
 
+        // יצירת ההודעה לשרת
         ArrayList<Object> message = new ArrayList<>();
-
-        message.add("GET_SUBSCRIBER_REPORTS");
-        message.add(1);
+        message.add("GET_SUBSCRIBER_REPORTS"); // הפקודה שהגדרנו ב-ServerController
         message.add(selectedMonth);
 
-        if (client != null) {
-            client.handleMessageFromClientUI(message);
+        try {
+            client.sendToServer(message); // שליחה לשרת
+            // (אופציונלי) סגירת חלון הבחירה לאחר הלחיצה
+            // ((Stage)subRepBtn.getScene().getWindow()).close(); 
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

@@ -1,5 +1,6 @@
 package managmentGUI;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,41 +17,33 @@ import javafx.stage.Stage;
 
 /**
  * קונטרולר עבור דשבורד מנהל.
- * יורש את כל הפונקציונליות של נציג (נציג שירות) ומוסיף יכולות הפקת דוחות.
+ * יורש את כל הפונקציונליות של נציג ומוסיף יכולות הפקת דוחות.
  */
 public class ManagerDashboardController extends RepresentativeDashboardController {
 
-    /**
-     * מתודה המתבצעת כאשר הלקוח מוכן.
-     * אנו משתמשים במימוש של מחלקת האב כדי לרשום את ה-UI ולטעון מסך התחלתי.
-     */
     @Override
     public void onClientReady() {
-        super.onClientReady();// הפעלת הלוגיקה הקיימת של הנציג 
+        super.onClientReady();
         appendLog("Manager Mode Active: Additional reporting tools enabled.");
     }
     
     @FXML
     public void openMonthSelection(ActionEvent event) {
         try {
-            // טעינת הקובץ של מסך בחירת חודש
-        	FXMLLoader loader = new FXMLLoader(
+            FXMLLoader loader = new FXMLLoader(
         		    getClass().getResource("/managmentGUI/ActionsFXML/monthSelection.fxml")
         		);
-
             Parent root = loader.load();
             
             MonthSelectionController ctrl = loader.getController();
             ctrl.setClient(this.client); 
             
-            // יצירת חלון חדש
             Stage stage = new Stage();
             stage.setTitle("Month Selection");
             stage.setScene(new Scene(root));
             stage.show();
             
         } catch (Exception e) {
-            // אם לא נפתח – תוצג הודעה במסך עצמו
             System.out.println("Failed to open month screen: " + e.getMessage());
             e.printStackTrace();
         }
@@ -58,53 +51,79 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
     
     @Override
     public void display(Object message) {
-        if (message instanceof ServiceResponse) {
-            ServiceResponse res = (ServiceResponse) message;
-            Object data = res.getData();
+        if (message instanceof ArrayList) {
+            ArrayList<Object> responseList = (ArrayList<Object>) message;
+            String header = (String) responseList.get(0);
 
-            // בדיקה: האם המידע שהגיע הוא נתונים של דוח זמנים?
-            if (data instanceof List && !((List<?>) data).isEmpty()) {
-                // אנחנו מניחים שהשרת שלח List של Maps כפי שתכננו
+            // 1. בדיקה עבור דוח זמנים
+            if ("REPORT_TIME_DATA_SUCCESS".equals(header)) {
+                List<Map<String, Object>> data = (List<Map<String, Object>>) responseList.get(1);
                 Platform.runLater(() -> {
-                    showGraph((List<Map<String, Object>>) data);
+                    appendLog("Time Report Data Received Successfully.");
+                    showGraph(data);
                 });
             } 
+            // 2. בדיקה עבור דוח מנויים (החלק החדש)
+            else if ("RECEIVE_SUBSCRIBER_REPORTS".equals(header)) {
+                List<Map<String, Object>> subData = (List<Map<String, Object>>) responseList.get(1);
+                Platform.runLater(() -> {
+                    if (subData == null || subData.isEmpty()) {
+                        appendLog("No subscriber data found for the selected month.");
+                    } else {
+                        appendLog("Subscriber Report Data Received Successfully.");
+                        showSubGraph(subData); // פתיחת גרף המנויים
+                    }
+                });
+            }
+            // 3. בדיקה אם קיבלנו שגיאת דוח
+            else if ("REPORT_ERROR".equals(header)) {
+                String errorMsg = (String) responseList.get(1);
+                Platform.runLater(() -> appendLog("Error: " + errorMsg));
+            }
             else {
-                // אם זה לא דוח, שלח לטיפול הרגיל של הנציג (הדפסת הודעות הצלחה/שגיאה)
-                super.display(message);
+                super.display(message); 
             }
         }
     }
     
- // בתוך ManagerDashboardController
     public void showGraph(List<Map<String, Object>> reportData) {
         Platform.runLater(() -> {
             try {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("TimeReportGraph.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/managmentGUI/ActionsFXML/TimeReportGraph.fxml"));
                 Parent root = loader.load();
-                
-                // השגת הקונטרולר של הגרף
                 TimeReportGraphController graphCtrl = loader.getController();
-                
-                // יצירת סדרת נתונים לגרף
-                XYChart.Series<String, Number> series = new XYChart.Series<>();
-                series.setName("Minutes of Delay");
-
-                for (Map<String, Object> entry : reportData) {
-                    // לוקחים את התאריך והאיחור
-                    String date = entry.get("reserved").toString(); // או פורמט יפה יותר
-                    int delay = (int) entry.get("delay");
-                    
-                    series.getData().add(new XYChart.Data<>(date, delay));
-                }
-
-                graphCtrl.getBarChart().getData().add(series);
+                graphCtrl.initData(reportData);
                 
                 Stage stage = new Stage();
+                stage.setTitle("Time & Delays Report");
+                stage.setScene(new Scene(root));
+                stage.show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    /**
+     * מתודה לפתיחת גרף דוח מנויים (הזמנות מול המתנות)
+     */
+    public void showSubGraph(List<Map<String, Object>> reportData) {
+        Platform.runLater(() -> {
+            try {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/managmentGUI/ActionsFXML/SubscriberReportGraph.fxml"));
+                Parent root = loader.load();
+                
+                // השגת הקונטרולר של גרף המנויים
+                SubReportGraphController subGraphCtrl = loader.getController();
+                subGraphCtrl.initData(reportData);
+                
+                Stage stage = new Stage();
+                stage.setTitle("Subscriber Activity Report");
                 stage.setScene(new Scene(root));
                 stage.show();
                 
             } catch (IOException e) {
+                appendLog("Error loading Subscriber Graph FXML.");
                 e.printStackTrace();
             }
         });
