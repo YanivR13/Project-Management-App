@@ -320,7 +320,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
         
         // SQL 3: Insert into subscriber table
         // username and qr_code remain NULL as requested. status is set to 'Active'.
-        String insertSubSql = "INSERT INTO subscriber (user_id, subscriber_id, status) VALUES (?, ?, 'Active')";
+        String insertSubSql = "INSERT INTO subscriber (user_id, subscriber_id, status) VALUES (?, ?, 'subscriber')";
 
         try { // Start transaction block
             conn.setAutoCommit(false); // Disable auto-commit for atomicity

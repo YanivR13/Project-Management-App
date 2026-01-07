@@ -58,7 +58,7 @@ public class SubscriberLoginHandler {
                 client.sendToClient(response);
             } else {
                 // Logic Failure: Inform the UI that the ID is either invalid or inactive
-                client.sendToClient("ERROR: Subscriber ID not found or inactive.");
+                client.sendToClient("ERROR: Subscriber ID not found.");
             }
         } catch (NumberFormatException e) {
             // Handles cases where the input string cannot be converted to a numeric long
