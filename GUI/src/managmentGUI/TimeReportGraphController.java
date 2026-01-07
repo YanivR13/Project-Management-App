@@ -1,56 +1,58 @@
 package managmentGUI;
 
-import java.net.URL;
-import java.util.List;
-import java.util.Map;
-import java.util.ResourceBundle;
-
 import javafx.fxml.FXML;
-import javafx.fxml.Initializable;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
+import javafx.scene.chart.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import java.util.*;
 
-public class TimeReportGraphController implements Initializable {
+public class TimeReportGraphController {
 
-    @FXML
-    private BarChart<String, Number> timeBarChart;
+    @FXML private BarChart<String, Number> timeBarChart;
+    @FXML private CategoryAxis xAxis;
+    @FXML private NumberAxis yAxis;
+    @FXML private PieChart arrivalPieChart;
+    @FXML private PieChart departurePieChart;
 
-    @FXML
-    private CategoryAxis xAxis; // ציר ה-X: מייצג את הביקורים
-
-    @FXML
-    private NumberAxis yAxis;   // ציר ה-Y: מייצג דקות איחור
-
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
-        // הגדרת תוויות לצירים
-        xAxis.setLabel("Visit (Time/ID)");
-        yAxis.setLabel("Delay in Minutes");
-        timeBarChart.setTitle("Customer Delays Report");
-    }
-
-    /**
-     * פונקציה שמקבלת את הנתונים מה-DashboardController וממלאת את הגרף
-     */
     public void initData(List<Map<String, Object>> reportData) {
-        // יצירת סדרת נתונים חדשה
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Minutes of Delay");
+        // 1. הגדרת גרף עמודות (איחורים ושהייה)
+        XYChart.Series<String, Number> delaySeries = new XYChart.Series<>();
+        delaySeries.setName("Avg Delay");
+        XYChart.Series<String, Number> durationSeries = new XYChart.Series<>();
+        durationSeries.setName("Avg Stay Duration");
 
-        // מעבר על הנתונים שהגיעו מהשרת
+        // 2. הכנה לגרפי עוגה (ספירת שעות)
+        Map<Integer, Integer> arrivalCounts = new HashMap<>();
+        Map<Integer, Integer> departureCounts = new HashMap<>();
+
         for (Map<String, Object> entry : reportData) {
-            // חילוץ נתונים (שים לב שהשמות תואמים למה שכתבנו ב-reportsDBController)
-            String timeLabel = entry.get("reserved").toString();
-            Number delay = (Number) entry.get("delay");
+            // נתוני עמודות
+            String day = entry.get("date").toString();
+            day = day.substring(day.lastIndexOf("-") + 1);
+            delaySeries.getData().add(new XYChart.Data<>(day, (Number) entry.get("delay")));
+            durationSeries.getData().add(new XYChart.Data<>(day, (Number) entry.get("duration")));
 
-            // הוספת נקודה לגרף: (שם הביקור, מספר דקות האיחור)
-            series.getData().add(new XYChart.Data<>(timeLabel, delay));
+            // נתוני עוגה - ספירת שעות
+            int arrH = (int) entry.get("arr_hour");
+            int depH = (int) entry.get("dep_hour");
+            arrivalCounts.put(arrH, arrivalCounts.getOrDefault(arrH, 0) + 1);
+            departureCounts.put(depH, departureCounts.getOrDefault(depH, 0) + 1);
         }
 
-        // הוספת הסדרה לגרף
-        timeBarChart.getData().clear(); // ניקוי נתונים קודמים אם היו
-        timeBarChart.getData().add(series);
+        // הזנת נתונים לגרף עמודות
+        timeBarChart.getData().clear();
+        timeBarChart.getData().addAll(delaySeries, durationSeries);
+
+        // הזנת נתונים לגרפי עוגה
+        fillPieChart(arrivalPieChart, arrivalCounts);
+        fillPieChart(departurePieChart, departureCounts);
+    }
+
+    private void fillPieChart(PieChart chart, Map<Integer, Integer> counts) {
+        ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+        counts.forEach((hour, count) -> {
+            pieData.add(new PieChart.Data(hour + ":00", count));
+        });
+        chart.setData(pieData);
     }
 }

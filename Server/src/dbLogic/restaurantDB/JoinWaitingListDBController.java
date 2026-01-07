@@ -78,5 +78,22 @@ public class JoinWaitingListDBController {
         }
         return null;
     }
+    
+ // בתוך JoinWaitingListDBController.java
+
+    public static boolean isUserAlreadyActive(int userId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM waiting_list_entry WHERE user_id = ? AND (status = 'WAITING' OR status = 'ARRIVED')";
+        
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0; // מחזיר true אם נמצאה לפחות רשומה אחת
+                }
+            }
+        }
+        return false;
+    }
 
 }
