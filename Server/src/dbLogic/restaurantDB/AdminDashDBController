@@ -1,0 +1,52 @@
+package dbLogic.restaurantDB;
+
+import java.sql.*;
+import java.util.ArrayList;
+import MainControllers.DBController;
+
+public class AdminDashDBController {
+
+    /**
+     * Viewing list of all Subscribers
+     */
+    public static ArrayList<String[]> getAllSubscribers() {
+        ArrayList<String[]> subscribers = new ArrayList<>();
+        String sql = "SELECT s.subscriber_id, s.username, u.phone_number, u.email, s.status " +
+                     "FROM subscriber s JOIN user u ON s.user_id = u.user_id";
+
+        Connection conn = DBController.getInstance().getConnection();
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                subscribers.add(new String[]{
+                    rs.getString("subscriber_id"), rs.getString("username"),
+                    rs.getString("phone_number"), rs.getString("email"), rs.getString("status")
+                });
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return subscribers;
+    }
+
+    /**
+     * Viewing active waiting list
+     */
+    public static ArrayList<String[]> getWaitingListEntries() {
+        ArrayList<String[]> list = new ArrayList<>();
+        String sql = "SELECT w.confirmation_code, w.entry_time, w.number_of_guests, u.phone_number, w.status " +
+                     "FROM waiting_list_entry w JOIN user u ON w.user_id = u.user_id " +
+                     "WHERE w.status = 'WAITING' ORDER BY w.entry_time ASC";
+
+        Connection conn = DBController.getInstance().getConnection();
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                list.add(new String[]{
+                    rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5)
+                });
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+}
