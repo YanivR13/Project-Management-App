@@ -32,8 +32,8 @@ import javafx.stage.Stage; // Importing for window stage management
 public class RepresentativeDashboardController extends BaseMenuController { // Class definition start
 
     // --- 1. Primary FXML Fields ---
-    @FXML private TextArea txtLog; // Console area for system feedback
-    @FXML private AnchorPane contentPane; // The central container where sub-screens are injected
+    @FXML protected TextArea txtLog; // Console area for system feedback
+    @FXML protected AnchorPane contentPane; // The central container where sub-screens are injected
 
     // --- Sub-screen FXML Fields (Injected only when specific FXMLs are loaded) ---
     @FXML private TableView<DayScheduleRow> tableHours; // Table for displaying regular hours

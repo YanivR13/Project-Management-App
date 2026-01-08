@@ -51,48 +51,55 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
     
     @Override
     public void display(Object message) {
+        // בדיקה ראשונית: האם מדובר ב-ArrayList (הפורמט שבו נשלחים דוחות המנהל)
         if (message instanceof ArrayList) {
             ArrayList<Object> responseList = (ArrayList<Object>) message;
             String header = (String) responseList.get(0);
 
-         // 1. בדיקה עבור דוח זמנים
+            // 1. בדיקה עבור דוח זמנים ואיחורים
             if ("REPORT_TIME_DATA_SUCCESS".equals(header)) {
                 List<Map<String, Object>> data = (List<Map<String, Object>>) responseList.get(1);
                 Platform.runLater(() -> {
                     if (data == null || data.isEmpty()) {
                         showErrorAlert("No Data Found", "No time and delay records were found for the selected month.");
-                        // לא נכתב כלום ללוג כאן
                     } else {
                         appendLog("Time Report Data Received Successfully.");
                         showGraph(data);
                     }
                 });
+                return; // טיפלנו בהודעה, אין צורך להמשיך ל-super
             } 
-            // 2. בדיקה עבור דוח מנויים
+            
+            // 2. בדיקה עבור דוח מנויים ורשימות המתנה
             else if ("RECEIVE_SUBSCRIBER_REPORTS".equals(header)) {
                 List<Map<String, Object>> subData = (List<Map<String, Object>>) responseList.get(1);
                 Platform.runLater(() -> {
                     if (subData == null || subData.isEmpty()) {
                         showErrorAlert("No Data Found", "No subscriber or waiting list activity found for the selected month.");
-                        // לא נכתב כלום ללוג כאן
                     } else {
                         appendLog("Subscriber Report Data Received Successfully.");
                         showSubGraph(subData);
                     }
                 });
+                return; // טיפלנו בהודעה
             }
-            // 3. בדיקה אם קיבלנו שגיאת דוח כללית מהשרת
+            
+            // 3. בדיקה אם קיבלנו שגיאת דוח ספציפית מהשרת
             else if ("REPORT_ERROR".equals(header)) {
                 String errorMsg = (String) responseList.get(1);
                 Platform.runLater(() -> {
                     showErrorAlert("System Error", "Error: " + errorMsg);
-                    // לא נכתב כלום ללוג כאן
                 });
-            }
-            else {
-                super.display(message); 
+                return; // טיפלנו בהודעה
             }
         }
+
+        /**
+         * אם הגענו לכאן, סימן שההודעה היא לא ArrayList של דוחות מנהל.
+         * היא יכולה להיות אובייקט Restaurant (עבור שעות פעילות), ServiceResponse (הודעות אישור/שגיאה),
+         * או רשימה רגילה של הזמנות/ביקורים שמחלקת האב יודעת לנהל.
+         */
+        super.display(message); 
     }
     
     public void showGraph(List<Map<String, Object>> reportData) {

@@ -22,7 +22,7 @@ public class DBSubscriberConnection implements ILoginDatabase { // Beginning of 
         Connection conn = DBController.getInstance().getConnection(); // Retrieving the connection
         
         // Defining the SQL query to check for a valid subscriber ID with an 'Active' status
-        String sql = "SELECT user_id FROM subscriber WHERE subscriber_id = ? AND status = 'Active'"; // SQL query string
+        String sql = "SELECT user_id FROM subscriber WHERE subscriber_id = ? AND status = 'subscriber'"; // SQL query string
         
         // Using try-with-resources to ensure the PreparedStatement is automatically closed
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) { // Initializing the statement
