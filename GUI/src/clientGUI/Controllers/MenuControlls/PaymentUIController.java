@@ -28,9 +28,9 @@ public class PaymentUIController extends BaseMenuController implements ICustomer
     @FXML private Button btnConfirmPay; // Button to process the payment
 
     // Internal session and data storage fields
-    private ChatClient client; // Reference to the active network client
-    private String userType; // Stores the role of the user (e.g., Subscriber)
-    private int userId; // Stores the unique identifier of the user
+    //private ChatClient client; // Reference to the active network client
+    //private String userType; // Stores the role of the user (e.g., Subscriber)
+    //private int userId; // Stores the unique identifier of the user
 
     // Tracking IDs required for the backend transaction
     private long currentBillId; // The ID of the bill being processed
@@ -121,32 +121,23 @@ public class PaymentUIController extends BaseMenuController implements ICustomer
     /**
      * Navigates the user back to their respective main menu based on their user type.
      */
-    private void returnToMainMenu(ActionEvent event) { // Start of navigation method
-        
-        // Variable to hold the destination FXML file path
-        String path = ""; // Initialize empty path string
-        
-        // Refactored: Using switch-case to determine path based on role string
-        if (userType != null) { // Guard clause to ensure userType is assigned
-            
-            switch (userType) { // Evaluate the user role
-                
-                case "Subscriber": // Case for registered members
-                    path = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml"; // Set subscriber FXML path
-                    break; // Exit switch
-                    
-                default: // Default case for Occasional users or others
-                    path = "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"; // Set occasional FXML path
-                    break; // Exit switch
-                    
-            } // End of switch
-            
-        } // End of null guard
-            
-        // Trigger the navigation using the helper method from BaseMenuController
-        navigateTo(client, event, userType, userId, path, "Bistro - Main Menu"); // Execute scene transition
-        
-    } // End of returnToMainMenu method
+    private void returnToMainMenu(ActionEvent event) {
+        String path = "";
+        if (userType != null) {
+            switch (userType) {
+                case "Terminal":
+                    path = "/clientGUI/fxmlFiles/Terminal/ManageReservationFrame.fxml";
+                    break;
+                case "Subscriber":
+                    path = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml";
+                    break;
+                default:
+                    path = "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml";
+                    break;
+            }
+        }
+        navigateTo(client, event, userType, userId, path, "Bistro - Main Menu");
+    }
 
     // Interface requirement implementations (No logic changes permitted)
     @Override public void viewOrderHistory(ChatClient client, int userId) {} // Empty stub
