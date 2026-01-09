@@ -10,54 +10,112 @@ import java.util.List;
 
 import MainControllers.DBController;
 
+/**
+ * Database access controller for restaurant table management.
+ * 
+ * This class centralizes all database operations related to tables,
+ * including availability queries, capacity calculations, and table state updates.
+ */
 public class TableDBController {
 
-	public static List<Integer> getCandidateTables(int numberOfGuests) {
+    /**
+     * Retrieves a list of available table IDs that can accommodate
+     * the given number of guests.
+     *
+     * The result is ordered by table capacity in ascending order,
+     * enabling a best-fit seating strategy (smallest suitable table first).
+     *
+     * @param numberOfGuests Required seating capacity
+     * @return List of candidate table IDs sorted by capacity
+     */
+    public static List<Integer> getCandidateTables(int numberOfGuests) {
 
-	    List<Integer> tableIds = new ArrayList<>();
+        List<Integer> tableIds = new ArrayList<>();
 
-	    String sql =
-	        "SELECT table_id FROM `table` WHERE capacity >= ? AND is_available = 1";
+        String sql =
+            "SELECT table_id " +
+            "FROM `table` " +
+            "WHERE capacity >= ? AND is_available = 1 " +
+            "ORDER BY capacity ASC";
 
-	    Connection conn = DBController.getInstance().getConnection();
-	    try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-	        pstmt.setInt(1, numberOfGuests);
+            pstmt.setInt(1, numberOfGuests);
 
-	        try (ResultSet rs = pstmt.executeQuery()) {
-	            while (rs.next()) {
-	                tableIds.add(rs.getInt("table_id"));
-	            }
-	        }
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    tableIds.add(rs.getInt("table_id"));
+                }
+            }
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
-	    return tableIds;
-	}
+        return tableIds;
+    }
 
-    
-    
-    
+    /**
+     * Calculates the total seating capacity of the restaurant
+     * by summing the capacity of all tables.
+     *
+     * @return Total restaurant seating capacity
+     */
     public static int getRestaurantMaxCapacity() {
 
-    	String sql = "SELECT COALESCE(SUM(capacity), 0) FROM `table`";
+        String sql = "SELECT COALESCE(SUM(capacity), 0) FROM `table`";
 
         Connection conn = DBController.getInstance().getConnection();
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-        	
+
             if (rs.next()) {
                 return rs.getInt(1);
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return 0;
     }
-    
+
+    /**
+     * Calculates the total seating capacity currently occupied
+     * by unavailable tables (is_available = 0).
+     *
+     * This represents capacity already taken by active visits.
+     *
+     * @return Total occupied seating capacity
+     * @throws SQLException if a database error occurs
+     */
+    public static int getUnavailableCapacity() throws SQLException {
+
+        String sql =
+            "SELECT COALESCE(SUM(capacity), 0) " +
+            "FROM `table` " +
+            "WHERE is_available = 0";
+
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * Marks a specific table as unavailable.
+     * Used when a table is assigned to an active visit.
+     *
+     * @param tableId ID of the table to mark as unavailable
+     * @throws Exception if a database error occurs
+     */
     public static void setTableUnavailable(int tableId) throws Exception {
 
         String sql =
@@ -72,9 +130,14 @@ public class TableDBController {
             ps.executeUpdate();
         }
     }
-    
-    
-    
+
+    /**
+     * Retrieves the seating capacity of a specific table.
+     *
+     * @param tableId Table identifier
+     * @return Seating capacity of the table
+     * @throws SQLException if the table does not exist
+     */
     public static int getTableCapacity(int tableId) throws SQLException {
 
         String sql = "SELECT capacity FROM `table` WHERE table_id = ?";
@@ -92,23 +155,25 @@ public class TableDBController {
         }
 
         throw new SQLException("Table not found: table_id=" + tableId);
-    } 
+    }
 
     /**
-     * Retrieves a complete list of all tables currently stored in the database.
-     * The results are ordered by their unique table ID in ascending order.
-     * * @return A List of Table objects containing ID, capacity, and availability status.
+     * Retrieves all tables currently stored in the system.
+     * Each table includes its ID, seating capacity,
+     * and availability status.
+     *
+     * @return List of all tables ordered by table ID
      */
     public static List<common.Table> getAllTables() {
+
         List<common.Table> tables = new ArrayList<>();
         String sql = "SELECT * FROM `table` ORDER BY table_id ASC";
-        Connection conn = DBController.getInstance().getConnection();
 
+        Connection conn = DBController.getInstance().getConnection();
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-            	// Map the current row in the ResultSet to a new Table domain object
                 common.Table t = new common.Table(
                     rs.getInt("table_id"),
                     rs.getInt("capacity"),
@@ -116,138 +181,136 @@ public class TableDBController {
                 );
                 tables.add(t);
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
         return tables;
     }
-    
+
     /**
-     * Calculates the next table ID while ensuring it starts from at least 1.
-     * Even if the "archive" table (-1) exists, this logic guarantees that 
-     * new real tables will receive a positive ID (1, 2, 3...).
-     * * @return The next available positive ID.
+     * Generates the next available positive table ID.
+     * Ensures table IDs always start from 1,
+     * even if a reserved archive table (-1) exists.
+     *
+     * @return Next available table ID
      */
     private static int getNextTableId() {
+
         String sql = "SELECT MAX(table_id) FROM `table`";
         Connection conn = DBController.getInstance().getConnection();
-        
+
         try (PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
-            
+
             if (rs.next()) {
                 int maxId = rs.getInt(1);
-                
-                // If the only table is -1, maxId + 1 would be 0.
-                // We use Math.max to ensure our first real table starts at ID 1.
                 return Math.max(1, maxId + 1);
             }
+
         } catch (SQLException e) {
-            System.err.println("SQL Error while generating next table ID: " + e.getMessage());
             e.printStackTrace();
         }
-        
-        // Default starting point if the table is completely empty
-        return 1; 
+
+        return 1;
     }
 
-
     /**
-     * Adds a new table to the system using manual ID management.
-     * After a successful insertion, it triggers the waiting list logic to 
-     * automatically check if waiting diners can fit the new table.
-     * * @param capacity The number of seats for the new table.
-     * @return true if the table was added successfully, false otherwise.
+     * Adds a new table to the system with the given seating capacity.
+     * After a successful insertion, the waiting list logic is triggered
+     * to attempt seating waiting guests.
+     *
+     * @param capacity Number of seats for the new table
+     * @return true if the table was added successfully, false otherwise
      */
     public static boolean addNewTable(int capacity) {
-    	// Calculate the next available ID (used because DB is not set to Auto-Increment)
-        int nextId = getNextTableId(); 
-        
-        // Insert table as available (is_available = 1)
-        String sql = "INSERT INTO `table` (table_id, capacity, is_available) VALUES (?, ?, 1)";
-        Connection conn = DBController.getInstance().getConnection();
 
+        int nextId = getNextTableId();
+        String sql = "INSERT INTO `table` (table_id, capacity, is_available) VALUES (?, ?, 1)";
+
+        Connection conn = DBController.getInstance().getConnection();
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             pstmt.setInt(1, nextId);
             pstmt.setInt(2, capacity);
-            
-            int rowsAffected = pstmt.executeUpdate();
-            boolean isSuccess = rowsAffected > 0;
 
-            if (isSuccess) {
-            	// If the new table is added, immediately try to seat guests from the waiting list
+            boolean success = pstmt.executeUpdate() > 0;
+
+            if (success) {
                 VisitController.handleTableFreed(nextId);
             }
-            
-            return isSuccess;
-            
+
+            return success;
+
         } catch (SQLException e) {
-            System.err.println("SQL Error (Add Table): " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
     /**
-     * Deletes a table from the database using a transaction.
-     * To prevent Foreign Key violations while preserving history, it reassigns 
-     * existing visits to a dummy ID (-1) before deleting the table record.
-     * * @param tableId The ID of the table to be deleted.
-     * @return true if the deletion was successful, false otherwise.
+     * Deletes a table from the system using a transactional process.
+     * Existing visit records are reassigned to a dummy archive table (-1)
+     * to preserve historical data and avoid foreign key violations.
+     *
+     * @param tableId ID of the table to delete
+     * @return true if deletion succeeded, false otherwise
      */
     public static boolean deleteTable(int tableId) {
-        Connection conn = DBController.getInstance().getConnection();
-        
-        try {
-            conn.setAutoCommit(false); // התחלת עסקה (Transaction)
 
-            // Step A: Reassign historical visits to table ID -1 (the "archive" table)
-            // This satisfies DB constraints without deleting visit records
-            String updateVisitsSql = "UPDATE `visit` SET table_id = -1 WHERE table_id = ?";
+        Connection conn = DBController.getInstance().getConnection();
+
+        try {
+            conn.setAutoCommit(false);
+
+            String updateVisitsSql =
+                "UPDATE `visit` SET table_id = -1 WHERE table_id = ?";
             try (PreparedStatement ps1 = conn.prepareStatement(updateVisitsSql)) {
                 ps1.setInt(1, tableId);
                 ps1.executeUpdate();
             }
 
-           // Step B: Safely delete the actual table record from the 'table' table
-            String deleteTableSql = "DELETE FROM `table` WHERE table_id = ?";
+            String deleteTableSql =
+                "DELETE FROM `table` WHERE table_id = ?";
             try (PreparedStatement ps2 = conn.prepareStatement(deleteTableSql)) {
                 ps2.setInt(1, tableId);
-                int affectedRows = ps2.executeUpdate();
-
-                conn.commit(); 
-                return affectedRows > 0;
+                int affected = ps2.executeUpdate();
+                conn.commit();
+                return affected > 0;
             }
 
         } catch (SQLException e) {
-            try { if (conn != null) conn.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
-            System.err.println("SQL Error (Soft Transfer & Delete): " + e.getMessage());
+            try { conn.rollback(); } catch (SQLException ignored) {}
+            e.printStackTrace();
             return false;
+
         } finally {
-            try { if (conn != null) conn.setAutoCommit(true); } catch (SQLException e) { e.printStackTrace(); }
+            try { conn.setAutoCommit(true); } catch (SQLException ignored) {}
         }
     }
-    
 
     /**
      * Updates the seating capacity of an existing table.
-     * * @param tableId The ID of the table to update.
-     * @param newCapacity The new number of seats.
-     * @return true if updated successfully, false otherwise.
+     *
+     * @param tableId ID of the table to update
+     * @param newCapacity New seating capacity
+     * @return true if updated successfully, false otherwise
      */
     public static boolean updateTableCapacity(int tableId, int newCapacity) {
-        String sql = "UPDATE `table` SET capacity = ? WHERE table_id = ?";
-        Connection conn = DBController.getInstance().getConnection();
 
+        String sql = "UPDATE `table` SET capacity = ? WHERE table_id = ?";
+
+        Connection conn = DBController.getInstance().getConnection();
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
             pstmt.setInt(1, newCapacity);
             pstmt.setInt(2, tableId);
             return pstmt.executeUpdate() > 0;
+
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
     }
-
-
 }

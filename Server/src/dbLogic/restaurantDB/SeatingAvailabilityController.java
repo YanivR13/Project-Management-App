@@ -8,29 +8,52 @@ import java.time.LocalDateTime;
 import MainControllers.DBController;
 import dbLogic.restaurantDB.TableDBController;
 
+/**
+ * Provides capacity-based availability checks for immediate seating.
+ * Determines whether adding new guests would conflict with future reservations.
+ */
 public class SeatingAvailabilityController {
 
-    public static boolean canSeatWithFutureReservations(
-            int incomingGuests,
-            LocalDateTime now
-    ) {
+    /**
+     * Determines whether incoming guests can be seated immediately
+     * without exceeding the restaurant's total capacity when considering
+     * future active reservations in a fixed time window.
+     *
+     * @param incomingGuests Number of guests attempting to enter immediately
+     * @param now             Current timestamp
+     * @return true if seating is possible without conflicts, false otherwise
+     */
+    public static boolean canSeatWithFutureReservations(int incomingGuests, LocalDateTime now) 
+    {
 
+        // Define the end of the future reservation window (fixed duration)
         LocalDateTime end = now.plusHours(2);
 
+        // Count guests from future active reservations within the window
         int futureGuests = getFutureReservedGuests(now, end);
+
+        // Retrieve the maximum seating capacity of the restaurant
         int restaurantCapacity = TableDBController.getRestaurantMaxCapacity();
 
+        // Debug output for capacity calculation
         System.out.println("DEBUG – futureGuests: " + futureGuests);
         System.out.println("DEBUG – incomingGuests: " + incomingGuests);
         System.out.println("DEBUG – restaurantCapacity: " + restaurantCapacity);
 
+        // Allow seating only if total guests do not exceed capacity
         return futureGuests + incomingGuests <= restaurantCapacity;
     }
 
     /**
-     * Counts how many guests are already reserved in the given time window.
+     * Retrieves the total number of guests from ACTIVE reservations
+     * within a given future time window.
+     * This method aggregates reservation data to support capacity checks.
+     *
+     * @param start Start of the time window
+     * @param end   End of the time window
+     * @return Total number of guests reserved in the given interval
      */
-    private static int getFutureReservedGuests(
+    public static int getFutureReservedGuests(
             LocalDateTime start,
             LocalDateTime end
     ) {
@@ -42,12 +65,15 @@ public class SeatingAvailabilityController {
             "AND reservation_datetime < ? " +
             "AND status = 'ACTIVE'";
 
+        // Acquire database connection
         Connection conn = DBController.getInstance().getConnection();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
         	
+            // Bind time window parameters
             ps.setObject(1, start);
             ps.setObject(2, end);
 
+            // Execute query and extract aggregated result
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1);
@@ -56,7 +82,8 @@ public class SeatingAvailabilityController {
             }
 
         } catch (Exception e) {
-        	 throw new RuntimeException("Failed to check future reservations", e);
+            // Escalate DB failures as runtime exceptions for upper-layer handling
+            throw new RuntimeException("Failed to check future reservations", e);
         }
     }
 }

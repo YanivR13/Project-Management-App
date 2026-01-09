@@ -26,14 +26,19 @@ import javafx.stage.Stage;
 import ocsf.server.ConnectionToClient;
 
 public class TerminalWaitingListSizeController implements ChatIF {
+
+    // Reference to the active terminal client connection
     private ChatClient client;
     
     @FXML
-    private TextField txtDiners;
+    private TextField txtDiners; // Input field for number of diners
     
     @FXML
-    private Label lblError;
+    private Label lblError; // Label for displaying validation and server errors
 
+    /**
+     * Injects the client and registers this controller as the UI listener.
+     */
     public void setClient(ChatClient client) {
         this.client = client;
         if (client != null) {
@@ -41,22 +46,23 @@ public class TerminalWaitingListSizeController implements ChatIF {
         }
     }
 
+    /**
+     * Navigates back to the terminal main menu screen.
+     */
     @FXML
     private void backToTerminal(ActionEvent event) {
         try {
-            // 1. טעינת קובץ ה-FXML של התפריט
-            // שים לב: וודא שהנתיב כאן תואם למבנה התיקיות שלך
+            // Load the terminal menu FXML
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalMenuFrame.fxml"));
             Parent root = loader.load();
 
-            // 2. קבלת הקונטרולר של התפריט והעברת הלקוח (Client) אליו
-            // נניח ששם הקונטרולר הוא TerminalMenuController
+            // Pass the client reference to the terminal menu controller
             Object controller = loader.getController();
             if (controller instanceof TerminalMenuController) {
                 ((TerminalMenuController) controller).setClient(this.client);
             }
 
-            // 3. החלפת הסצנה בחלון הקיים
+            // Replace the current scene
             Scene scene = new Scene(root);
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(scene);
@@ -68,126 +74,129 @@ public class TerminalWaitingListSizeController implements ChatIF {
         }
     }
 
+    /**
+     * Validates diner count input and sends a request to join the waiting list.
+     */
     @FXML
     private void handleContinue(ActionEvent event) {
-    	int diners;
-    	if (txtDiners.getText().isEmpty()) {
-    	    showError("Please enter number of diners");
-    	    return;
-    	}
-    	
-    	try {
-    	    diners = Integer.parseInt(txtDiners.getText());
-    	} catch (NumberFormatException e) {
-    	    showError("Number of diners must be a number");
-    	    return;
-    	}
-    	
-    	if (diners <= 0) {
-    	    showError("Number of diners must be positive");
-    	    return;
-    	}
-    	
-    	ArrayList<Object> msg = new ArrayList<>();
+        int diners;
 
-        msg.add("JOIN_WAITING_LIST");
-        msg.add(diners);
+        // Input validation: empty field
+        if (txtDiners.getText().isEmpty()) {
+            showError("Please enter number of diners");
+            return;
+        }
 
-    	
-    	if (client != null) {
-    		System.out.println("Sending JOIN_WAITING_LIST message: " + msg);
-    	    client.handleMessageFromClientUI(msg);
-    	} else {
-    	    showError("No server connection");
-    	}
+        // Input validation: numeric value
+        try {
+            diners = Integer.parseInt(txtDiners.getText());
+        } catch (NumberFormatException e) {
+            showError("Number of diners must be a number");
+            return;
+        }
+
+        // Input validation: positive number
+        if (diners <= 0) {
+            showError("Number of diners must be positive");
+            return;
+        }
+
+        // Build protocol message
+        ArrayList<Object> msg = new ArrayList<>();
+        msg.add("JOIN_WAITING_LIST"); // Server command
+        msg.add(diners);              // Number of diners
+
+        // Send request to server
+        if (client != null) {
+            client.handleMessageFromClientUI(msg);
+        } else {
+            showError("No server connection");
+        }
     }
     
+    /**
+     * Displays a validation or server error message on the screen.
+     */
     private void showError(String msg) {
         lblError.setText(msg);
         lblError.setVisible(true);
     }
 
-	@Override
-	public void display(Object message) {
-		Platform.runLater(() -> handleServerMessage(message));
-	}
-	
-	@SuppressWarnings("unchecked")
-	private void handleServerMessage(Object message) {
+    /**
+     * Entry point for handling incoming server messages.
+     */
+    @Override
+    public void display(Object message) {
+        Platform.runLater(() -> handleServerMessage(message));
+    }
+    
+    /**
+     * Handles server responses for waiting list requests.
+     * Supports immediate entry, waiting list addition, and error cases.
+     */
+    @SuppressWarnings("unchecked")
+    private void handleServerMessage(Object message) {
 
-	    if (!(message instanceof ServiceResponse)) {
-	        return;
-	    }
+        // Ignore unexpected message formats
+        if (!(message instanceof ServiceResponse)) {
+            return;
+        }
 
-	    ServiceResponse response = (ServiceResponse) message;
+        ServiceResponse response = (ServiceResponse) message;
 
-	    // --- החלק החדש שמוודא שהודעת השגיאה תוצג ---
-	    if (response.getStatus() == ServiceStatus.INTERNAL_ERROR) {
-	        String code = response.getData().toString();
+        // Handle logical and system-level errors
+        if (response.getStatus() == ServiceStatus.INTERNAL_ERROR) {
+            String code = response.getData().toString();
 
-	        if ("ALREADY_IN_LIST".equals(code)) {
-	            showError("You are already on the waiting list.");
-	        }
-	        else if ("RESTAURANT_CLOSED".equals(code)) {
-	            showError("The restaurant is currently closed – you cannot join the waiting list.");
-	        }
-	        else {
-	            showError("Error: " + code);
-	        }
+            if ("ALREADY_IN_LIST".equals(code)) {
+                showError("You are already on the waiting list.");
+            }
+            else if ("RESTAURANT_CLOSED".equals(code)) {
+                showError("The restaurant is currently closed – you cannot join the waiting list.");
+            }
+            else {
+                showError("Error: " + code);
+            }
 
-	        return; // stop here – do not continue to success handling
-	    }
-	    // ------------------------------------------
+            return;
+        }
 
-	    if (response.getStatus() != ServiceStatus.UPDATE_SUCCESS) {
-	        return;
-	    }
+        // Ignore non-success responses
+        if (response.getStatus() != ServiceStatus.UPDATE_SUCCESS) {
+            return;
+        }
 
-	    Object data = response.getData();
+        Object data = response.getData();
 
-	    //  תרחיש כניסה מיידית למסעדה
-	    if (data instanceof Map) {
-	        Map<String, Object> map = (Map<String, Object>) data;
+        // Immediate entry scenario
+        if (data instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) data;
 
-	        if ("IMMEDIATE".equals(map.get("mode"))) {
-	            long confirmationCode = ((Number) map.get("confirmationCode")).longValue();
-	            int tableId = ((Number) map.get("tableId")).intValue();
+            if ("IMMEDIATE".equals(map.get("mode"))) {
+                long confirmationCode = ((Number) map.get("confirmationCode")).longValue();
+                int tableId = ((Number) map.get("tableId")).intValue();
 
-	            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-	            alert.setTitle("Table Available");
-	            alert.setHeaderText(null);
-	            alert.setContentText(
-	                "A table is available – you can enter now.\n\n" +
-	                "Table number: " + tableId + "\n" +
-	                "Confirmation code: " + confirmationCode
-	            );
-	            alert.showAndWait();
-	            return;
-	        }
-	    }
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Table Available");
+                alert.setHeaderText(null);
+                alert.setContentText(
+                    "A table is available – you can enter now.\n\n" +
+                    "Table number: " + tableId + "\n" +
+                    "Confirmation code: " + confirmationCode);
+                alert.showAndWait();
+                return;
+            }
+        }
 
-	    //  כל שאר המקרים: נכנס לרשימת המתנה
-	    String confirmationCode = data.toString();
+        // Waiting list entry scenario
+        String confirmationCode = data.toString();
 
-	    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-	    alert.setTitle("Waiting List");
-	    alert.setHeaderText(null);
-	    alert.setContentText(
-	        "You have been added to the waiting list.\n\n" +
-	        "Confirmation code: " + confirmationCode
-	    );
-	    alert.showAndWait();
-	}
-
-
-	
-	private void showPopup(String title, String message, AlertType type) {
-	    Platform.runLater(() -> {
-	        Alert alert = new Alert(type);
-	        alert.setTitle(title);
-	        alert.setHeaderText(null);
-	        alert.setContentText(message);
-	        alert.showAndWait();
-	    });
-	}
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Waiting List");
+        alert.setHeaderText(null);
+        alert.setContentText(
+            "You have been added to the waiting list.\n\n" +
+            "Confirmation code: " + confirmationCode);
+        alert.showAndWait();
+    }
 }

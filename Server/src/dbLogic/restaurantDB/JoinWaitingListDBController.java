@@ -10,11 +10,14 @@ import MainControllers.DBController;
 
 /**
  * Handles DB operations related to the waiting_list_entry table.
+ * Provides utilities for inserting entries, updating status,
+ * and querying waiting list and restaurant availability data.
  */
 public class JoinWaitingListDBController {
 
     /**
-     * Inserts a new entry into the waiting list.
+     * Inserts a new entry into the waiting list table.
+     * This method is used when no immediate table is available.
      *
      * @param confirmationCode Unique confirmation code
      * @param userId           User ID
@@ -37,16 +40,23 @@ public class JoinWaitingListDBController {
         Connection conn = DBController.getInstance().getConnection();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
+            ps.setLong(1, confirmationCode);
+            ps.setInt(2, numberOfGuests);
+            ps.setInt(3, userId);
+            ps.setString(4, status);
 
-        	ps.setLong(1, confirmationCode);
-        	ps.setInt(2, numberOfGuests);
-        	ps.setInt(3, userId);
-        	ps.setString(4, status);
-
-        	ps.executeUpdate();
+            ps.executeUpdate();
         }
     }
-    
+
+    /**
+     * Updates the status of an existing waiting list entry.
+     * Also records the notification time for tracking purposes.
+     *
+     * @param confirmationCode Unique confirmation code
+     * @param newStatus        New status value
+     * @throws Exception if a DB error occurs
+     */
     public static void updateStatus(
             long confirmationCode,
             String newStatus
@@ -64,7 +74,15 @@ public class JoinWaitingListDBController {
             ps.executeUpdate();
         }
     }
-    
+
+    /**
+     * Retrieves the current status of a waiting list entry
+     * based on its confirmation code.
+     *
+     * @param confirmationCode Unique confirmation code
+     * @return The current status string, or null if not found
+     * @throws Exception if a DB error occurs
+     */
     public static String getStatusByCode(long confirmationCode) throws Exception {
         String sql = "SELECT status FROM waiting_list_entry WHERE confirmation_code = ?";
         
@@ -79,37 +97,52 @@ public class JoinWaitingListDBController {
         }
         return null;
     }
-    
- // בתוך JoinWaitingListDBController.java
 
+    /**
+     * Checks whether a given user already has an active
+     * waiting list entry (WAITING or ARRIVED).
+     * Used to prevent duplicate active entries.
+     *
+     * @param userId User identifier
+     * @return true if the user already appears as active, false otherwise
+     * @throws SQLException if a DB error occurs
+     */
     public static boolean isUserAlreadyActive(int userId) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM waiting_list_entry WHERE user_id = ? AND (status = 'WAITING' OR status = 'ARRIVED')";
+        String sql =
+            "SELECT COUNT(*) FROM waiting_list_entry " +
+            "WHERE user_id = ? AND (status = 'WAITING' OR status = 'ARRIVED')";
         
         Connection conn = DBController.getInstance().getConnection();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getInt(1) > 0; // מחזיר true אם נמצאה לפחות רשומה אחת
+                    return rs.getInt(1) > 0;
                 }
             }
         }
         return false;
     }
-    
+
+    /**
+     * Determines whether the restaurant is currently open.
+     * The check prioritizes special hours for the current date.
+     * If no special hours exist, regular weekly hours are used.
+     *
+     * @return true if the restaurant is open at the current time, false otherwise
+     * @throws Exception if a DB error occurs
+     */
     public static boolean isRestaurantOpenNow() throws Exception {
 
         Connection conn = DBController.getInstance().getConnection();
         LocalTime now = LocalTime.now();
 
-        // --------------------------------------------------
-        //  בדיקת שעות SPECIAL (אם קיימות – הן מנצחות)
-        // --------------------------------------------------
+        // --- Check special opening hours (override regular hours) ---
         String specialSql =
-        	    "SELECT tr.open_time, tr.close_time " +
-        	    	    "FROM restaurant_special_hours sh " +
-        	    	    "JOIN time_range tr ON sh.time_range_id = tr.time_range_id " +
-        	    	    "WHERE sh.special_date = CURDATE()";
+            "SELECT tr.open_time, tr.close_time " +
+            "FROM restaurant_special_hours sh " +
+            "JOIN time_range tr ON sh.time_range_id = tr.time_range_id " +
+            "WHERE sh.special_date = CURDATE()";
 
         try (PreparedStatement ps = conn.prepareStatement(specialSql);
              ResultSet rs = ps.executeQuery()) {
@@ -122,20 +155,18 @@ public class JoinWaitingListDBController {
             }
         }
 
-        // --------------------------------------------------
-        //  אם אין SPECIAL – בדיקת שעות רגילות
-        // --------------------------------------------------
+        // --- Fallback to regular weekly opening hours ---
         String regularSql =
-        	    "SELECT tr.open_time, tr.close_time " +
-        	    	    "FROM restaurant_regular_hours rrh " +
-        	    	    "JOIN time_range tr ON rrh.time_range_id = tr.time_range_id " +
-        	    	    "WHERE rrh.day_of_week = DAYOFWEEK(CURDATE())";;
+            "SELECT tr.open_time, tr.close_time " +
+            "FROM restaurant_regular_hours rrh " +
+            "JOIN time_range tr ON rrh.time_range_id = tr.time_range_id " +
+            "WHERE rrh.day_of_week = DAYOFWEEK(CURDATE())";
 
         try (PreparedStatement ps = conn.prepareStatement(regularSql);
              ResultSet rs = ps.executeQuery()) {
 
             if (!rs.next()) {
-                return false; // אין שעות מוגדרות ליום הזה
+                return false;
             }
 
             LocalTime open = rs.getTime("open_time").toLocalTime();
@@ -144,5 +175,29 @@ public class JoinWaitingListDBController {
             return !now.isBefore(open) && !now.isAfter(close);
         }
     }
+    
+    /**
+     * Checks whether the waiting list currently contains any active WAITING entries.
+     * Used to prevent immediate entry when other guests are already waiting.
+     *
+     * @return true if the waiting list is not empty, false otherwise
+     * @throws SQLException if a DB error occurs
+     */
+    public static boolean hasWaitingGuests() throws SQLException {
 
+        String sql =
+            "SELECT COUNT(*) " +
+            "FROM waiting_list_entry " +
+            "WHERE status = 'WAITING'";
+
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        }
+        return false;
+    }
 }

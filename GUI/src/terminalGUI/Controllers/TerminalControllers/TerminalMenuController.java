@@ -181,8 +181,6 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
         }
     }
 
-
-
     /**
      * Receives messages from the server.
      * Currently logs messages to stdout (placeholder behavior).

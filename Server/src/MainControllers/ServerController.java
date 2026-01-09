@@ -327,16 +327,25 @@ public class ServerController extends AbstractServer {
                     break;
                     
                 case "GET_RESERVATIONS_HISTORY": 
+                    // Server command: retrieves reservation history for a specific subscriber
+                    // Routed to the ReservationHistoryHandler for processing
                     new ReservationHistoryHandler().handle(messageList, client); 
-                    break; 
+                    break;
+
                     
                 case "UPDATE_SUBSCRIBER_DETAILS": 
+                    // Server command: updates personal details of a specific subscriber
+                    // Routed to the EditDetailsHandler for processing
                     new EditDetailsHandler().handle(messageList, client); 
-                    break; 
+                    break;
+
                     
                 case "JOIN_WAITING_LIST":
-                	new JoinWaitingListHandler().handle(messageList, client);
-                	break;
+                    // Server command: adds a subscriber to the restaurant waiting list
+                    // Routed to the JoinWaitingListHandler for processing
+                    new JoinWaitingListHandler().handle(messageList, client);
+                    break;
+
                 
                 case "GET_TIME_REPORTS": {
                     new GenerateTimeReportsHandler().handle(messageList, client);

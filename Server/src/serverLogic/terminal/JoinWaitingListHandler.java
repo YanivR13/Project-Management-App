@@ -19,33 +19,36 @@ import java.util.Map;
 
 public class JoinWaitingListHandler {
 
+    /**
+     * Handles the "JOIN_WAITING_LIST" server command.
+     * Determines whether the subscriber can be seated immediately or added to the waiting list.
+     */
     public void handle(ArrayList<Object> messageList, ConnectionToClient client) {
 
+        // Debug log indicating handler activation
         System.out.println("JOIN_WAITING_LIST HANDLER CALLED");
 
         try {
-            // 1) number of guests
+            // --- STEP 1: Extract number of guests from protocol ---
             int numberOfGuests = (int) messageList.get(1);
 
-         // 2) user id
+            // --- STEP 2: Retrieve authenticated user ID from connection context ---
             Integer userId = (Integer) client.getInfo("userId");
             if (userId == null) {
                 sendError(client, "User not authenticated");
                 return;
             }
             
-            // 3) Check if the restaurant is currently open (special hours override regular hours)
+            // --- STEP 3: Validate restaurant operational status ---
             if (!JoinWaitingListDBController.isRestaurantOpenNow()) {
                 sendError(client, "RESTAURANT_CLOSED");
                 return;
             }
 
-            // -----------------------------------------------------------
-            // תוספת חדשה: בדיקה אם המשתמש כבר מופיע ברשימה כפעיל
-            // -----------------------------------------------------------
+            // --- STEP 4: Check if user is already active in the waiting list ---
             try {
                 if (JoinWaitingListDBController.isUserAlreadyActive(userId)) {
-                    // אנחנו שולחים "ALREADY_IN_LIST" כדי שה-Client ידע להציג הודעה מתאימה
+                    // Prevent duplicate active waiting list entries
                     sendError(client, "ALREADY_IN_LIST"); 
                     return; 
                 }
@@ -54,79 +57,102 @@ public class JoinWaitingListHandler {
                 sendError(client, "DATABASE_ERROR");
                 return;
             }
+            
+         // --- STEP 5: Fairness rule: if someone is already waiting, do not allow immediate entry ---
+            try {
+                if (JoinWaitingListDBController.hasWaitingGuests()) {
 
-            // 3) confirmation code
+                    // Directly add the user to the waiting list (skip immediate seating logic)
+                    long confirmationCode = System.currentTimeMillis();
+
+                    JoinWaitingListDBController.insertWaitingListEntry(confirmationCode,userId,numberOfGuests,"WAITING");
+
+                    client.sendToClient(new ServiceResponse(ServiceStatus.UPDATE_SUCCESS,confirmationCode));
+                    return;
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                sendError(client, "DATABASE_ERROR");
+                return;
+            }
+
+
+            // --- STEP 6: Generate confirmation code ---
             long confirmationCode = System.currentTimeMillis();
 
-            // 4) candidate tables
-            List<Integer> candidateTables =
-                    TableDBController.getCandidateTables(numberOfGuests);
+            // --- STEP 7: Retrieve candidate tables based on party size ---
+            List<Integer> candidateTables = TableDBController.getCandidateTables(numberOfGuests);
 
+            //DEBUG
             System.out.println("DEBUG – candidate tables: " + candidateTables);
 
             Integer chosenTableId = null;
 
-            // 5) check each candidate table against future reservations
-            if (candidateTables != null) {
-                for (Integer tableId : candidateTables) {
-                    boolean ok =
-                        SeatingAvailabilityController
-                            .canSeatWithFutureReservations(
-                                tableId,
-                                LocalDateTime.now()
-                            );
+         // --- STEP 8: Check seating availability against future reservations ---
+            /*
+             * This step determines whether an immediate seating is possible without
+             * compromising future reservations.
+             *
+             * The logic is table-based (not seat-based):
+             * - Immediate entry assigns a specific table, consuming its full capacity.
+             * - Even unused seats at that table become unavailable for future reservations.
+             *
+             * Algorithm:
+             * 1. Calculate the restaurant's total seating capacity.
+             * 2. Subtract the capacity of all currently unavailable tables
+             *    (tables already assigned to active visits).
+             * 3. For each candidate table (sorted by capacity in ascending order):
+             *    a. Assume the table is assigned to the incoming guests.
+             *    b. Subtract the table's full capacity from the remaining capacity.
+             *    c. Verify that the remaining capacity is sufficient to accommodate
+             *       all guests from future reservations within the defined time window.
+             *
+             * The first table that satisfies this condition is selected,
+             * ensuring a best-fit strategy that minimizes capacity waste
+             * and preserves larger tables for future use.
+             */
 
-                    if (ok) {
-                        chosenTableId = tableId;
-                        break;
-                    }
+            int totalCapacity = TableDBController.getRestaurantMaxCapacity();
+            int unavailableCapacity = TableDBController.getUnavailableCapacity();
+            int futureGuests = SeatingAvailabilityController.getFutureReservedGuests(LocalDateTime.now(),LocalDateTime.now().plusHours(2));
+
+            for (Integer tableId : candidateTables) {
+
+                int tableCapacity = TableDBController.getTableCapacity(tableId);
+
+                int freeCapacityAfterSeating = totalCapacity - unavailableCapacity - tableCapacity;
+
+                if (futureGuests <= freeCapacityAfterSeating) {
+                    chosenTableId = tableId;
+                    break;
                 }
             }
 
-            // 6) if table found -> ARRIVED + VISIT(ACTIVE)
+            // --- STEP 9: Immediate seating scenario ---
             if (chosenTableId != null) {
 
-                // mark table as unavailable
+                // Mark the selected table as unavailable
                 TableDBController.setTableUnavailable(chosenTableId);
 
-                // insert visit with ACTIVE status AND create connected bill
-                int billId =
-                	    VisitDBController.insertVisitAndCreateBill(
-                	        confirmationCode,
-                	        chosenTableId,
-                	        userId
-                	    );
+                // Create an ACTIVE visit entry and initialize a connected bill
+                int billId = VisitDBController.insertVisitAndCreateBill(confirmationCode,chosenTableId,userId);
 
-
-                // insert waiting list entry
+                // Build response payload for immediate entry
                 Map<String, Object> data = new HashMap<>();
                 data.put("mode", "IMMEDIATE");
                 data.put("confirmationCode", confirmationCode);
                 data.put("tableId", chosenTableId);
 
-                client.sendToClient(
-                    new ServiceResponse(
-                        ServiceStatus.UPDATE_SUCCESS,
-                        data
-                    )
-                );
+                // Send success response with immediate seating details
+                client.sendToClient(new ServiceResponse(ServiceStatus.UPDATE_SUCCESS,data));
                 return;
             }
 
-            // 7) no table fits -> WAITING
-            JoinWaitingListDBController.insertWaitingListEntry(
-                confirmationCode,
-                userId,
-                numberOfGuests,
-                "WAITING"
-            );
+            // --- STEP 9: No table available – add to waiting list ---
+            JoinWaitingListDBController.insertWaitingListEntry(confirmationCode,userId,numberOfGuests,"WAITING");
 
-            client.sendToClient(
-                new ServiceResponse(
-                    ServiceStatus.UPDATE_SUCCESS,
-                    confirmationCode
-                )
-            );
+            // Send success response with confirmation code only
+            client.sendToClient(new ServiceResponse(ServiceStatus.UPDATE_SUCCESS,confirmationCode));
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -134,11 +160,12 @@ public class JoinWaitingListHandler {
         }
     }
 
+    /**
+     * Sends a standardized error response back to the client.
+     */
     private void sendError(ConnectionToClient client, String msg) {
         try {
-            client.sendToClient(
-                new ServiceResponse(ServiceStatus.INTERNAL_ERROR, msg)
-            );
+            client.sendToClient(new ServiceResponse(ServiceStatus.INTERNAL_ERROR, msg));
         } catch (IOException ignored) {}
     }
 }
