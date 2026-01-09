@@ -66,6 +66,10 @@ public class ChatClient extends AbstractClient {
     public void handleMessageFromServer(Object msg) {
         // Dispatch the received message directly to the UI's display logic
         clientUI.display(msg);  
+        
+        
+  
+        
     }
 
 
@@ -106,4 +110,7 @@ public class ChatClient extends AbstractClient {
         // Complete termination of the Java Virtual Machine
         System.exit(0);
     }
+    
+    
+    
 }

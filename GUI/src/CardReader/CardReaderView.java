@@ -89,7 +89,6 @@ public class CardReaderView extends Application implements common.ChatIF {
         
  
 
-     // הקוד הנכון שצריך להיות:
      loginBtn.setOnAction(e -> {
          String id = idInput.getText();
          this.currentSubscriberID = id; 
