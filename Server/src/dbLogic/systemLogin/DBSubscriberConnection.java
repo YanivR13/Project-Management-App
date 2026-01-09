@@ -21,8 +21,8 @@ public class DBSubscriberConnection implements ILoginDatabase { // Beginning of 
         // Accessing the shared database connection instance from the DBController singleton
         Connection conn = DBController.getInstance().getConnection(); // Retrieving the connection
         
-        // Defining the SQL query to check for a valid subscriber ID with an 'Active' status
-        String sql = "SELECT user_id FROM subscriber WHERE subscriber_id = ? AND status = 'subscriber'"; // SQL query string
+        // Defining the SQL query to check for a valid subscriber ID with an 'subscriber' or 'manager' or 'representative' status
+        String sql = "SELECT user_id FROM subscriber WHERE subscriber_id = ? AND (status = 'subscriber' OR status = 'manager' OR status = 'representative')"; // SQL query string
         
         // Using try-with-resources to ensure the PreparedStatement is automatically closed
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) { // Initializing the statement
@@ -54,6 +54,45 @@ public class DBSubscriberConnection implements ILoginDatabase { // Beginning of 
         return -1; // Default failure response
         
     } // End of verifySubscriber method
+    
+    /**
+     * Retrieves the status of a subscriber by their internal user ID.
+     * @param userId The internal user identifier.
+     * @return The status string if found; null otherwise.
+     */
+    public String verifyStatus(int userId) { // Start of verifyStatus method
+
+        // Accessing the shared database connection
+        Connection conn = DBController.getInstance().getConnection();
+
+        // SQL query to retrieve the status for the given user_id
+        String sql = "SELECT status FROM subscriber WHERE user_id = ?";
+
+        // Using try-with-resources for safe resource management
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Binding the userId parameter
+            pstmt.setInt(1, userId);
+
+            // Executing the query
+            try (ResultSet rs = pstmt.executeQuery()) {
+
+                // If a matching row exists, return the status
+                if (rs.next()) {
+                    return rs.getString("status");
+                }
+
+            }
+
+        } catch (SQLException e) {
+            // Logging SQL errors for debugging
+            e.printStackTrace();
+        }
+
+        // Return null if no status was found or an error occurred
+        return null;
+    }
+
 
     /**
      * Interface Implementation: Occasional customer verification.

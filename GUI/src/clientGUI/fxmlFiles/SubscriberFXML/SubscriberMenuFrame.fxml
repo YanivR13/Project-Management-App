@@ -37,5 +37,6 @@
          </children>
       </VBox>
       <TextArea fx:id="txtLog" editable="false" layoutX="25.0" layoutY="450.0" prefHeight="120.0" prefWidth="450.0" wrapText="true" />
+      <Button fx:id="btnBack" layoutX="47.0" layoutY="387.0" mnemonicParsing="false" onAction="#clickBack" prefHeight="34.0" prefWidth="400.0" style="-fx-text-fill: black;" text="Back" visible="false" />
    </children>
 </AnchorPane>

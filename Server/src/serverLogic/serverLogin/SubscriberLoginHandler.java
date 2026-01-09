@@ -43,22 +43,27 @@ public class SubscriberLoginHandler {
              */
             DBSubscriberConnection db = new DBSubscriberConnection();
             int userId = db.verifySubscriber(subID);
+            String subStatus = db.verifyStatus(userId) ;
 
             /**
              * STEP 3: Response Dispatching
              */
-            if (userId != -1) {
-                // Success: Construct a list containing the status and the retrieved session ID
+            if (userId != -1 && subStatus != null) {
+                // Success: Construct a list containing the session ID and subscriber status
                 ArrayList<Object> response = new ArrayList<>();
                 response.add("LOGIN_SUCCESS");
                 response.add(userId);
+                response.add(subStatus);
+
+                // Persist session-related metadata on the connection
                 client.setInfo("userId", userId);
-                
+                client.setInfo("status", subStatus);
+
                 // Transmit serialized object back to the client
                 client.sendToClient(response);
             } else {
-                // Logic Failure: Inform the UI that the ID is either invalid or inactive
-                client.sendToClient("ERROR: Subscriber ID not found or inactive.");
+                // Logic Failure: Inform the UI that the ID is either invalid or unauthorized
+                client.sendToClient("ERROR: Subscriber ID not found or unauthorized.");
             }
         } catch (NumberFormatException e) {
             // Handles cases where the input string cannot be converted to a numeric long

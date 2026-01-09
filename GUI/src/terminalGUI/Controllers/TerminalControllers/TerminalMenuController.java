@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import client.ChatClient;
+import clientGUI.Controllers.RemoteLoginController;
 import common.ChatIF;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -138,6 +139,47 @@ public class TerminalMenuController implements ChatIF {
             e.printStackTrace();
         }
     }
+    
+    /**
+     * Logs out from the terminal and returns to the terminal login screen.
+     */
+    @FXML
+    private void clickLogOut(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/clientGUI/fxmlFiles/TerminalLoginFrame.fxml")
+            );
+            Parent root = loader.load();
+
+            Object nextController = loader.getController();
+            if (nextController instanceof TerminalLoginController) {
+                ((TerminalLoginController) nextController).setClient(client);
+            }
+
+            // (Optional but clean) rebind UI
+            if (nextController instanceof ChatIF && client != null) {
+                client.setUI((ChatIF) nextController);
+            }
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            Scene scene = new Scene(root);
+
+            if (getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css") != null) {
+                scene.getStylesheets().add(
+                    getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()
+                );
+            }
+
+            stage.setTitle("Bistro - Terminal Login");
+            stage.setScene(scene);
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
     /**
      * Receives messages from the server.

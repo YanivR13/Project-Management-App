@@ -31,6 +31,7 @@ public class SubscriberMenuController extends BaseMenuController implements ICus
     @FXML private Button btnHistory; // Button for viewing reservation history
     @FXML private Button btnEditProfile; // Button for updating personal profile details
     @FXML private Button btnLogout; // Button for logging out of the system
+    @FXML private Button btnBack;   // Back button only for manager and representative
     
     // FXML injected text area for system feedback logs
     @FXML private TextArea txtLog; // Reference to the log area
@@ -44,6 +45,12 @@ public class SubscriberMenuController extends BaseMenuController implements ICus
     public void onClientReady() { // Start of onClientReady method
         // Log a welcome message containing the subscriber's unique ID
         appendLog("Welcome back! Subscriber ID: " + userId); // Adding greeting to log
+        
+        // Show Back button only if staff entered customer mode
+        if (actingAsSubscriber && btnBack != null) 
+        {
+            btnBack.setVisible(true);
+            }
     } // End of onClientReady method
 
     // --- 2. Reservation & Billing Actions (ICustomerActions) ---
@@ -204,6 +211,44 @@ public class SubscriberMenuController extends BaseMenuController implements ICus
             appendLog("Error during logout: " + e.getMessage()); // Logging failure to user
         } // End of try-catch block
     } // End of clickLogout method
+    
+    
+    /**
+     * Returns staff users (Manager/Representative) from the Subscriber menu back to their respective dashboard.
+     */
+    @FXML
+    void clickBack(ActionEvent event) {
+        try {
+            String fxmlPath;
+
+            // Decide where to return based on original role
+            if ("Manager".equalsIgnoreCase(originalUserType)) {
+                fxmlPath = "/managmentGUI/ManagerDashboard.fxml";
+            } else {
+                fxmlPath = "/managmentGUI/RepresentativeDashboard.fxml";
+            }
+
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent root = loader.load();
+
+            Object controller = loader.getController();
+            if (controller instanceof BaseMenuController) {
+                BaseMenuController base = (BaseMenuController) controller;
+                base.setClient(client, originalUserType, userId);
+                base.setActingAsSubscriber(false); // exit subscriber mode
+            }
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (Exception e) {
+            appendLog("Navigation Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+
 
     // --- 6. Server Communication Handling ---
 

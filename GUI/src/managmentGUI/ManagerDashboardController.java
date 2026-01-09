@@ -48,6 +48,7 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
             e.printStackTrace();
         }
     }
+
     
     @Override
     public void display(Object message) {

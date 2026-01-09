@@ -33,6 +33,12 @@ public class JoinWaitingListHandler {
                 sendError(client, "User not authenticated");
                 return;
             }
+            
+            // 3) Check if the restaurant is currently open (special hours override regular hours)
+            if (!JoinWaitingListDBController.isRestaurantOpenNow()) {
+                sendError(client, "RESTAURANT_CLOSED");
+                return;
+            }
 
             // -----------------------------------------------------------
             // תוספת חדשה: בדיקה אם המשתמש כבר מופיע ברשימה כפעיל

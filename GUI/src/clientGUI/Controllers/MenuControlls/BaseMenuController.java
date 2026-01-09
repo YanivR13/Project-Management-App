@@ -17,6 +17,12 @@ public abstract class BaseMenuController implements ChatIF { // Defining the abs
     
     // Protected field to store the unique database ID of the user
     protected int userId; 
+    
+    // Protected flag that indicates whether the current user entered the Subscriber menu in staff (Manager/Representative) mode
+    protected boolean actingAsSubscriber = false;
+    
+    // Stores the original role before entering Subscriber mode
+    protected String originalUserType;
 
     // --- Public Getters ---
 
@@ -56,19 +62,33 @@ public abstract class BaseMenuController implements ChatIF { // Defining the abs
             return; // Exiting the method immediately
         } // End of null check
 
-        // Refactored to use switch for better readability as requested
-        switch (userType) { // Start of switch block on userType string
-            
-            case "Representative": // Case for staff members
-                this.userId = -1; // Setting ID to -1 to represent administrative/staff status
-                break; // Exiting switch after matching "Representative"
-                
-            default: // Default case for other user types (e.g., Subscriber)
-                // No specific override needed, keeping the assigned userId
-                break; // Exiting switch
-        } // End of switch block
+//        // Refactored to use switch for better readability as requested
+//        switch (userType) { // Start of switch block on userType string
+//            
+//            case "Representative": // Case for staff members
+//                this.userId = -1; // Setting ID to -1 to represent administrative/staff status
+//                break; // Exiting switch after matching "Representative"
+//                
+//            default: // Default case for other user types (e.g., Subscriber)
+//                // No specific override needed, keeping the assigned userId
+//                break; // Exiting switch
+//        } // End of switch block
         
     } // End of setSessionData method
+    
+    /**
+     * Sets whether the current session is acting in Subscriber mode.
+     */
+    public void setActingAsSubscriber(boolean actingAsSubscriber) {
+        this.actingAsSubscriber = actingAsSubscriber;
+    }
+    
+    /**
+     * Stores the original user role before entering Subscriber mode.
+     */
+    public void setOriginalUserType(String originalUserType) {
+        this.originalUserType = originalUserType;
+    }
 
     /**
      * Sets the client and triggers the session logic.

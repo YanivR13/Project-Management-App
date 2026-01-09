@@ -39,7 +39,8 @@
 
             <Separator prefWidth="200.0" />
             
-            <Button mnemonicParsing="false" onAction="#clickCustomerPortal" prefWidth="200.0" style="-fx-background-color: #3498db; -fx-text-fill: white;" text="Go to Customer Portal" />
+            <Button mnemonicParsing="false" onAction="#clickCustomerPortal" prefWidth="200.0" style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-weight: bold;" text="Go to Customer Portal" />
+            <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#clickLogout" prefHeight="10.0" prefWidth="200.0" style="-fx-background-color: #f1948a; -fx-text-fill: white; -fx-font-weight: bold;" text="LogOut" />
          </children>
       </VBox>
 

@@ -126,14 +126,23 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
             if (status.equals("LOGIN_SUCCESS")) { // Successful authentication
                 appendLog("Login confirmed! Loading dashboard..."); // Logging success
                 int userIdFromDB = (int) res.get(1); // Extracting official ID
+                String userStatusFromDB = (String)res.get(2);
                 
                 // Transition to the JavaFX Application thread for navigation
                 Platform.runLater(() -> { // Start of UI thread execution
                     // Branching navigation based on Eden's loginSource logic
                     if (loginSource == LoginSource.TERMINAL) { // If terminal source
                         navigateToTerminal(userIdFromDB); // Navigate to Terminal Menu
-                    } else { // If remote source
-                        navigateToMenu(userIdFromDB); // Navigate to standard Subscriber Menu
+                    } else { 
+                    	// Navigation based on subscriber status
+                    	if ("subscriber".equalsIgnoreCase(userStatusFromDB)) {
+                            navigateToMenu(userIdFromDB);
+                        } else if ("manager".equalsIgnoreCase(userStatusFromDB)) {
+                                navigateToManagerMenu(userIdFromDB);
+                        } else if ("representative".equalsIgnoreCase(userStatusFromDB)) {
+                                navigateToRepresentativeMenu(userIdFromDB);
+                        }
+
                     } // End of branching
                 }); // End of runLater lambda
             } else { // For any other server response
@@ -180,20 +189,73 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
             appendLog("Terminal navigation error."); // Logging failure
         } // End of try-catch
     } // End of method
+    
+    
+    /**
+     * Navigates the manager to the Manager Menu.
+     */
+    private void navigateToManagerMenu(int userIdFromDB) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+            		getClass().getResource("/managmentGUI/ManagerDashboard.fxml"));
+            Parent root = loader.load();
+
+            if (loader.getController() instanceof BaseMenuController) {
+                ((BaseMenuController) loader.getController())
+                    .setClient(client, "Manager", userIdFromDB);
+            }
+
+            updateStage(root, "Manager Dashboard");
+        } catch (Exception e) {
+            e.printStackTrace();
+            appendLog("UI Error: Could not load Manager Menu.");
+        }
+    }
+    
+    
+    /**
+     * Navigates the representative to the Representative Menu.
+     */
+    private void navigateToRepresentativeMenu(int userIdFromDB) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+            		getClass().getResource("/managmentGUI/RepresentativeDashboard.fxml"));
+            Parent root = loader.load();
+
+            if (loader.getController() instanceof BaseMenuController) {
+                ((BaseMenuController) loader.getController())
+                    .setClient(client, "Representative", userIdFromDB);
+            }
+
+            updateStage(root, "Representative Dashboard");
+        } catch (Exception e) {
+            e.printStackTrace();
+            appendLog("UI Error: Could not load Representative Menu.");
+        }
+    }
+
 
     /**
      * Shared utility for updating the stage and applying CSS.
      */
-    private void updateStage(Parent root, String title) { // Start method
-        Stage stage = (Stage) btnLogin.getScene().getWindow(); // Getting stage
-        Scene scene = new Scene(root); // Creating scene
-        if (getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css") != null) { // CSS check
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); // Add CSS
-        } // End if
-        stage.setTitle(title); // Set title
-        stage.setScene(scene); // Set scene
-        stage.show(); // Display
-    } // End method
+    private void updateStage(Parent root, String title) {
+        Stage stage = (Stage) btnLogin.getScene().getWindow();
+        Scene scene = new Scene(root);
+
+        // Apply global CSS only for non-management screens
+        if (!title.contains("Manager") && !title.contains("Representative")) {
+            if (getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css") != null) {
+                scene.getStylesheets().add(
+                    getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()
+                );
+            }
+        }
+
+        stage.setTitle(title);
+        stage.setScene(scene);
+        stage.show();
+    }
+
 
     /**
      * Appends a message to the UI log area in a thread-safe manner.

@@ -123,12 +123,19 @@ public class TerminalWaitingListSizeController implements ChatIF {
 
 	    // --- החלק החדש שמוודא שהודעת השגיאה תוצג ---
 	    if (response.getStatus() == ServiceStatus.INTERNAL_ERROR) {
-	        if ("ALREADY_IN_LIST".equals(response.getData())) {
+	        String code = response.getData().toString();
+
+	        if ("ALREADY_IN_LIST".equals(code)) {
 	            showError("You are already on the waiting list.");
-	        } else {
-	            showError("Error: " + response.getData());
 	        }
-	        return; // עוצר כאן כדי שלא ינסה לפתוח פופ-אפ של הצלחה
+	        else if ("RESTAURANT_CLOSED".equals(code)) {
+	            showError("The restaurant is currently closed – you cannot join the waiting list.");
+	        }
+	        else {
+	            showError("Error: " + code);
+	        }
+
+	        return; // stop here – do not continue to success handling
 	    }
 	    // ------------------------------------------
 

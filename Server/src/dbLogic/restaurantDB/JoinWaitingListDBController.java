@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalTime;
 
 import MainControllers.DBController;
 
@@ -94,6 +95,54 @@ public class JoinWaitingListDBController {
             }
         }
         return false;
+    }
+    
+    public static boolean isRestaurantOpenNow() throws Exception {
+
+        Connection conn = DBController.getInstance().getConnection();
+        LocalTime now = LocalTime.now();
+
+        // --------------------------------------------------
+        //  בדיקת שעות SPECIAL (אם קיימות – הן מנצחות)
+        // --------------------------------------------------
+        String specialSql =
+        	    "SELECT tr.open_time, tr.close_time " +
+        	    	    "FROM restaurant_special_hours sh " +
+        	    	    "JOIN time_range tr ON sh.time_range_id = tr.time_range_id " +
+        	    	    "WHERE sh.special_date = CURDATE()";
+
+        try (PreparedStatement ps = conn.prepareStatement(specialSql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                LocalTime open = rs.getTime("open_time").toLocalTime();
+                LocalTime close = rs.getTime("close_time").toLocalTime();
+
+                return !now.isBefore(open) && !now.isAfter(close);
+            }
+        }
+
+        // --------------------------------------------------
+        //  אם אין SPECIAL – בדיקת שעות רגילות
+        // --------------------------------------------------
+        String regularSql =
+        	    "SELECT tr.open_time, tr.close_time " +
+        	    	    "FROM restaurant_regular_hours rrh " +
+        	    	    "JOIN time_range tr ON rrh.time_range_id = tr.time_range_id " +
+        	    	    "WHERE rrh.day_of_week = DAYOFWEEK(CURDATE())";;
+
+        try (PreparedStatement ps = conn.prepareStatement(regularSql);
+             ResultSet rs = ps.executeQuery()) {
+
+            if (!rs.next()) {
+                return false; // אין שעות מוגדרות ליום הזה
+            }
+
+            LocalTime open = rs.getTime("open_time").toLocalTime();
+            LocalTime close = rs.getTime("close_time").toLocalTime();
+
+            return !now.isBefore(open) && !now.isAfter(close);
+        }
     }
 
 }

@@ -147,6 +147,35 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         // Populate the dropdowns and set date picker constraints
         setupSpecialHoursFields(); // Configuring inputs
     } // End method
+    
+    
+    /**
+     * Logs the representative out and returns to the primary login portal.
+     */
+    @FXML
+    public void clickLogout(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml")
+            );
+            Parent root = loader.load();
+
+            Object nextController = loader.getController();
+
+            if (nextController instanceof BaseMenuController) {
+                ((BaseMenuController) nextController).setClient(client, null, 0);
+            }
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            appendLog("Error during logout: " + e.getMessage());
+        }
+    }
+
 
     // --- 4. Internal UI Component Setup ---
 
@@ -381,33 +410,39 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     } // End method
     
     /**
-     * Allows staff members to access the customer-facing portal.
+     * Allows staff members to access the customer-facing subscriber menu.
      */
-    @FXML // Link to portal button
-    void clickCustomerPortal(ActionEvent event) { // Start method
-        try { // Start navigation try block
-            // Define the relative path to the customer portal landing frame
-            String fxmlPath = "/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"; // Path definition
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath)); // Loader initialization
-            Parent root = loader.load(); // Loading UI graph
+    @FXML
+    void clickCustomerPortal(ActionEvent event) {
+        try {
+            // Load the Subscriber Menu frame directly
+            String fxmlPath = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml";
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
+            Parent root = loader.load();
 
-            // Inject shared session dependencies into the next controller via the Pipe
-            Object nextController = loader.getController(); // Accessing controller
-            if (nextController instanceof BaseMenuController) { // Checking interface support
-                ((BaseMenuController) nextController).setClient(client, userType, userId); // Injecting session
-            } // End injection check
+            // Inject session data into the Subscriber menu controller
+            Object nextController = loader.getController();
+            if (nextController instanceof BaseMenuController) {
+                ((BaseMenuController) nextController).setClient(client, "Subscriber", userId);
+                
+                ((BaseMenuController) nextController).setOriginalUserType(userType);   // save Manager / Representative
+                // Preserve original staff context and switch to Subscriber mode
+                ((BaseMenuController) nextController).setActingAsSubscriber(true);
+                ((BaseMenuController) nextController).setClient(client, "Subscriber", userId);
+            }
 
-            // Transition the current stage to the customer portal scene
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Getting stage
-            stage.setTitle("Bistro - Customer Portal"); // Updating title
-            stage.setScene(new Scene(root)); // Switching scene
-            stage.show(); // Displaying window
+            // Switch the current stage to the Subscriber Menu scene
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setTitle("Bistro - Subscriber Menu");
+            stage.setScene(new Scene(root));
+            stage.show();
 
-        } catch (IOException e) { // Catch navigation failures
-            appendLog("Navigation Error: " + e.getMessage()); // Log user error
-            e.printStackTrace(); // Print technical error
-        } // End try-catch
-    } // End method
+        } catch (IOException e) {
+            appendLog("Navigation Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     
     /**
      * Processes server responses regarding operational updates and data requests.
