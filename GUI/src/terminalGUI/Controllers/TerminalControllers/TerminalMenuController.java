@@ -7,6 +7,7 @@ import javafx.scene.control.Button;
 import javafx.stage.Stage;
 import client.ChatClient;
 import clientGUI.Controllers.RemoteLoginController;
+import clientGUI.Controllers.MenuControlls.BaseMenuController;
 import common.ChatIF;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -27,10 +28,9 @@ import javafx.scene.control.Button;;
  * @author Software Engineering Student
  * @version 1.0
  */
-public class TerminalMenuController implements ChatIF {
+public class TerminalMenuController extends BaseMenuController implements ChatIF {
 
     /** Persistent network client (injected on application startup) */
-    private ChatClient client;
     
     
     // FXML Button Bindings
@@ -74,14 +74,16 @@ public class TerminalMenuController implements ChatIF {
             Parent root = loader.load();
 
             ManageReservationController controller = loader.getController();
-            controller.setClient(client);
+            controller.setClient(this.client, "Terminal", -1); 
 
             Stage stage = (Stage) btnManageReservation.getScene().getWindow();
             stage.setScene(new Scene(root));
+            stage.setTitle("Bistro - Manage Reservation");
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
-        }    }
+        }
+    }
     
     /**
      * Handles "Join Waiting List" button click.

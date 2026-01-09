@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import MainControllers.DBController;
 import common.Bill;
@@ -130,6 +131,24 @@ public class PaymentController {
             return false;
         }
     }
-		
-   
+	
+	public static ArrayList<Object> getVisitWithSubscriberStatus(long code) {
+	    Visit v = getVisitDetails(code); 
+	    if (v == null) return null;
+	    
+	    boolean isSub = false;
+	    String subQuery = "SELECT COUNT(*) FROM subscriber WHERE user_id = ?";
+	    Connection conn = DBController.getInstance().getConnection();
+	    try (PreparedStatement ps = conn.prepareStatement(subQuery)) {
+	        ps.setInt(1, v.getUserId());
+	        try (ResultSet rs = ps.executeQuery()) {
+	            if (rs.next() && rs.getInt(1) > 0) isSub = true;
+	        }
+	    } catch (SQLException e) { e.printStackTrace(); }
+	    
+	    ArrayList<Object> result = new ArrayList<>();
+	    result.add(v);    
+	    result.add(isSub); 
+	    return result;
+	}
 }

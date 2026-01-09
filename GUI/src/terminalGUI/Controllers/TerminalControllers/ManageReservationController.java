@@ -3,11 +3,14 @@ package terminalGUI.Controllers.TerminalControllers;
 import java.util.ArrayList;
 
 import client.ChatClient;
+import clientGUI.Controllers.MenuControlls.BaseMenuController;
+import clientGUI.Controllers.MenuControlls.PayBillEntryController;
 import common.ChatIF;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -16,15 +19,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 
-public class ManageReservationController implements ChatIF{
-    
-    private ChatClient client;
-    
+public class ManageReservationController extends BaseMenuController implements ChatIF{
+        
     @FXML private Button btnCancel, btnExitWaiting, btnPay, btnBack;
 
-    public void setClient(ChatClient client) {
-        this.client = client;
-        this.client.setUI(this);
+    @Override
+    public void setClient(ChatClient client, String userType, int userId) {
+        super.setClient(client, userType, userId);
+        if (this.client != null) {
+            this.client.setUI(this);
+        }
     }
 
     @FXML
@@ -78,7 +82,23 @@ public class ManageReservationController implements ChatIF{
 
     @FXML
     void onPayReservation(ActionEvent event) {
-            
+    	try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/MenuFXML/PayBillEntryFrame.fxml"));
+            Parent root = loader.load();
+
+            PayBillEntryController controller = loader.getController();
+
+            controller.setClient(this.client, "Terminal", -1); 
+
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Bistro - Pay Bill");
+            stage.show();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlert("Error", "Could not load the payment screen.", AlertType.ERROR);
+        }
     }
 
     @FXML

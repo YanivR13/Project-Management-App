@@ -184,20 +184,17 @@ public class ServerController extends AbstractServer {
                 case "GET_VISIT_BY_CODE": 
                     try { 
                         long code = (long) messageList.get(1); 
-                        common.Visit visitData = dbLogic.restaurantDB.PaymentController.getVisitDetails(code); 
-                        if (visitData != null) { 
-                            client.sendToClient(visitData); 
-                            serverUI.appendLog("Visit found for code: #" + code); 
+                        ArrayList<Object> responseData = dbLogic.restaurantDB.PaymentController.getVisitWithSubscriberStatus(code); 
+                        
+                        if (responseData != null) { 
+                            client.sendToClient(responseData); 
                         } else { 
                             client.sendToClient("VISIT_NOT_FOUND"); 
-                            serverUI.appendLog("No active visit for code: #" + code); 
                         } 
-                    } catch (IOException e) { 
-                        serverUI.appendLog("Network error: " + e.getMessage()); 
                     } catch (Exception e) { 
                         serverUI.appendLog("Error in GET_VISIT_BY_CODE: " + e.getMessage()); 
                     } 
-                    break; 
+                    break;
                     
                 case "CANCEL_RESERVATION": 
                     long codeToCancel = (long) messageList.get(1); 
