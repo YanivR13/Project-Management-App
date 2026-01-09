@@ -23,7 +23,7 @@
             <Button mnemonicParsing="false" onAction="#showRegularHoursScreen" prefWidth="200.0" text="Update Regular Hours" />
             <Button mnemonicParsing="false" onAction="#showSpecialHoursScreen" prefWidth="200.0" text="Update Special Hours" />
             <Button mnemonicParsing="false" onAction="#showCurrentWorkTimes" prefWidth="200.0" text="Show updated work times" />
-            
+            <Button mnemonicParsing="false" onAction="#showManageTablesScreen" prefWidth="200.0" text="Manage Tables" />
             <Separator prefWidth="200.0" />
             
             <Button mnemonicParsing="false" onAction="#createNewSubscriber" prefWidth="200.0" text="Create New Subscriber" />

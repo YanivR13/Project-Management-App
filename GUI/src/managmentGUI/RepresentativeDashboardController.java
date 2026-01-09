@@ -442,6 +442,47 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             e.printStackTrace();
         }
     }
+    
+    
+    /**
+     * Dynamically loads the Table Management sub-screen into the central content pane.
+     * This method initializes a dedicated controller for tables, ensuring separation 
+     * of concerns and preventing the main dashboard from becoming bloated.
+     * * @param event The action event triggered by the "Manage Tables" button.
+     */
+    @FXML
+    public void showManageTablesScreen(ActionEvent event) {
+        try {
+        	// Clear previous content from the central container
+            contentPane.getChildren().clear();
+            appendLog("Loading Tables Management (Dedicated Controller)...");
+
+            // Initialize the FXML loader for the specific management view
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/managmentGUI/ActionsFXML/ManageTables.fxml"));
+            
+            Node node = loader.load();
+            
+            // Retrieve the newly created controller instance from the loader
+            ManageTablesController childCtrl = loader.getController();
+            
+            // Inject the shared communication client and session data into the child controller
+            childCtrl.setClient(this.client, this.userType, this.userId);
+            // Initialize the child controller (sets up tables, listeners, etc.) 
+            childCtrl.onClientReady(); 
+
+            // Set layout constraints to ensure the sub-screen fills the entire content pane
+            AnchorPane.setTopAnchor(node, 0.0);
+            AnchorPane.setBottomAnchor(node, 0.0);
+            AnchorPane.setLeftAnchor(node, 0.0);
+            AnchorPane.setRightAnchor(node, 0.0);
+            
+            // Add the sub-screen node to the visual hierarchy
+            contentPane.getChildren().add(node);
+        } catch (IOException e) {
+            appendLog("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     
     /**

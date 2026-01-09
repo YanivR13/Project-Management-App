@@ -166,7 +166,61 @@ public class ServerController extends AbstractServer {
                 case "REGISTER_OCCASIONAL": 
                     new OccasionalRegistrationHandler().handle(messageList, client); 
                     break; 
+                                        
+                case "GET_ALL_TABLES":
+                    List<common.Table> allTables = dbLogic.restaurantDB.TableDBController.getAllTables();
+                    try {
+                        client.sendToClient(new ArrayList<>(allTables));
+                    } catch (IOException e) {
+                        serverUI.appendLog("Error sending tables list: " + e.getMessage());
+                    }
+                    break;
                     
+                case "UPDATE_TABLE_CAPACITY":
+                    try {
+                        int tableIdToUpdate = (int) messageList.get(1);
+                        int newCapacity = (int) messageList.get(2);
+                        boolean isUpdated = dbLogic.restaurantDB.TableDBController.updateTableCapacity(tableIdToUpdate, newCapacity);
+                        
+                        if (isUpdated) {
+                            client.sendToClient(new ServiceResponse(ServiceStatus.UPDATE_SUCCESS, "Table capacity updated successfully"));
+                        } else {
+                            client.sendToClient(new ServiceResponse(ServiceStatus.INTERNAL_ERROR, "Failed to update capacity in DB"));
+                        }
+                    } catch (Exception e) {
+                        serverUI.appendLog("Error in UPDATE_TABLE_CAPACITY: " + e.getMessage());
+                    }
+                    break;
+                    
+                case "ADD_NEW_TABLE":
+                    try {
+                        int cap = (int) messageList.get(1);
+                        boolean success = dbLogic.restaurantDB.TableDBController.addNewTable(cap);
+                        if (success) {
+                            client.sendToClient(new ServiceResponse(ServiceStatus.UPDATE_SUCCESS, "Table added successfully"));
+                        } else {
+                            client.sendToClient(new ServiceResponse(ServiceStatus.INTERNAL_ERROR, "Database refused to add table"));
+                        }
+                    } catch (Exception e) {
+                        serverUI.appendLog("Server Error in ADD_NEW_TABLE: " + e.getMessage());
+                    }
+                    break;
+
+                case "DELETE_TABLE":
+                    try {
+                        int id = (int) messageList.get(1);
+                        boolean success = dbLogic.restaurantDB.TableDBController.deleteTable(id);
+                        if (success) {
+                            client.sendToClient(new ServiceResponse(ServiceStatus.UPDATE_SUCCESS, "Table deleted"));
+                        } else {
+                            client.sendToClient(new ServiceResponse(ServiceStatus.INTERNAL_ERROR, "SQL Error during deletion"));
+                        }
+                    } catch (Exception e) {
+                        serverUI.appendLog("Server Error in DELETE_TABLE: " + e.getMessage());
+                    }
+                    break;
+
+                
                 case "PROCESS_PAYMENT": 
                     Bill billToProcess = (Bill) messageList.get(1); 
                     boolean isSuccess = dbLogic.restaurantDB.PaymentController.finalizePayment(billToProcess); 
