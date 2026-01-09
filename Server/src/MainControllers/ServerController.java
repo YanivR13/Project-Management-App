@@ -34,6 +34,8 @@ import dbLogic.managmentDB.*;
 import dbLogic.restaurantDB.*;
 import dbLogic.systemLogin.*;
 
+import serverLogic.cardReader.CardReaderHandler;
+
 /**
  * The ServerController class is the central communication hub for the Bistro Server.
  * It manages network lifecycle, database connectivity, and command routing.
@@ -150,15 +152,24 @@ public class ServerController extends AbstractServer {
             String command = (String) messageList.get(0); 
 
             switch (command) { 
+            
+            	case "CARD_READER_LOGIN":
+            	case "CARD_READER_GET_CODES":
+            	case "CARD_READER_VERIFY_CODE":
+            		new CardReaderHandler().handle((ArrayList<Object>)messageList, client);
+            		break;
 
+            		
                 case "LOGIN_SUBSCRIBER": 
                     new SubscriberLoginHandler().handle(messageList, client); 
                     break; 
 
+                    
                 case "LOGIN_OCCASIONAL": 
                     new OccasionalLoginHandler().handle(messageList, client); 
                     break; 
 
+                    
                 case "RESET_OCCASIONAL_USERNAME": 
                     new OccasionalRestUsernameHandler().handle(messageList, client); 
                     break; 
