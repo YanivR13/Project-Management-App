@@ -245,7 +245,7 @@ public class VisitController {
     private static void updateTableAvailability(Connection conn, int id, String isAvailable) throws SQLException {
         String sql = "UPDATE `table` SET is_available = ? WHERE table_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-        	ps.setBoolean(1, true);
+        	ps.setBoolean(1, false);
             ps.setInt(2, id);
             ps.executeUpdate();
         }

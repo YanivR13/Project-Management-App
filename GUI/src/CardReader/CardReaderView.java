@@ -3,7 +3,7 @@ package CardReader;
 
 import java.util.List;
 
-
+import javafx.geometry.Pos;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
@@ -108,31 +108,8 @@ public class CardReaderView extends Application implements common.ChatIF {
  // הוספנו את loginStatusLabel לרשימה כדי שנראה הודעות שגיאה
   
     
-    private void showSubscriberMenu() {
-        VBox layout = new VBox(25);
-        layout.setAlignment(Pos.CENTER);
-        layout.getStyleClass().add("main-background");
 
-        Label welcomeMsg = new Label("Subscriber Menu");
-        welcomeMsg.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2e7d32;");
-
-   
-        Button enterCodeBtn = new Button("Enter Confirmation Code");
-        enterCodeBtn.getStyleClass().add("arrival-code-button");
-        
-        enterCodeBtn.setOnAction(e -> showEnterCodeScreen());
-
-        Button lostCodeBtn = new Button("I lost my confirmation code");
-        lostCodeBtn.getStyleClass().add("lost-code-button");
-        lostCodeBtn.setOnAction(e -> showRecoveredCodesScreen());
-
-        Button disconnectBtn = new Button("Disconnect");
-        disconnectBtn.getStyleClass().add("disconnect-button"); 
-        disconnectBtn.setOnAction(e -> showWelcomeScreen());
-
-        layout.getChildren().addAll(welcomeMsg, enterCodeBtn, lostCodeBtn, disconnectBtn);
-        setupAndShowScene(layout, "Subscriber Menu");
-    }
+    
     
     
     private void showRecoveredCodesScreen() {
@@ -161,7 +138,31 @@ public class CardReaderView extends Application implements common.ChatIF {
 
     
     
-    private void setupAndShowScene(VBox layout, String title) {
+    private void showSubscriberMenu() { // שים לב שזה void ולא Object
+        VBox layout = new VBox(25);
+        layout.setAlignment(Pos.CENTER);
+        layout.getStyleClass().add("main-background");
+
+        Label welcomeMsg = new Label("Subscriber Menu");
+        welcomeMsg.setStyle("-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #2e7d32;");
+
+        Button enterCodeBtn = new Button("Enter Confirmation Code");
+        enterCodeBtn.getStyleClass().add("arrival-code-button");
+        enterCodeBtn.setOnAction(e -> showEnterCodeScreen());
+
+        Button lostCodeBtn = new Button("I lost my confirmation code");
+        lostCodeBtn.getStyleClass().add("lost-code-button");
+        lostCodeBtn.setOnAction(e -> showRecoveredCodesScreen());
+
+        Button disconnectBtn = new Button("Disconnect");
+        disconnectBtn.getStyleClass().add("disconnect-button"); 
+        disconnectBtn.setOnAction(e -> showWelcomeScreen());
+
+        layout.getChildren().addAll(welcomeMsg, enterCodeBtn, lostCodeBtn, disconnectBtn);
+        setupAndShowScene(layout, "Subscriber Menu");
+    }
+
+	private void setupAndShowScene(VBox layout, String title) {
         Scene scene = new Scene(layout, 450, 450);
         String cssPath = "/CardReader/CardReader.css";
         if (getClass().getResource(cssPath) != null) {
@@ -174,81 +175,125 @@ public class CardReaderView extends Application implements common.ChatIF {
 
     
     
-    private void showEnterCodeScreen() {
-        VBox layout = new VBox(20);
-        layout.setAlignment(Pos.CENTER);
-        layout.getStyleClass().add("main-background");
+	private void showEnterCodeScreen() {
+	    try {
+	        System.out.println(">>> Attempting to show Enter Code Screen...");
 
-        Label title = new Label("Enter Confirmation Code");
-        title.getStyleClass().add("title-label");
+	        VBox layout = new VBox(20);
+	        layout.setAlignment(Pos.CENTER);
+	        layout.getStyleClass().add("main-background");
 
-        TextField codeInput = new TextField();
-        codeInput.setPromptText("Type your code here (e.g. XY789)");
-        codeInput.getStyleClass().add("id-input-field");
+	        Label title = new Label("Enter Confirmation Code");
+	        title.getStyleClass().add("title-label");
 
-        // הסרנו את המשתנה המקומי messageLabel והשתמשנו ב-verifyMessageLabel הגלובלי
-        verifyMessageLabel.setText(""); 
-        
-        Button submitBtn = new Button("Confirm Arrival");
-        submitBtn.getStyleClass().add("login-button"); 
-        
-        submitBtn.setOnAction(e -> {
-            // שלב 1: איפוס הודעה והצגת סטטוס זמני
-            verifyMessageLabel.setText("Processing...");
-            verifyMessageLabel.setStyle("-fx-text-fill: blue;");
+	        TextField codeInput = new TextField();
+	        codeInput.setPromptText("Type your code here (e.g. 12345)");
+	        codeInput.getStyleClass().add("id-input-field");
 
-            // שלב 2: שליחת הבקשה לשרת דרך הקונטרולר
-            controller.verifyConfirmationCode(codeInput.getText(), currentSubscriberID); 
-        });
-        
-        Button backBtn = new Button("Back");
-        backBtn.getStyleClass().add("connect-button");
-        backBtn.setOnAction(e -> showSubscriberMenu());
+	        // תיקון קריטי: מאפסים את הטקסט של הלייבל הגלובלי לפני השימוש
+	        verifyMessageLabel.setText("");
+	        verifyMessageLabel.setStyle("-fx-text-fill: black;");
 
-        // כאן התיקון הקריטי: הוספת verifyMessageLabel ל-layout
-        layout.getChildren().addAll(title, codeInput, submitBtn, verifyMessageLabel, backBtn);
-        setupAndShowScene(layout, "Enter Code");
-    }
+	        Button submitBtn = new Button("Confirm Arrival");
+	        submitBtn.getStyleClass().add("login-button");
+	        submitBtn.setOnAction(e -> {
+	            verifyMessageLabel.setText("Processing...");
+	            controller.verifyConfirmationCode(codeInput.getText(), currentSubscriberID); 
+	        });
+
+	        Button backBtn = new Button("Back");
+	        backBtn.getStyleClass().add("connect-button");
+	        backBtn.setOnAction(e -> showSubscriberMenu());
+
+	        // לפני שמוסיפים את verifyMessageLabel, אנחנו מוודאים שהוא לא "תקוע" ב-Layout ישן
+	        layout.getChildren().addAll(title, codeInput, submitBtn, verifyMessageLabel, backBtn);
+
+	        System.out.println(">>> Switching scene now...");
+	        setupAndShowScene(layout, "Enter Code");
+
+	    } catch (Exception ex) {
+	        System.err.println(">>> ERROR during screen transition:");
+	        ex.printStackTrace(); // זה יראה לנו ב-Console את השגיאה המדויקת באדום
+	    }
+	}
     
     
-    @Override
-    public void display(Object message) {
-        Platform.runLater(() -> {
-            // 1. טיפול בתוצאת לוגין (Boolean)
-            if (message instanceof Boolean) {
-                if ((Boolean) message) {
-                    showSubscriberMenu();
-                } else {
-                    loginStatusLabel.setText("Login Failed!");
-                }
-            } 
-            // 2. טיפול בשחזור קודים אבודים (List) - מציג את הרשימה על המסך
-            else if (message instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<String> codes = (List<String>) message;
-                codesContainer.getChildren().clear(); // מנקה את הודעת ה-"Fetching..."
-                
-                if (codes.isEmpty()) {
-                    codesContainer.getChildren().add(new Label("No active codes found."));
-                } else {
-                    for (String codeStr : codes) {
-                        Label codeLabel = new Label(codeStr);
-                        codeLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #1565c0; -fx-font-weight: bold;");
-                        codesContainer.getChildren().add(codeLabel);
-                    }
-                }
-            }
-            // 3. טיפול באימות קוד הגעה (String) - מציג הצלחה או כישלון
-            else if (message instanceof String) {
-                verifyMessageLabel.setText((String) message);
-                if (((String) message).contains("Success")) {
-                    verifyMessageLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
-                } else {
-                    verifyMessageLabel.setStyle("-fx-text-fill: red;");
-                }
-            }
-        });
-    }
+	@Override
+	public void display(Object message) {
+	    // הדפסה קריטית כדי לראות מה השרת שלח עוד לפני ה-Platform.runLater
+	    System.out.println(">>> MESSAGE RECEIVED FROM SERVER: " + message);
+
+	    Platform.runLater(() -> {
+	        try {
+	            // 1. טיפול בתוצאת לוגין (Boolean)
+	            if (message instanceof Boolean) {
+	                boolean isSuccess = (Boolean) message;
+	                System.out.println(">>> Login status: " + isSuccess);
+	                
+	                if (isSuccess) {
+	                    showSubscriberMenu();
+	                } else {
+	                    loginStatusLabel.setText("Login Failed! Incorrect ID.");
+	                    loginStatusLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+	                }
+	            } 
+	            
+	            // 2. טיפול בשחזור קודים אבודים (List)
+	            else if (message instanceof List) {
+	                System.out.println(">>> Processing recovered codes list...");
+	                @SuppressWarnings("unchecked")
+	                List<String> codes = (List<String>) message;
+	                codesContainer.getChildren().clear(); 
+	                
+	                if (codes.isEmpty()) {
+	                    codesContainer.getChildren().add(new Label("No active codes found for this ID."));
+	                } else {
+	                    for (String codeStr : codes) {
+	                        Label codeLabel = new Label("Code: " + codeStr);
+	                        codeLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #1565c0; -fx-font-weight: bold;");
+	                        codesContainer.getChildren().add(codeLabel);
+	                    }
+	                }
+	            }
+	            
+	            // 3. טיפול באימות קוד הגעה (String) - לפי VisitController
+	            else if (message instanceof String) {
+	                String response = (String) message;
+	                System.out.println(">>> Arrival response: " + response);
+	                
+	                // מקרה א': הצלחה והקצאת שולחן
+	                if (response.startsWith("SUCCESS_TABLE_")) {
+	                    String tableId = response.split("_")[2]; 
+	                    verifyMessageLabel.setText("Success! Please proceed to Table #" + tableId);
+	                    verifyMessageLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
+	                } 
+	                // מקרה ב': קוד לא תקין
+	                else if (response.equals("INVALID_CODE")) {
+	                    verifyMessageLabel.setText("Error: Invalid or expired code.");
+	                    verifyMessageLabel.setStyle("-fx-text-fill: red;");
+	                }
+	                // מקרה ג': הגעה מוקדמת מדי
+	                else if (response.equals("TOO_EARLY")) {
+	                    verifyMessageLabel.setText("Too early! Please come back later.");
+	                    verifyMessageLabel.setStyle("-fx-text-fill: orange; -fx-font-weight: bold;");
+	                }
+	                // מקרה ד': אין שולחן פנוי כרגע
+	                else if (response.equals("TABLE_NOT_READY_WAIT")) {
+	                    verifyMessageLabel.setText("Table not ready. We will notify you via SMS.");
+	                    verifyMessageLabel.setStyle("-fx-text-fill: blue;");
+	                }
+	                // מקרה ה': שגיאת מערכת כללית
+	                else {
+	                    verifyMessageLabel.setText("System: " + response);
+	                    verifyMessageLabel.setStyle("-fx-text-fill: gray;");
+	                }
+	            }
+	        } catch (Exception e) {
+	            System.err.println(">>> CRITICAL ERROR in display method:");
+	            e.printStackTrace(); // ידפיס ב-Console את סיבת הקריסה אם יש כזו
+	        }
+	    });
+	}
     
     private void appendLog(String message) {
         System.out.println("[LOG]: " + message);

@@ -1,5 +1,5 @@
 package serverLogic.cardReader;
-
+import dbLogic.restaurantDB.VisitController;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,11 +37,16 @@ public class CardReaderHandler {
                     break;
 
                 case "CARD_READER_VERIFY_CODE":
-                    // אימות קוד אישור ועדכון הגעה
-                    String code = (String) data.get(1);
-                    String subIDForVerify = (String) data.get(2);
-                    String result = db.verifyConfirmationCode(code, subIDForVerify);
-                    client.sendToClient(result); // החזרת הודעת טקסט ללקוח
+                    // 1. שליפת הנתונים מההודעה
+                    String codeStr = (String) data.get(1);
+                    
+                    // 2. שימוש בלוגיקה הקיימת של הטרמינל (VisitController)
+                    // המתודה הזו כבר מטפלת בהקצאת שולחן, יצירת חשבון ועדכון סטטוס ל-ARRIVED
+                    long code = Long.parseLong(codeStr);
+                    String result = dbLogic.restaurantDB.VisitController.processTerminalArrival(code);
+                    
+                    // 3. החזרת התשובה המפורטת ללקוח (למשל: "SUCCESS_TABLE_5")
+                    client.sendToClient(result); 
                     break;
             }
         } catch (Exception e) {
