@@ -85,4 +85,43 @@ public class viewReservationController {
 	        return false;
 	    }
 	}
+	
+	
+	/**
+	 * Fetches ALL active reservations from the database for staff view.
+	 * Uses a JOIN with the user table to include customer phone numbers.
+	 */
+	public static ArrayList<Object[]> getAllActiveReservations() {
+	    ArrayList<Object[]> activeList = new ArrayList<>();
+	    
+	    // השאילתה שבדקת ב-Workbench ועובדת
+	    String query = "SELECT r.confirmation_code, r.reservation_datetime, r.number_of_guests, u.phone_number, r.status " +
+	                   "FROM reservation r " +
+	                   "JOIN user u ON r.user_id = u.user_id " +
+	                   "WHERE r.status = 'ACTIVE' " +
+	                   "ORDER BY r.reservation_datetime ASC";
+
+	    Connection conn = DBController.getInstance().getConnection(); //
+	    try (PreparedStatement pstmt = conn.prepareStatement(query);
+	         ResultSet rs = pstmt.executeQuery()) {
+
+	        while (rs.next()) {
+	            // אריזת השורה למערך עבור ה-TableView ב-Dashboard
+	            Object[] row = new Object[] {
+	                rs.getLong("confirmation_code"),
+	                rs.getString("reservation_datetime"),
+	                rs.getInt("number_of_guests"),
+	                rs.getString("phone_number"),
+	                rs.getString("status")
+	            };
+	            activeList.add(row);
+	        }
+	    } catch (SQLException e) {
+	        System.out.println("DB Error in getAllActiveReservations: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	    return activeList;
+	}
+	
+	
 }

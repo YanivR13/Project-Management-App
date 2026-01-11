@@ -33,6 +33,7 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
 
     // --- 1. Primary FXML Fields ---
     @FXML protected TextArea txtLog; // Console area for system feedback
+    private Object currentSubController;
     @FXML protected AnchorPane contentPane; // The central container where sub-screens are injected
 
     // --- Sub-screen FXML Fields (Injected only when specific FXMLs are loaded) ---
@@ -97,37 +98,34 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
      * Utility method to load FXML sub-screens into the central contentPane.
      * Crucial: Sets the current class instance ('this') as the controller for all sub-screens.
      */
-    private void loadSubScreen(String fxmlPath) { // Start of loadSubScreen method
-        try { // Start of try block for FXML loading
-            // Clear all current children from the central container
-            contentPane.getChildren().clear(); // Clearing pane
-            
-            // Initialize the FXMLLoader with the provided file path
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath)); // Loader initialization
-            
-            // Injection logic: Force the loader to use the current dashboard instance as the controller
-            loader.setController(this); // Setting 'this' as sub-screen controller
-            
-            // Load the FXML file and retrieve the resulting UI node
-            Node node = loader.load(); // Loading node
-            
-            // Ensure the loaded content expands to fill the entire AnchorPane
-            AnchorPane.setTopAnchor(node, 0.0); // Top constraint
-            AnchorPane.setBottomAnchor(node, 0.0); // Bottom constraint
-            AnchorPane.setLeftAnchor(node, 0.0); // Left constraint
-            AnchorPane.setRightAnchor(node, 0.0); // Right constraint
-            
-            // Add the processed node into the contentPane's visual hierarchy
-            contentPane.getChildren().add(node); // Updating UI
-            
-        } catch (IOException e) { // Start of catch block for loading errors
-            // Log failure to find or load the specified FXML file
-            appendLog("Error loading screen: " + fxmlPath + " -> " + e.getMessage()); // Logging error
-            // Print the full technical stack trace for debugging
-            e.printStackTrace(); // Printing trace
-        } // End of try-catch block
-    } // End of loadSubScreen method
+    private void loadSubScreen(String fxmlPath) {
+        try {
+            contentPane.getChildren().clear();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
 
+            // אם זה מסך ההזמנות, ניצור לו קונטרולר ייעודי
+            if (fxmlPath.contains("ActiveReservations.fxml")) {
+                ActiveReservationsController controller = new ActiveReservationsController();
+                loader.setController(controller);
+                this.currentSubController = controller;
+            } else {
+                // למסכים רגילים נשתמש ב-'this' (כפי שהיה קודם)
+                loader.setController(this);
+                this.currentSubController = null;
+            }
+
+            Node node = loader.load();
+            AnchorPane.setTopAnchor(node, 0.0);
+            AnchorPane.setBottomAnchor(node, 0.0);
+            AnchorPane.setLeftAnchor(node, 0.0);
+            AnchorPane.setRightAnchor(node, 0.0);
+            contentPane.getChildren().add(node);
+
+        } catch (IOException e) {
+            appendLog("Error loading screen: " + fxmlPath + " -> " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
     // --- 3. Screen Navigation Handlers ---
 
     @FXML // Link to FXML menu button
@@ -397,21 +395,66 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         loadSubScreen("/managmentGUI/ActionsFXML/SubscribersList.fxml"); // Loading sub-view
     } // End method
 
-    @FXML void viewActiveReservations(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/ActiveReservations.fxml"); // Loading sub-view
+    
+    
+    
+    
+    
+    
+    
+    
+    @FXML 
+    void viewActiveReservations(ActionEvent event) { // Triggered by menu
+        loadSubScreen("/managmentGUI/ActionsFXML/ActiveReservations.fxml"); 
+
+        // 2. שליחת הבקשה לשרת כדי לקבל את הנתונים לתוך המסך שנטען
+        try {
+            appendLog("System: Fetching all active reservations for staff view...");
+            
+            ArrayList<Object> message = new ArrayList<>();
+            message.add("GET_ALL_ACTIVE_RESERVATIONS_STAFF"); // הפקודה שהגדרנו בשרת
+            
+            client.sendToServer(message); 
+        } catch (IOException e) {
+            appendLog("Error: Failed to send request to server.");
+            e.printStackTrace();
+        }
+    }
+
+    
+   
+    
+    @FXML void viewCurrentDiners(ActionEvent event) { // Triggered by menu
+        loadSubScreen("/managmentGUI/ActionsFXML/CurrentDiners.fxml"); // Loading sub-view
+        
+        
+        
+        
     } // End method
 
+    /**
+     * Allows staff members to access the customer-facing subscriber menu.
+     */
+  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     @FXML void viewWaitingList(ActionEvent event) { // Triggered by menu
         loadSubScreen("/managmentGUI/ActionsFXML/WaitingList.fxml"); // Loading sub-view
     } // End method
 
-    @FXML void viewCurrentDiners(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/CurrentDiners.fxml"); // Loading sub-view
-    } // End method
+  
     
-    /**
-     * Allows staff members to access the customer-facing subscriber menu.
-     */
     @FXML
     void clickCustomerPortal(ActionEvent event) {
         try {
@@ -485,6 +528,9 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     }
 
     
+    
+    
+    
     /**
      * Processes server responses regarding operational updates and data requests.
      * Updated to handle the results of new subscriber registration.
@@ -529,9 +575,41 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             Platform.runLater(() -> { 
                 appendLog(rest.getFormattedOpeningHours()); //
             });
-        }
-    }
 
+        }
+        
+        
+     // --- SCENARIO 3: טיפול ברשימת ההזמנות הפעילות ---
+        else if (message instanceof ArrayList) { 
+            @SuppressWarnings("unchecked")
+            ArrayList<Object[]> reservationsList = (ArrayList<Object[]>) message; 
+
+            Platform.runLater(() -> { 
+                appendLog("SERVER DATA: Received " + reservationsList.size() + " active reservations."); 
+
+                // אם אנחנו במסך הנכון, נזריק את הנתונים לטבלה
+                if (currentSubController instanceof ActiveReservationsController) {
+                    ((ActiveReservationsController) currentSubController).setTableData(reservationsList);
+                    appendLog("Table updated with " + reservationsList.size() + " rows.");
+                }
+            }); 
+        }
+        
+        
+        
+        
+        
+    } //end of display
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Thread-safe helper to update the UI log area.
      */
