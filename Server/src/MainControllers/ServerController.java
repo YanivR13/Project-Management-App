@@ -24,6 +24,7 @@ import common.ServerIF; // Import the interface for server-side UI logging
 import common.ServiceResponse; // Import the standard response wrapper
 import common.ServiceResponse.ServiceStatus;
 import common.TimeRange; // Import the time range domain object
+import common.Visit;
 import ocsf.server.AbstractServer; // Import OCSF base server class
 import ocsf.server.ConnectionToClient; // Import OCSF client connection handle
 import serverLogic.serverLogin.OccasionalLoginHandler; // Import guest login logic
@@ -436,7 +437,27 @@ public class ServerController extends AbstractServer {
                         serverUI.appendLog("Error sending status update: " + e.getMessage());
                     }
                     break;
+                    
+                    
+                    
+                 // פקודה חדשה לשליפת רשימת הסועדים הפעילים
+                case "GET_ACTIVE_DINERS_LIST":
+                    // 1. קריאה למתודה שיצרנו ב-VisitController
+                    ArrayList<Visit> activeDiners = VisitController.getAllActiveDiners();
+                    
+                    // 2. שליחת הרשימה חזרה ללקוח (לנציג)
+                    try {
+                        client.sendToClient(activeDiners);
+                    } catch (IOException e) {
+                        System.err.println("שגיאה בשליחת רשימת הסועדים ללקוח: " + e.getMessage());
+                    }
+                    break;     
 
+                    
+                    
+                    
+                    
+                    
                 default: 
                     serverUI.appendLog("Unknown command received: " + command); 
                     try { 

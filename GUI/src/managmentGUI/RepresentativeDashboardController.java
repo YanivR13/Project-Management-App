@@ -8,6 +8,7 @@ import java.util.Map; // Importing for map interface
 
 import clientGUI.Controllers.MenuControlls.BaseMenuController; // Importing the base menu controller for session data
 import common.TimeRange; // Importing the TimeRange domain entity
+import common.Visit;
 import common.Restaurant;
 import common.ServiceResponse; // Importing the server response envelope
 import javafx.application.Platform; // Importing for UI thread management
@@ -103,13 +104,25 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             contentPane.getChildren().clear();
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
 
-            // אם זה מסך ההזמנות, ניצור לו קונטרולר ייעודי
+            // 1. טיפול במסך ההזמנות הפעילות
             if (fxmlPath.contains("ActiveReservations.fxml")) {
                 ActiveReservationsController controller = new ActiveReservationsController();
                 loader.setController(controller);
                 this.currentSubController = controller;
-            } else {
-                // למסכים רגילים נשתמש ב-'this' (כפי שהיה קודם)
+            } 
+            
+            // --- כאן הוספנו את החלק החדש ---
+            // 2. טיפול במסך הסועדים הנוכחיים
+            else if (fxmlPath.contains("CurrentDiners.fxml")) {
+                // יצירת הקונטרולר החדש ושיוכו ל-FXML
+                CurrentDinersController controller = new CurrentDinersController();
+                loader.setController(controller);
+                this.currentSubController = controller;
+            } 
+            // ------------------------------
+            
+            else {
+                // למסכים רגילים נשתמש ב-'this'
                 loader.setController(this);
                 this.currentSubController = null;
             }
@@ -126,6 +139,13 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             e.printStackTrace();
         }
     }
+    
+    
+    
+    
+    
+    
+    
     // --- 3. Screen Navigation Handlers ---
 
     @FXML // Link to FXML menu button
@@ -424,27 +444,33 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     
    
     
-    @FXML void viewCurrentDiners(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/CurrentDiners.fxml"); // Loading sub-view
-        
-        
-        
-        
-    } // End method
+    @FXML 
+    void viewCurrentDiners(ActionEvent event) { 
+        // 1. טעינת תת-המסך הגרפי (ה-FXML) לתוך הפאנל המרכזי
+        loadSubScreen("/managmentGUI/ActionsFXML/CurrentDiners.fxml"); 
+
+        // 2. שליחת הבקשה לשרת לקבלת הנתונים
+        try {
+            appendLog("System: Fetching list of active diners currently in the restaurant...");
+            
+            // יצירת פרוטוקול ההודעה כפי שהגדרנו ב-case בשרת
+            ArrayList<Object> message = new ArrayList<>();
+            message.add("GET_ACTIVE_DINERS_LIST"); 
+            
+            // שליחת ההודעה דרך הלקוח (הנציג) לשרת
+            if (client != null) {
+                client.handleMessageFromClientUI(message); 
+            }
+        } catch (Exception e) {
+            appendLog("Error: Failed to send request for active diners.");
+            e.printStackTrace();
+        }
+    }
 
     /**
      * Allows staff members to access the customer-facing subscriber menu.
      */
   
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -579,22 +605,49 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
         
         
-     // --- SCENARIO 3: טיפול ברשימת ההזמנות הפעילות ---
+     // --- SCENARIO 3 & 4: טיפול ברשימות (הזמנות או סועדים) ---
         else if (message instanceof ArrayList) { 
-            @SuppressWarnings("unchecked")
-            ArrayList<Object[]> reservationsList = (ArrayList<Object[]>) message; 
+            ArrayList<?> genericList = (ArrayList<?>) message; 
+
+            if (genericList.isEmpty()) {
+                Platform.runLater(() -> appendLog("SERVER DATA: Received an empty list."));
+                return;
+            }
+
+            // בודקים את סוג האובייקט הראשון ברשימה
+            Object firstItem = genericList.get(0);
 
             Platform.runLater(() -> { 
-                appendLog("SERVER DATA: Received " + reservationsList.size() + " active reservations."); 
+                // Scenario 3: רשימת הזמנות (Object[]) - הבוקר עבדנו על זה
+                if (firstItem instanceof Object[]) {
+                    @SuppressWarnings("unchecked")
+                    ArrayList<Object[]> reservationsList = (ArrayList<Object[]>) genericList; 
+                    appendLog("SERVER DATA: Received " + reservationsList.size() + " active reservations."); 
+                    if (currentSubController instanceof ActiveReservationsController) {
+                        ((ActiveReservationsController) currentSubController).setTableData(reservationsList);
+                    }
+                } 
+                
+                // Scenario 4: רשימת סועדים יושבים (Visit) - הפיצ'ר החדש
+                else if (firstItem instanceof common.Visit) {
+                    @SuppressWarnings("unchecked")
+                    ArrayList<common.Visit> visitsList = (ArrayList<common.Visit>) genericList;
+                    appendLog("SERVER DATA: Received " + visitsList.size() + " active visits.");
 
-                // אם אנחנו במסך הנכון, נזריק את הנתונים לטבלה
-                if (currentSubController instanceof ActiveReservationsController) {
-                    ((ActiveReservationsController) currentSubController).setTableData(reservationsList);
-                    appendLog("Table updated with " + reservationsList.size() + " rows.");
+                    // חישוב ה-7 המפורסם
+                    int total = 0;
+                    for (common.Visit v : visitsList) {
+                        total += v.getNumberOfGuests(); // השתמשנו ב-Getter החדש שיצרנו
+                    }
+                    appendLog("System: Total diners currently seated: " + total);
+
+                    // הזרקת הנתונים לטבלה החדשה
+                    if (currentSubController instanceof CurrentDinersController) {
+                        ((CurrentDinersController) currentSubController).setTableData(visitsList);
+                    }
                 }
             }); 
         }
-        
         
         
         

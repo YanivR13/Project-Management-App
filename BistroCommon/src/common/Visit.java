@@ -70,6 +70,11 @@ public class Visit implements Serializable { // Defining the Visit class which i
     // Getters and Setters Section
     // =========================================================================
 
+    
+
+    
+    
+    
     public long getConfirmationCode() { // Method to retrieve confirmation code
         return confirmationCode;        // Returns the long value
     } // End method
@@ -118,6 +123,20 @@ public class Visit implements Serializable { // Defining the Visit class which i
         this.status = status;                   // Assigning new value
     } // End method
 
+    
+    
+ // שדה חדש להחזקת כמות הסועדים (לצורכי תצוגה בלבד)
+    private int numberOfGuests;
+
+    public int getNumberOfGuests() {
+        return numberOfGuests;
+    }
+
+    public void setNumberOfGuests(int numberOfGuests) {
+        this.numberOfGuests = numberOfGuests;
+    }
+    
+    
     // =========================================================================
     // Utility Methods
     // =========================================================================

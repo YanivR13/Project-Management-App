@@ -4,7 +4,9 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.Duration;
 import MainControllers.DBController;
+import common.Visit;
 
+import java.util.ArrayList;
 /**
  * VisitController handles the arrival logic and seating transactions at the Terminal.
  * Logic: Prioritizes NOTIFIED guests and ensures fair table allocation.
@@ -273,4 +275,44 @@ public class VisitController {
             ps.executeUpdate();
         }
     }
+    
+    /**
+     * שלב 2: שליפת רשימת סועדים פעילים (JOIN בין visit ל-reservation)
+     */
+    public static java.util.ArrayList<Visit> getAllActiveDiners() {
+        java.util.ArrayList<Visit> activeDiners = new java.util.ArrayList<>();
+        
+        // השאילתה המנצחת מה-Workbench
+        String sql = "SELECT v.*, r.number_of_guests " +
+                     "FROM visit v " +
+                     "JOIN reservation r ON v.confirmation_code = r.confirmation_code " +
+                     "WHERE v.status = 'ACTIVE'";
+
+        try (Connection conn = DBController.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                // יצירת אובייקט Visit באמצעות הבנאי הקיים שלך
+                Visit v = new Visit(
+                    rs.getLong("confirmation_code"),
+                    rs.getInt("table_id"),
+                    rs.getInt("user_id"),
+                    rs.getLong("bill_id"),
+                    rs.getString("start_time"),
+                    Visit.VisitStatus.valueOf(rs.getString("status"))
+                );
+                
+                // הזרקת כמות הסועדים ששלפנו מה-JOIN
+                v.setNumberOfGuests(rs.getInt("number_of_guests"));
+                
+                activeDiners.add(v);
+            }
+        } catch (SQLException e) {
+            System.err.println("DB Error in getAllActiveDiners: " + e.getMessage());
+        }
+        return activeDiners;
+    }
+    
+    
 }
