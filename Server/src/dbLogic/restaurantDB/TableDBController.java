@@ -270,12 +270,18 @@ public class TableDBController {
                 ps1.setInt(1, tableId);
                 ps1.executeUpdate();
             }
+            
+            String deleteFromRestaurantTableSql = "DELETE FROM `restaurant_table` WHERE table_id = ?";
+            try (PreparedStatement ps2 = conn.prepareStatement(deleteFromRestaurantTableSql)) {
+                ps2.setInt(1, tableId);
+                ps2.executeUpdate();
+            }
 
             String deleteTableSql =
                 "DELETE FROM `table` WHERE table_id = ?";
-            try (PreparedStatement ps2 = conn.prepareStatement(deleteTableSql)) {
-                ps2.setInt(1, tableId);
-                int affected = ps2.executeUpdate();
+            try (PreparedStatement ps3 = conn.prepareStatement(deleteTableSql)) {
+                ps3.setInt(1, tableId);
+                int affected = ps3.executeUpdate();
                 conn.commit();
                 return affected > 0;
             }
