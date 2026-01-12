@@ -325,4 +325,14 @@
     -fx-font-weight: bold;
 }
 
+/* Join Waiting List – Indigo (Unique) */
+.btn-waiting {
+    -fx-background-color: #3f51b5;   /* אינדיגו */
+    -fx-text-fill: white;
+}
+
+.btn-waiting:hover {
+    -fx-background-color: #303f9f;   /* אינדיגו כהה */
+}
+
 
