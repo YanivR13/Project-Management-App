@@ -225,27 +225,49 @@ public class TableDBController {
      * @return true if the table was added successfully, false otherwise
      */
     public static boolean addNewTable(int capacity) {
-
+    	
+        final int DEFAULT_RESTAURANT_ID = 1; 
+        
         int nextId = getNextTableId();
-        String sql = "INSERT INTO `table` (table_id, capacity, is_available) VALUES (?, ?, 1)";
+        String sqlTable = "INSERT INTO `table` (table_id, capacity, is_available) VALUES (?, ?, 1)";
+        String sqlRestaurantTable = "INSERT INTO `restaurant_table` (restaurant_id, table_id) VALUES (?, ?)";
 
         Connection conn = DBController.getInstance().getConnection();
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        
+        try {
+            conn.setAutoCommit(false); 
 
-            pstmt.setInt(1, nextId);
-            pstmt.setInt(2, capacity);
-
-            boolean success = pstmt.executeUpdate() > 0;
-
-            if (success) {
-                VisitController.handleTableFreed(nextId);
+            try (PreparedStatement pstmt1 = conn.prepareStatement(sqlTable)) {
+                pstmt1.setInt(1, nextId);
+                pstmt1.setInt(2, capacity);
+                pstmt1.executeUpdate();
             }
 
-            return success;
+            try (PreparedStatement pstmt2 = conn.prepareStatement(sqlRestaurantTable)) {
+                pstmt2.setInt(1, DEFAULT_RESTAURANT_ID); 
+                pstmt2.setInt(2, nextId);
+                pstmt2.executeUpdate();
+            }
+
+            conn.commit(); 
+
+            VisitController.handleTableFreed(nextId);
+            
+            System.out.println("Table " + nextId + " added successfully to both tables.");
+            return true;
 
         } catch (SQLException e) {
+            try {
+                if (conn != null) conn.rollback();
+            } catch (SQLException rollbackEx) {
+                rollbackEx.printStackTrace();
+            }
             e.printStackTrace();
             return false;
+        } finally {
+            try {
+                if (conn != null) conn.setAutoCommit(true);
+            } catch (SQLException ignored) {}
         }
     }
 
