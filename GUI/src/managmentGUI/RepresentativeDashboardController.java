@@ -595,13 +595,13 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             }); 
         } 
         
-        // --- SCENARIO 2: Handling Restaurant object (Work times) ---
+     // --- SCENARIO 2: Handling Restaurant object (Work times) ---
         else if (message instanceof Restaurant) { 
-            Restaurant rest = (Restaurant) message; //
+            Restaurant rest = (Restaurant) message;
             Platform.runLater(() -> { 
-                appendLog(rest.getFormattedOpeningHours()); //
+                // במקום להדפיס ללוגר, נציג חלון חדש
+                showWorkTimesAlert(rest.getFormattedOpeningHours());
             });
-
         }
         
         
@@ -694,4 +694,28 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         public String getCloseTime() { return closeTime; } // Getter
         public void setCloseTime(String ct) { this.closeTime = ct; } // Setter
     } // Inner class end
+    
+    /**
+     * מתודה המציגה את שעות הפעילות בחלון חדש (Alert)
+     */
+    public void showWorkTimesAlert(String formattedHours) {
+        Alert alert = new Alert(AlertType.INFORMATION);
+        alert.setTitle("Restaurant Operating Hours");
+        alert.setHeaderText("Current Updated Schedule");
+
+        // יצירת TextArea להצגת הטקסט כדי לאפשר גלילה ועיצוב נקי
+        TextArea textArea = new TextArea(formattedHours);
+        textArea.setEditable(false); // המשתמש לא יכול לערוך את הטקסט
+        textArea.setWrapText(true);  // גלישת טקסט אוטומטית
+        textArea.setPrefWidth(500);
+        textArea.setPrefHeight(400);
+
+        // הגדרת גופן מונוספייס (כמו ב-Logger) כדי שהעיצוב יישמר
+        textArea.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 13;");
+
+        // הטמעת ה-TextArea בתוך ה-Alert
+        alert.getDialogPane().setContent(textArea);
+        alert.showAndWait();
+    }
+    
 } // End of RepresentativeDashboardController class

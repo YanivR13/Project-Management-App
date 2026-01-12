@@ -64,7 +64,7 @@ public class CreateOrderController { // Start of CreateOrderController class def
             if (!isStartOpen || !isEndOpen) { // If closed during any part of the window
                 // Return a specific status informing the client that the time is outside operational hours
                 return new ServiceResponse(ServiceStatus.RESERVATION_OUT_OF_HOURS, 
-                    "The restaurant is closing soon. A full 2-hour window is required (until " + endTimeStr + ")."); // Out of hours return
+                    "The restaurant is outside operational hours."); // Out of hours return
             } // End of hours check
 
             // --- PHASE 1: Direct Availability Check ---
@@ -173,11 +173,11 @@ public class CreateOrderController { // Start of CreateOrderController class def
     private static int getReservedTablesCount(LocalDateTime dt, int capacity) { // Start method
         
         // Query Logic: A table is occupied if a reservation exists within a 4-hour window (+/- 2 hours)
-        String query = "SELECT COUNT(*) FROM reservation " +
-                       "WHERE number_of_guests = ? " +
-                       "AND status != 'CANCELLED' "+
-                       "AND reservation_datetime > DATE_SUB(?, INTERVAL 2 HOUR) " +
-                       "AND reservation_datetime < DATE_ADD(?, INTERVAL 2 HOUR)"; // SQL query string
+    	String query = "SELECT COUNT(*) FROM reservation " +
+                "WHERE number_of_guests = ? " +
+                "AND status NOT IN ('CANCELLED', 'FINISHED', 'NOSHOW') " + 
+                "AND reservation_datetime > DATE_SUB(?, INTERVAL 2 HOUR) " +
+                "AND reservation_datetime < DATE_ADD(?, INTERVAL 2 HOUR)";
         
         try (PreparedStatement pstmt = DBController.getInstance().getConnection().prepareStatement(query)) { // Prepare statement
             // Bind the table capacity being checked to the first parameter
