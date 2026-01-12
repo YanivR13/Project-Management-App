@@ -73,6 +73,8 @@ public class PaymentController {
         // 3. Reset table availability. Note: `table` is a reserved keyword in SQL, requiring backticks
         String updateTable = "UPDATE `table` SET is_available = ? WHERE table_id = ?";
         
+        String updateRes = "UPDATE reservation SET status = 'FINISHED' WHERE confirmation_code = ?";
+        
         String getTableIdSql = "SELECT table_id FROM visit WHERE confirmation_code = ?";        
         try {
         	// Disable auto-commit to manage the transaction manually
@@ -87,7 +89,8 @@ public class PaymentController {
 
             try (PreparedStatement psBill = conn.prepareStatement(updateBill);
                  PreparedStatement psVisit = conn.prepareStatement(updateVisit);
-                 PreparedStatement psTable = conn.prepareStatement(updateTable)) {
+                 PreparedStatement psTable = conn.prepareStatement(updateTable);
+            		PreparedStatement psRes = conn.prepareStatement(updateRes)) {
 
             	// Execute Bill Update
                 psBill.setDouble(1, bill.getBaseAmount());
@@ -106,6 +109,11 @@ public class PaymentController {
                 	psTable.setInt(2, tableId);
                     psTable.executeUpdate();
                 }
+                
+             // 4. Update Reservation to FINISHED (if exists)
+                psRes.setLong(1, bill.getConfirmationCode());
+                psRes.executeUpdate();
+
             
                 // Commit all changes if no exceptions occurred
                 conn.commit(); 
@@ -131,7 +139,6 @@ public class PaymentController {
             return false;
         }
     }
-	
 	public static ArrayList<Object> getVisitWithSubscriberStatus(long code) {
 	    Visit v = getVisitDetails(code); 
 	    if (v == null) return null;

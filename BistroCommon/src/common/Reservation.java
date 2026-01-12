@@ -20,6 +20,7 @@ public class Reservation implements Serializable { // Begin class definition imp
         WAITING_AT_RESTAURANT,
         NOTIFIED,
         NOSHOW,
+        FINISHED,
         ARRIVED   // Represents a state where the customer has reached the restaurant
     } // End of Enum definition
 
