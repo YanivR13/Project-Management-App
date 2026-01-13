@@ -15,7 +15,6 @@
         <columns>
           <TableColumn fx:id="colCode" prefWidth="140.0" text="Confirmation Code" />
           <TableColumn fx:id="colTable" prefWidth="100.0" text="Table ID" />
-          <TableColumn fx:id="colGuests" prefWidth="120.0" text="Guest Count" />
           <TableColumn fx:id="colTime" prefWidth="200.0" text="Arrival Time" />
         </columns>
       </TableView>

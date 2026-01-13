@@ -16,7 +16,6 @@ public class CurrentDinersController implements Initializable {
     @FXML private TableView<Visit> dinersTable;
     @FXML private TableColumn<Visit, String> colCode;
     @FXML private TableColumn<Visit, Integer> colTable;
-    @FXML private TableColumn<Visit, Integer> colGuests;
     @FXML private TableColumn<Visit, String> colTime;
 
     @Override
@@ -24,7 +23,6 @@ public class CurrentDinersController implements Initializable {
         // השמות בגרשיים חייבים להתאים לשמות השדות במחלקה Visit (למשל confirmationCode)
         colCode.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
         colTable.setCellValueFactory(new PropertyValueFactory<>("tableId"));
-        colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests"));
         colTime.setCellValueFactory(new PropertyValueFactory<>("startTime"));
     }
     public void setTableData(ArrayList<Visit> visitsList) {
