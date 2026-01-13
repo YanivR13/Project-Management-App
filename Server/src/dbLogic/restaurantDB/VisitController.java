@@ -276,44 +276,47 @@ public class VisitController {
         }
     }
     
-    /**
-     * שלב 2: שליפת רשימת סועדים פעילים (JOIN בין visit ל-reservation)
-     */
-    public static java.util.ArrayList<Visit> getAllActiveDiners() {
-        java.util.ArrayList<Visit> activeDiners = new java.util.ArrayList<>();
-        
-        // תיקון 1: שימוש ב-* כדי למשוך את כל העמודות (כולל status ו-bill_id)
-        String sql = "SELECT * FROM visit WHERE status = 'ACTIVE'";
-        
-        try (Connection conn = DBController.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+ 
+public static java.util.ArrayList<Visit> getAllActiveDiners() {
+    java.util.ArrayList<Visit> activeDiners = new java.util.ArrayList<>();
+    
+    // שימוש בשם הסכימה המפורש כפי שמופיע ב-Workbench שלך
+    String sql = "SELECT * FROM prototypedb.visit WHERE status = 'ACTIVE'";
+    
+    try (Connection conn = DBController.getInstance().getConnection();
+         PreparedStatement pstmt = conn.prepareStatement(sql);
+         ResultSet rs = pstmt.executeQuery()) {
 
-            while (rs.next()) {
-                // תיקון 2: יצירת האובייקט רק עם מה שיש בטבלת ה-visit
+        while (rs.next()) {
+            try {
+                // המרת הסטטוס מה-DB ל-Enum של Java
+                String statusStr = rs.getString("status");
+                Visit.VisitStatus vStatus = Visit.VisitStatus.valueOf(statusStr);
+
                 Visit v = new Visit(
                     rs.getLong("confirmation_code"),
                     rs.getInt("table_id"),
                     rs.getInt("user_id"),
                     rs.getLong("bill_id"),
                     rs.getString("start_time"),
-                    Visit.VisitStatus.valueOf(rs.getString("status"))
+                    vStatus
                 );
                 
-                // מכיוון שאין JOIN, שדה האורחים יהיה 0 או שתגדיר ערך ברירת מחדל
                 v.setNumberOfGuests(0); 
-                
                 activeDiners.add(v);
+                
+                // הדפסה ל-Console של השרת לצורך בדיקה
+                System.out.println("DEBUG: Found active diner with code: " + v.getConfirmationCode());
+            } catch (IllegalArgumentException e) {
+                System.err.println("Enum Mapping Error: " + rs.getString("status") + " is not valid.");
             }
-        } catch (SQLException e) {
-            // אם יש שגיאה, נראה אותה ב-Console של השרת
-            System.err.println("DB Error in getAllActiveDiners: " + e.getMessage());
         }
-        return activeDiners;
+    } catch (SQLException e) {
+        System.err.println("Database Execution Error: " + e.getMessage());
     }
     
-    
-    
-    
+    System.out.println("DEBUG: Server returning list with " + activeDiners.size() + " diners.");
+    return activeDiners;
+}
     
 }
