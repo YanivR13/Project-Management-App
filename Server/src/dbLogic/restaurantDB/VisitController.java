@@ -282,18 +282,15 @@ public class VisitController {
     public static java.util.ArrayList<Visit> getAllActiveDiners() {
         java.util.ArrayList<Visit> activeDiners = new java.util.ArrayList<>();
         
-        // השאילתה המנצחת מה-Workbench
-        String sql = "SELECT v.*, r.number_of_guests " +
-                     "FROM visit v " +
-                     "JOIN reservation r ON v.confirmation_code = r.confirmation_code " +
-                     "WHERE v.status = 'ACTIVE'";
-
+        // תיקון 1: שימוש ב-* כדי למשוך את כל העמודות (כולל status ו-bill_id)
+        String sql = "SELECT * FROM visit WHERE status = 'ACTIVE'";
+        
         try (Connection conn = DBController.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
-                // יצירת אובייקט Visit באמצעות הבנאי הקיים שלך
+                // תיקון 2: יצירת האובייקט רק עם מה שיש בטבלת ה-visit
                 Visit v = new Visit(
                     rs.getLong("confirmation_code"),
                     rs.getInt("table_id"),
@@ -303,16 +300,20 @@ public class VisitController {
                     Visit.VisitStatus.valueOf(rs.getString("status"))
                 );
                 
-                // הזרקת כמות הסועדים ששלפנו מה-JOIN
-                v.setNumberOfGuests(rs.getInt("number_of_guests"));
+                // מכיוון שאין JOIN, שדה האורחים יהיה 0 או שתגדיר ערך ברירת מחדל
+                v.setNumberOfGuests(0); 
                 
                 activeDiners.add(v);
             }
         } catch (SQLException e) {
+            // אם יש שגיאה, נראה אותה ב-Console של השרת
             System.err.println("DB Error in getAllActiveDiners: " + e.getMessage());
         }
         return activeDiners;
     }
+    
+    
+    
     
     
 }

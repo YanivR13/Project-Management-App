@@ -566,94 +566,71 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         
         // --- SCENARIO 1: Handling ServiceResponse (Update confirmations, errors, or IDs) ---
         if (message instanceof ServiceResponse) { 
-            ServiceResponse response = (ServiceResponse) message; // Casting object
-            
-            // UI updates must be on the JavaFX Application Thread
+            ServiceResponse response = (ServiceResponse) message; 
             Platform.runLater(() -> { 
-                
-                // If the response is a success (RESERVATION_SUCCESS or UPDATE_SUCCESS)
                 if (response.getStatus() == ServiceResponse.ServiceStatus.UPDATE_SUCCESS) {
-                    
-                    // Check if the payload is a Long (Our new Subscriber ID)
                     if (response.getData() instanceof Long) {
                         Long newSubscriberId = (Long) response.getData();
-                        // Display the successful ID directly in the logger as requested
                         appendLog("SUCCESS: New Subscriber created! Generated ID: " + newSubscriberId); 
                         new Alert(Alert.AlertType.INFORMATION, "Subscriber Created Successfully!\nID: " + newSubscriberId).show();
                     } else {
-                        // Standard success message (like hours update)
                         appendLog("Server Response: " + response.getStatus());
                         new Alert(Alert.AlertType.INFORMATION, "Success! System updated.").show(); 
                     }
                 } 
-                // If the response contains an error (INTERNAL_ERROR)
                 else if (response.getStatus() == ServiceResponse.ServiceStatus.INTERNAL_ERROR) {
-                    // Display the specific error message (e.g., "Phone already exists")
                     appendLog("SERVER ERROR: " + response.getData());
                     new Alert(Alert.AlertType.ERROR, "Operation Failed: " + response.getData()).show();
                 }
             }); 
         } 
         
-     // --- SCENARIO 2: Handling Restaurant object (Work times) ---
+        // --- SCENARIO 2: Handling Restaurant object (Work times) ---
         else if (message instanceof Restaurant) { 
-            Restaurant rest = (Restaurant) message;
+            Restaurant rest = (Restaurant) message; 
             Platform.runLater(() -> { 
-                // במקום להדפיס ללוגר, נציג חלון חדש
-                showWorkTimesAlert(rest.getFormattedOpeningHours());
+                appendLog(rest.getFormattedOpeningHours()); 
             });
         }
         
-        
-     // --- SCENARIO 3 & 4: טיפול ברשימות (הזמנות או סועדים) ---
+        // --- SCENARIO 3 & 4: טיפול ברשימות (הזמנות או סועדים פעילים) ---
         else if (message instanceof ArrayList) { 
             ArrayList<?> genericList = (ArrayList<?>) message; 
-
             if (genericList.isEmpty()) {
                 Platform.runLater(() -> appendLog("SERVER DATA: Received an empty list."));
                 return;
             }
 
-            // בודקים את סוג האובייקט הראשון ברשימה
             Object firstItem = genericList.get(0);
 
             Platform.runLater(() -> { 
-                // Scenario 3: רשימת הזמנות (Object[]) - הבוקר עבדנו על זה
+                // מקרה א': רשימת הזמנות (Object[])
                 if (firstItem instanceof Object[]) {
                     @SuppressWarnings("unchecked")
                     ArrayList<Object[]> reservationsList = (ArrayList<Object[]>) genericList; 
                     appendLog("SERVER DATA: Received " + reservationsList.size() + " active reservations."); 
                     if (currentSubController instanceof ActiveReservationsController) {
                         ((ActiveReservationsController) currentSubController).setTableData(reservationsList);
+                        appendLog("Reservations table updated.");
                     }
                 } 
                 
-                // Scenario 4: רשימת סועדים יושבים (Visit) - הפיצ'ר החדש
+                // מקרה ב': רשימת סועדים פעילים (Visit) - הפיצ'ר החדש
                 else if (firstItem instanceof common.Visit) {
                     @SuppressWarnings("unchecked")
                     ArrayList<common.Visit> visitsList = (ArrayList<common.Visit>) genericList;
-                    appendLog("SERVER DATA: Received " + visitsList.size() + " active visits.");
+                    
+                    // כפי שביקשת: רק הודעה כללית ללא מספר הסועדים הכולל
+                    appendLog("System: Displaying currently active diner groups in the restaurant.");
 
-                    // חישוב ה-7 המפורסם
-                    int total = 0;
-                    for (common.Visit v : visitsList) {
-                        total += v.getNumberOfGuests(); // השתמשנו ב-Getter החדש שיצרנו
-                    }
-                    appendLog("System: Total diners currently seated: " + total);
-
-                    // הזרקת הנתונים לטבלה החדשה
+                    // הזרקה לקונטרולר של טבלת הסועדים
                     if (currentSubController instanceof CurrentDinersController) {
                         ((CurrentDinersController) currentSubController).setTableData(visitsList);
                     }
                 }
             }); 
         }
-        
-        
-        
-        
-    } //end of display
-
+    } // end of display
     
     
     

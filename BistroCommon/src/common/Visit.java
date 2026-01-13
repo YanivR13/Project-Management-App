@@ -156,4 +156,25 @@ public class Visit implements Serializable { // Defining the Visit class which i
                
     } // End method
 
+    
+    
+    
+    
+    
+    
+    
+ // הוסף את השדה הזה למעלה עם שאר השדות
+    private String reservationDateTime;
+
+    // הוסף את ה-Getter וה-Setter האלו
+    public String getReservationDateTime() {
+        return reservationDateTime;
+    }
+
+    public void setReservationDateTime(String reservationDateTime) {
+        this.reservationDateTime = reservationDateTime;
+    }
+    
+    
+    
 } // End of Visit class

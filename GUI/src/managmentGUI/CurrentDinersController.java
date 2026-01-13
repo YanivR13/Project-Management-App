@@ -1,20 +1,34 @@
 package managmentGUI;
 
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.ResourceBundle;
 import common.Visit;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.cell.PropertyValueFactory;
 
-public class CurrentDinersController {
+public class CurrentDinersController implements Initializable {
 
-    @FXML private TableView<Visit> dinersTable; // וודא שה-fx:id ב-SceneBuilder תואם
+    @FXML private TableView<Visit> dinersTable;
+    @FXML private TableColumn<Visit, String> colCode;
+    @FXML private TableColumn<Visit, Integer> colTable;
+    @FXML private TableColumn<Visit, Integer> colGuests;
+    @FXML private TableColumn<Visit, String> colTime;
 
-    /**
-     * מתודה המקבלת את הרשימה מה-Dashboard ומציגה אותה בטבלה
-     */
+    @Override
+    public void initialize(URL location, ResourceBundle resources) {
+        // השמות בגרשיים חייבים להתאים לשמות השדות במחלקה Visit (למשל confirmationCode)
+        colCode.setCellValueFactory(new PropertyValueFactory<>("confirmationCode"));
+        colTable.setCellValueFactory(new PropertyValueFactory<>("tableId"));
+        colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests"));
+        colTime.setCellValueFactory(new PropertyValueFactory<>("startTime"));
+    }
     public void setTableData(ArrayList<Visit> visitsList) {
-        if (dinersTable != null) {
+        if (dinersTable != null && visitsList != null) {
             dinersTable.setItems(FXCollections.observableArrayList(visitsList));
         }
     }
