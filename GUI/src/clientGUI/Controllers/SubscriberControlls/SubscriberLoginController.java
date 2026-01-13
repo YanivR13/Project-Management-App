@@ -175,21 +175,27 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
     /**
      * Navigates the subscriber to the Physical Terminal Menu (Eden's logic).
      */
-    private void navigateToTerminal(int userId) { // Start of navigateToTerminal method
-        try { // Start of try block
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalMenuFrame.fxml")); // Set path
-            Parent root = loader.load(); // Loading UI
+    /**
+     * Navigates the subscriber to the Physical Terminal Menu (Eden's logic).
+     * מעביר את ה-ID הנכון כדי ששחזור הקודים יעבוד
+     */
+    private void navigateToTerminal(int userIdFromDB) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalMenuFrame.fxml"));
+            Parent root = loader.load();
 
-            TerminalMenuController controller = loader.getController(); // Accessing controller
-            controller.setClient(client); // Injecting client connection
+            TerminalMenuController controller = loader.getController();
+            
+            // התיקון הקריטי: מעבירים את ה-client, סוג המשתמש וה-ID האמיתי מה-DB
+            // זה מה שיגרום למשתנה userId ב-TerminalMenuController לקבל ערך (כמו 502) במקום 0
+            controller.setClient(client, "Subscriber", userIdFromDB);
 
-            updateStage(root, "Customer Service Terminal"); // Update display
-        } catch (Exception e) { // Handling errors
-            e.printStackTrace(); // Printing trace
-            appendLog("Terminal navigation error."); // Logging failure
-        } // End of try-catch
-    } // End of method
-    
+            updateStage(root, "Customer Service Terminal");
+        } catch (Exception e) {
+            e.printStackTrace();
+            appendLog("Terminal navigation error.");
+        }
+    }
     
     /**
      * Navigates the manager to the Manager Menu.

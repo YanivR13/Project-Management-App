@@ -3,8 +3,14 @@ package terminalGUI.Controllers.TerminalControllers;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.stage.Stage;
+import java.util.List;
+import java.util.ArrayList;
+
+
+import javafx.scene.control.Alert;
 import client.ChatClient;
 import clientGUI.Controllers.RemoteLoginController;
 import clientGUI.Controllers.MenuControlls.BaseMenuController;
@@ -13,7 +19,8 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Button;;
+import javafx.scene.control.Button;
+import clientGUI.Controllers.MenuControlls.BaseMenuController;
 
 /**
  * Minimal controller for the Customer Service Terminal screen.
@@ -61,12 +68,31 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
      */
     @FXML
     private void handleLostConfirmationCode(ActionEvent event) {
-        // TODO: implement reservation code recovery flow
+        // userId מגיע מה-BaseMenuController בזכות ה-setClient שעשינו למעלה
+        System.out.println("[Terminal] Button clicked! Requesting codes for Subscriber ID: " + userId);
+
+        ArrayList<Object> message = new ArrayList<>();
+        message.add("CARD_READER_GET_CODES");
+        message.add(String.valueOf(userId)); 
+
+        if (client != null) {
+            client.handleMessageFromClientUI(message);
+        }
     }
+    
     
     /**
      * Handles "Manage Reservation" button click.
      */
+    
+    
+    
+    
+    
+    
+    
+    
+    
     @FXML
     private void handleManageReservation(ActionEvent event) {
     	try {
@@ -189,10 +215,42 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
      */
     @Override
     public void display(Object message) {
-        if (message != null) {
-            Platform.runLater(() ->
-                System.out.println("[Terminal] " + message)
-            );
+        if (message instanceof List) {
+            @SuppressWarnings("unchecked")
+            List<String> codes = (List<String>) message;
+
+            Platform.runLater(() -> {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Code Recovery");
+                alert.setHeaderText("Results for User ID: " + userId); // כאן תראה "1"
+                
+                if (codes == null || codes.isEmpty()) {
+                    alert.setContentText("No active codes found in the system.");
+                } else {
+                    // כאן יופיע הקוד עצמו (למשל 888) בגוף ההודעה!
+                    String allCodes = String.join("\n", codes);
+                    alert.setContentText("Your active confirmation code(s):\n\n" + allCodes);
+                }
+                alert.showAndWait();
+            });
         }
     }
+    
+    
+    /**
+     * פונקציית עזר להצגת הודעה (מופיעה פעם אחת בלבד!)
+     */
+    private void showInformationAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+    
+    
+    
+    
+    
+    
 }

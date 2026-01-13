@@ -16,46 +16,43 @@ public class CardReaderHandler {
      * @param data רשימה הכוללת: [0] פקודה, [1...] נתונים.
      * @param client חיבור הלקוח.
      */
-    public void handle(ArrayList<Object> data, ConnectionToClient client) {
-        String command = (String) data.get(0); // שליפת הפקודה
-        CardReaderDBController db = new CardReaderDBController(); // יצירת מופע של ה-DB Controller
+	public void handle(ArrayList<Object> data, ConnectionToClient client) {
+	    String command = (String) data.get(0); 
+	    CardReaderDBController db = new CardReaderDBController(); 
 
-        try {
-            switch (command) {
-                case "CARD_READER_LOGIN":
-                    // אימות מנוי לפי ID
-                    String subID = (String) data.get(1);
-                    boolean isValid = db.validateSubscriber(subID);
-                    client.sendToClient(isValid); // החזרת תשובה בוליאנית ללקוח
-                    break;
+	    try {
+	        switch (command) {
+	            case "CARD_READER_LOGIN":
+	                String subIDForLogin = (String) data.get(1);
+	                boolean isValid = db.validateSubscriber(subIDForLogin);
+	                client.sendToClient(isValid); 
+	                break;
 
-                case "CARD_READER_GET_CODES":
-                    // שליפת רשימת קודים אבודים
-                    String idForCodes = (String) data.get(1);
-                    List<String> codes = db.getLostConfirmationCodes(idForCodes);
-                    client.sendToClient(codes); // החזרת רשימה ללקוח
-                    break;
+	            case "CARD_READER_GET_CODES": { // השתמש בסוגריים {} למניעת שגיאת Duplicate variable
+	                // 1. קבלת ה-ID מהטרמינל (למשל "502")
+	                String idFromTerminal = (String) data.get(1);
+	                
+	                // 2. קריאה ישירה ללוגיקה ב-viewReservationController (הקישור שביקשת)
+	                List<String> codesList = dbLogic.restaurantDB.viewReservationController.getCodesBySubscriberId(idFromTerminal);
+	                
+	                // 3. שליחה חזרה לטרמינל
+	                client.sendToClient(codesList); 
+	                break;
+	            }
 
-                case "CARD_READER_VERIFY_CODE":
-                    // 1. שליפת הנתונים מההודעה
-                    String codeStr = (String) data.get(1);
-                    
-                    // 2. שימוש בלוגיקה הקיימת של הטרמינל (VisitController)
-                    // המתודה הזו כבר מטפלת בהקצאת שולחן, יצירת חשבון ועדכון סטטוס ל-ARRIVED
-                    long code = Long.parseLong(codeStr);
-                    String result = dbLogic.restaurantDB.VisitController.processTerminalArrival(code);
-                    
-                    // 3. החזרת התשובה המפורטת ללקוח (למשל: "SUCCESS_TABLE_5")
-                    client.sendToClient(result); 
-                    break;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            try {
-                client.sendToClient("ERROR: Failed to process Card Reader request."); // דיווח על שגיאה ללקוח
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
+	            case "CARD_READER_VERIFY_CODE":
+	                String codeStr = (String) data.get(1);
+	                long code = Long.parseLong(codeStr);
+	                String result = dbLogic.restaurantDB.VisitController.processTerminalArrival(code);
+	                client.sendToClient(result); 
+	                break;
+	        }
+	    } catch (Exception e) {
+	        System.err.println("Error in CardReaderHandler: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	}
+    
+    
+    
 }

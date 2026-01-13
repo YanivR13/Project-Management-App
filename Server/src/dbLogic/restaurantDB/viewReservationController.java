@@ -121,4 +121,41 @@ public class viewReservationController {
 	    }
 	    return activeList;
 	}
+	
+	
+	
+	
+	/**
+	 * שולף את כל קודי האישור הפעילים עבור מנוי ספציפי.
+	 */
+	/**
+	 * שולף קודים לפי Subscriber ID על ידי חיבור בין טבלת מנויים להזמנות
+	 */
+	/**
+	***
+	*
+	*/
+	public static List<String> getCodesBySubscriberId(String userIdFromTerminal) {
+	    List<String> codes = new ArrayList<>();
+	    
+	    // שאילתה ישירה: מחפשים בטבלת reservation לפי ה-user_id שהגיע מהטרמינל
+	    String query = "SELECT confirmation_code FROM prototypedb.reservation " +
+	                   "WHERE user_id = ? AND status = 'ACTIVE'";
+
+	    try (Connection conn = MainControllers.DBController.getInstance().getConnection();
+	         PreparedStatement pstmt = conn.prepareStatement(query)) {
+	        
+	        pstmt.setString(1, userIdFromTerminal); // כאן יתקבל ה-"1" (עבור מנוי 500) או "3" (עבור 502)
+	        
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            while (rs.next()) {
+	                // מוסיפים את הקוד (למשל 888) לרשימה
+	                codes.add(String.valueOf(rs.getLong("confirmation_code")));
+	            }
+	        }
+	    } catch (SQLException e) {
+	        System.err.println("SQL Error: " + e.getMessage());
+	    }
+	    return codes;
+	}
 }
