@@ -183,17 +183,14 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalMenuFrame.fxml"));
             Parent root = loader.load();
-
             TerminalMenuController controller = loader.getController();
             
-            // התיקון הקריטי: מעבירים את ה-client, סוג המשתמש וה-ID האמיתי מה-DB
-            // זה מה שיגרום למשתנה userId ב-TerminalMenuController לקבל ערך (כמו 502) במקום 0
+            // הזרקת ה-ID האמיתי (למשל 1) לקונטרולר של התפריט
             controller.setClient(client, "Subscriber", userIdFromDB);
 
             updateStage(root, "Customer Service Terminal");
         } catch (Exception e) {
             e.printStackTrace();
-            appendLog("Terminal navigation error.");
         }
     }
     

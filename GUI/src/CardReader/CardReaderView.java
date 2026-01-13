@@ -218,83 +218,60 @@ public class CardReaderView extends Application implements common.ChatIF {
 	}
     
     
+
 	@Override
 	public void display(Object message) {
-	    // הדפסה קריטית כדי לראות מה השרת שלח עוד לפני ה-Platform.runLater
 	    System.out.println(">>> MESSAGE RECEIVED FROM SERVER: " + message);
 
 	    Platform.runLater(() -> {
 	        try {
-	            // 1. טיפול בתוצאת לוגין (Boolean)
-	            if (message instanceof Boolean) {
-	                boolean isSuccess = (Boolean) message;
-	                System.out.println(">>> Login status: " + isSuccess);
-	                
-	                if (isSuccess) {
+	            // 1. טיפול בתוצאת לוגין (רשימה שמתחילה ב-LOGIN_SUCCESS)
+	            if (message instanceof List && !((List<?>) message).isEmpty()) {
+	                List<?> res = (List<?>) message;
+	                if ("LOGIN_SUCCESS".equals(res.get(0))) {
 	                    showSubscriberMenu();
-	                } else {
-	                    loginStatusLabel.setText("Login Failed! Incorrect ID.");
-	                    loginStatusLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+	                    return;
 	                }
-	            } 
-	            
-	            // 2. טיפול בשחזור קודים אבודים (List)
-	            else if (message instanceof List) {
-	                System.out.println(">>> Processing recovered codes list...");
-	                @SuppressWarnings("unchecked")
-	                List<String> codes = (List<String>) message;
-	                codesContainer.getChildren().clear(); 
 	                
-	                if (codes.isEmpty()) {
-	                    codesContainer.getChildren().add(new Label("No active codes found for this ID."));
-	                } else {
-	                    for (String codeStr : codes) {
-	                        Label codeLabel = new Label("Code: " + codeStr);
-	                        codeLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #1565c0; -fx-font-weight: bold;");
-	                        codesContainer.getChildren().add(codeLabel);
+	                // 2. טיפול ברשימת קודים אבודים (שחזור קוד)
+	                if (res.get(0) instanceof String && !res.get(0).toString().startsWith("LOGIN")) {
+	                    @SuppressWarnings("unchecked")
+	                    List<String> codes = (List<String>) message;
+	                    codesContainer.getChildren().clear(); 
+	                    if (codes.isEmpty()) {
+	                        codesContainer.getChildren().add(new Label("No active codes found."));
+	                    } else {
+	                        for (String codeStr : codes) {
+	                            Label codeLabel = new Label("Code: " + codeStr);
+	                            codeLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #1565c0; -fx-font-weight: bold;");
+	                            codesContainer.getChildren().add(codeLabel);
+	                        }
 	                    }
+	                    return;
 	                }
 	            }
-	            
-	            // 3. טיפול באימות קוד הגעה (String) - לפי VisitController
-	            else if (message instanceof String) {
+
+	            // 3. טיפול בהודעות שגיאה או אימות הגעה (String)
+	            if (message instanceof String) {
 	                String response = (String) message;
-	                System.out.println(">>> Arrival response: " + response);
-	                
-	                // מקרה א': הצלחה והקצאת שולחן
-	                if (response.startsWith("SUCCESS_TABLE_")) {
-	                    String tableId = response.split("_")[2]; 
-	                    verifyMessageLabel.setText("Success! Please proceed to Table #" + tableId);
-	                    verifyMessageLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
-	                } 
-	                // מקרה ב': קוד לא תקין
-	                else if (response.equals("INVALID_CODE")) {
-	                    verifyMessageLabel.setText("Error: Invalid or expired code.");
-	                    verifyMessageLabel.setStyle("-fx-text-fill: red;");
-	                }
-	                // מקרה ג': הגעה מוקדמת מדי
-	                else if (response.equals("TOO_EARLY")) {
-	                    verifyMessageLabel.setText("Too early! Please come back later.");
-	                    verifyMessageLabel.setStyle("-fx-text-fill: orange; -fx-font-weight: bold;");
-	                }
-	                // מקרה ד': אין שולחן פנוי כרגע
-	                else if (response.equals("TABLE_NOT_READY_WAIT")) {
-	                    verifyMessageLabel.setText("Table not ready. We will notify you via SMS.");
-	                    verifyMessageLabel.setStyle("-fx-text-fill: blue;");
-	                }
-	                // מקרה ה': שגיאת מערכת כללית
-	                else {
-	                    verifyMessageLabel.setText("System: " + response);
-	                    verifyMessageLabel.setStyle("-fx-text-fill: gray;");
+	                // הצגת שגיאת לוגין באדום כפי שרואים בצילום המסך שלך
+	                if (response.contains("not found") || response.contains("ERROR")) {
+	                    loginStatusLabel.setText("Login Error: Subscriber ID not found.");
+	                    loginStatusLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+	                } else if (response.startsWith("SUCCESS_TABLE_")) {
+	                    String tableId = response.split("_")[2];
+	                    verifyMessageLabel.setText("Success! Table #" + tableId);
+	                    verifyMessageLabel.setStyle("-fx-text-fill: green;");
+	                } else {
+	                    verifyMessageLabel.setText(response);
 	                }
 	            }
 	        } catch (Exception e) {
-	            System.err.println(">>> CRITICAL ERROR in display method:");
-	            e.printStackTrace(); // ידפיס ב-Console את סיבת הקריסה אם יש כזו
+	            e.printStackTrace();
 	        }
 	    });
 	}
-    
+	
     private void appendLog(String message) {
         System.out.println("[LOG]: " + message);
     } 

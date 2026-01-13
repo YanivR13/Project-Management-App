@@ -68,9 +68,7 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
      */
     @FXML
     private void handleLostConfirmationCode(ActionEvent event) {
-        // userId מגיע מה-BaseMenuController בזכות ה-setClient שעשינו למעלה
-        System.out.println("[Terminal] Button clicked! Requesting codes for Subscriber ID: " + userId);
-
+        // שליחת הודעה לשרת עם ה-ID של המשתמש (למשל "1")
         ArrayList<Object> message = new ArrayList<>();
         message.add("CARD_READER_GET_CODES");
         message.add(String.valueOf(userId)); 
@@ -79,7 +77,6 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
             client.handleMessageFromClientUI(message);
         }
     }
-    
     
     /**
      * Handles "Manage Reservation" button click.
@@ -218,24 +215,20 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
         if (message instanceof List) {
             @SuppressWarnings("unchecked")
             List<String> codes = (List<String>) message;
-
             Platform.runLater(() -> {
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
                 alert.setTitle("Code Recovery");
-                alert.setHeaderText("Results for User ID: " + userId); // כאן תראה "1"
-                
-                if (codes == null || codes.isEmpty()) {
-                    alert.setContentText("No active codes found in the system.");
+                alert.setHeaderText("Results for ID: " + userId);
+                if (codes.isEmpty()) {
+                    alert.setContentText("No active reservations found.");
                 } else {
-                    // כאן יופיע הקוד עצמו (למשל 888) בגוף ההודעה!
-                    String allCodes = String.join("\n", codes);
-                    alert.setContentText("Your active confirmation code(s):\n\n" + allCodes);
+                    alert.setContentText("Your active codes:\n" + String.join("\n", codes));
                 }
                 alert.showAndWait();
             });
         }
     }
-    
+
     
     /**
      * פונקציית עזר להצגת הודעה (מופיעה פעם אחת בלבד!)

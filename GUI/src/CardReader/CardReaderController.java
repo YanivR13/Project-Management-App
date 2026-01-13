@@ -22,11 +22,12 @@ public class CardReaderController {
     // שליחת בקשת לוגין לשרת
     public void validateSubscriber(String id) {
         ArrayList<Object> message = new ArrayList<>();
-        message.add("CARD_READER_LOGIN");
+        // שינוי קריטי: משתמשים ב-LOGIN_SUBSCRIBER כדי שיהיה זהה לטרמינל
+        message.add("LOGIN_SUBSCRIBER"); 
         message.add(id);
         client.handleMessageFromClientUI(message);
     }
-
+    
     // שליחת בקשה לשחזור קודים לשרת
     public void getLostConfirmationCodes(String id) {
         ArrayList<Object> message = new ArrayList<>();

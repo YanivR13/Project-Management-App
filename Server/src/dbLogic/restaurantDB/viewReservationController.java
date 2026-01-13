@@ -135,26 +135,24 @@ public class viewReservationController {
 	***
 	*
 	*/
-	public static List<String> getCodesBySubscriberId(String userIdFromTerminal) {
+	public static List<String> getCodesBySubscriberId(String idFromClient) {
 	    List<String> codes = new ArrayList<>();
-	    
-	    // שאילתה ישירה: מחפשים בטבלת reservation לפי ה-user_id שהגיע מהטרמינל
-	    String query = "SELECT confirmation_code FROM prototypedb.reservation " +
-	                   "WHERE user_id = ? AND status = 'ACTIVE'";
+	    // שאילתה שבודקת גם מול subscriber_id וגם מול user_id
+	    String query = "SELECT r.confirmation_code FROM prototypedb.reservation r " +
+	                   "LEFT JOIN prototypedb.subscriber s ON r.user_id = s.user_id " +
+	                   "WHERE (s.subscriber_id = ? OR r.user_id = ?) AND r.status = 'ACTIVE'";
 
 	    try (Connection conn = MainControllers.DBController.getInstance().getConnection();
 	         PreparedStatement pstmt = conn.prepareStatement(query)) {
-	        
-	        pstmt.setString(1, userIdFromTerminal); // כאן יתקבל ה-"1" (עבור מנוי 500) או "3" (עבור 502)
-	        
+	        pstmt.setString(1, idFromClient);
+	        pstmt.setString(2, idFromClient);
 	        try (ResultSet rs = pstmt.executeQuery()) {
 	            while (rs.next()) {
-	                // מוסיפים את הקוד (למשל 888) לרשימה
 	                codes.add(String.valueOf(rs.getLong("confirmation_code")));
 	            }
 	        }
 	    } catch (SQLException e) {
-	        System.err.println("SQL Error: " + e.getMessage());
+	        System.err.println("Database Error: " + e.getMessage());
 	    }
 	    return codes;
 	}
