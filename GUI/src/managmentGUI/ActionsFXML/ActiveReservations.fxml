@@ -12,7 +12,7 @@
           <TableColumn fx:id="colCode" prefWidth="120.0" text="Conf. Code" />
           <TableColumn fx:id="colDate" prefWidth="180.0" text="Date &amp; Time" />
           <TableColumn fx:id="colGuests" prefWidth="80.0" text="Guests" />
-          <TableColumn fx:id="colPhone" prefWidth="150.0" text="Phone Number" />
+		  <TableColumn fx:id="colPhone" prefWidth="120.0" text="Phone Number" />
           <TableColumn fx:id="colStatus" prefWidth="130.0" text="Status" />
         </columns>
       </TableView>

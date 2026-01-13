@@ -94,34 +94,31 @@ public class viewReservationController {
 	public static ArrayList<Object[]> getAllActiveReservations() {
 	    ArrayList<Object[]> activeList = new ArrayList<>();
 	    
-	    // השאילתה שבדקת ב-Workbench ועובדת
+	    // שימוש ב-LEFT JOIN כדי למשוך את מספר הטלפון מטבלת המשתמשים
 	    String query = "SELECT r.confirmation_code, r.reservation_datetime, r.number_of_guests, u.phone_number, r.status " +
-	                   "FROM reservation r " +
-	                   "JOIN user u ON r.user_id = u.user_id " +
+	                   "FROM prototypedb.reservation r " +
+	                   "LEFT JOIN prototypedb.user u ON r.user_id = u.user_id " +
 	                   "WHERE r.status = 'ACTIVE' " +
 	                   "ORDER BY r.reservation_datetime ASC";
 
-	    Connection conn = DBController.getInstance().getConnection(); //
+	    Connection conn = DBController.getInstance().getConnection();
 	    try (PreparedStatement pstmt = conn.prepareStatement(query);
 	         ResultSet rs = pstmt.executeQuery()) {
 
 	        while (rs.next()) {
-	            // אריזת השורה למערך עבור ה-TableView ב-Dashboard
 	            Object[] row = new Object[] {
 	                rs.getLong("confirmation_code"),
 	                rs.getString("reservation_datetime"),
 	                rs.getInt("number_of_guests"),
-	                rs.getString("phone_number"),
+	                // אם הטלפון הוא NULL ב-DB, נציג הודעה מתאימה בטבלה
+	                rs.getString("phone_number") != null ? rs.getString("phone_number") : "No Phone",
 	                rs.getString("status")
 	            };
 	            activeList.add(row);
 	        }
 	    } catch (SQLException e) {
-	        System.out.println("DB Error in getAllActiveReservations: " + e.getMessage());
-	        e.printStackTrace();
+	        System.err.println("Database Error: " + e.getMessage());
 	    }
 	    return activeList;
 	}
-	
-	
 }

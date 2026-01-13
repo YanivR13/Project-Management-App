@@ -291,17 +291,14 @@ public class ServerController extends AbstractServer {
                 
                  // --- תוספת עבור מסך נציג/מנהל ---
                 case "GET_ALL_ACTIVE_RESERVATIONS_STAFF": 
-                    try { 
-                        // קריאה למתודה הסטטית החדשה שהוספנו ב-viewReservationController
-                        ArrayList<Object[]> allActive = viewReservationController.getAllActiveReservations(); 
-                        
-                        // שליחת הרשימה המלאה חזרה ל-Dashboard של הנציג
-                        client.sendToClient(allActive); 
-                        serverUI.appendLog("Sent all active reservations list to staff"); 
-                    } catch (IOException e) { 
-                        serverUI.appendLog("Error sending staff reservations: " + e.getMessage()); 
-                    } 
-                    break;    
+                    ArrayList<Object[]> allActive = viewReservationController.getAllActiveReservations(); 
+				try {
+					client.sendToClient(allActive);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} 
+                    break;   
                     
                 case "CANCEL_WAITING_LIST": 
                     try { 
