@@ -20,24 +20,28 @@ public class reportsDBController {
 	    List<Map<String, Object>> reportList = new ArrayList<>();
 	    
 	    int selectedMonth;
+	    
 	    try { selectedMonth = Integer.parseInt(monthStr); } 
 	    catch (Exception e) { selectedMonth = java.time.Month.valueOf(monthStr.toUpperCase()).getValue(); }
+	    int reportYear = resolveReportYear(selectedMonth);
 
-	    // שאילתה המשלבת 3 טבלאות: reservation, visit, bill
-	    String sql = "SELECT DATE(v.start_time) AS date, " +
-	                 "AVG(TIMESTAMPDIFF(MINUTE, r.reservation_datetime, v.start_time)) AS avg_delay, " +
-	                 "AVG(TIMESTAMPDIFF(MINUTE, v.start_time, b.payment_time)) AS avg_duration, " + // זמן שהייה מהתשלום
-	                 "HOUR(v.start_time) AS arrival_hour, " +
-	                 "HOUR(b.payment_time) AS departure_hour " + // שעת עזיבה מהתשלום
-	                 "FROM visit v " +
-	                 "JOIN reservation r ON v.confirmation_code = r.confirmation_code " +
-	                 "JOIN bill b ON v.bill_id = b.bill_id " + // חיבור לחשבונית
-	                 "WHERE MONTH(v.start_time) = ? AND YEAR(v.start_time) = 2026 " +
-	                 "GROUP BY date, arrival_hour, departure_hour";
+	    String sql =
+	    	    "SELECT DATE(v.start_time) AS date, " +
+	    	    "AVG(TIMESTAMPDIFF(MINUTE, r.reservation_datetime, v.start_time)) AS avg_delay, " +
+	    	    "AVG(TIMESTAMPDIFF(MINUTE, v.start_time, b.payment_time)) AS avg_duration, " +
+	    	    "HOUR(v.start_time) AS arrival_hour, " +
+	    	    "HOUR(b.payment_time) AS departure_hour " +
+	    	    "FROM visit v " +
+	    	    "JOIN reservation r ON v.confirmation_code = r.confirmation_code " +
+	    	    "JOIN bill b ON v.bill_id = b.bill_id " +
+	    	    "WHERE MONTH(v.start_time) = ? AND YEAR(v.start_time) = ? " +
+	    	    "GROUP BY date, arrival_hour, departure_hour";
+
 
 	    Connection conn = MainControllers.DBController.getInstance().getConnection();
 	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, selectedMonth);
+	    	ps.setInt(1, selectedMonth);
+	    	ps.setInt(2, reportYear);
 	        try (ResultSet rs = ps.executeQuery()) {
 	            while (rs.next()) {
 	                Map<String, Object> row = new HashMap<>();
@@ -50,6 +54,10 @@ public class reportsDBController {
 	            }
 	        }
 	    }
+//	    System.out.println(
+//	    	    "DEBUG TimeReport | month=" + selectedMonth +
+//	    	    " year=" + reportYear
+//	    	);
 	    return reportList;
 	}
 	
@@ -66,7 +74,7 @@ public class reportsDBController {
 
 	    // לוגיקת בחירת שנה (2026 אם כבר עבר, אחרת 2025)
 	    int currentMonth = java.time.LocalDate.now().getMonthValue();
-	    int yearToFetch = (selectedMonth <= currentMonth) ? 2026 : 2025;
+	    int reportYear = resolveReportYear(selectedMonth);
 
 	    // שאילתה שסופרת הזמנות והמתנות לכל יום בחודש שבו היו נתונים
 	    String sql = "SELECT report_date, SUM(is_res) as res_count, SUM(is_wait) as wait_count FROM (" +
@@ -79,10 +87,10 @@ public class reportsDBController {
 
 	    Connection conn = MainControllers.DBController.getInstance().getConnection();
 	    try (PreparedStatement ps = conn.prepareStatement(sql)) {
-	        ps.setInt(1, selectedMonth);
-	        ps.setInt(2, yearToFetch);
-	        ps.setInt(3, selectedMonth);
-	        ps.setInt(4, yearToFetch);
+	    	ps.setInt(1, selectedMonth);
+	    	ps.setInt(2, reportYear);
+	    	ps.setInt(3, selectedMonth);
+	    	ps.setInt(4, reportYear);
 	        
 	        try (ResultSet rs = ps.executeQuery()) {
 	            while (rs.next()) {
@@ -96,4 +104,17 @@ public class reportsDBController {
 	    }
 	    return reportList;
 	}
+	
+	private static int resolveReportYear(int selectedMonth) {
+	    int currentYear = LocalDate.now().getYear();
+	    int currentMonth = LocalDate.now().getMonthValue();
+
+	    // אם החודש שנבחר עוד לא קרה השנה – חוזרים לשנה הקודמת
+	    if (selectedMonth > currentMonth) {
+	        return currentYear - 1;
+	    }
+
+	    return currentYear;
+	}
+
 }
