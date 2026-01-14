@@ -210,6 +210,7 @@ public class ServerController extends AbstractServer {
                         boolean success = dbLogic.restaurantDB.TableDBController.addNewTable(cap);
                         if (success) {
                             client.sendToClient(new ServiceResponse(ServiceStatus.UPDATE_SUCCESS, "Table added successfully"));
+                            serverUI.appendLog("[Tables] New table (Capacity: " + cap + ") added successfully.");
                         } else {
                             client.sendToClient(new ServiceResponse(ServiceStatus.INTERNAL_ERROR, "Database refused to add table"));
                         }

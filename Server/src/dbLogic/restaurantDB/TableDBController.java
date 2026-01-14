@@ -226,8 +226,8 @@ public class TableDBController {
      */
     public static boolean addNewTable(int capacity) {
     	
-        final int DEFAULT_RESTAURANT_ID = 1; 
-        
+    	int restaurantId = serverLogic.serverRestaurant.RestaurantManager.getInstance().getRestaurantId();
+    	
         int nextId = getNextTableId();
         String sqlTable = "INSERT INTO `table` (table_id, capacity, is_available) VALUES (?, ?, 1)";
         String sqlRestaurantTable = "INSERT INTO `restaurant_table` (restaurant_id, table_id) VALUES (?, ?)";
@@ -244,16 +244,17 @@ public class TableDBController {
             }
 
             try (PreparedStatement pstmt2 = conn.prepareStatement(sqlRestaurantTable)) {
-                pstmt2.setInt(1, DEFAULT_RESTAURANT_ID); 
+                pstmt2.setInt(1, restaurantId); 
                 pstmt2.setInt(2, nextId);
                 pstmt2.executeUpdate();
             }
 
             conn.commit(); 
-
-            VisitController.handleTableFreed(nextId);
+            serverLogic.serverRestaurant.RestaurantManager.reInitialize(restaurantId);
+           
+            //VisitController.handleTableFreed(nextId);
             
-            System.out.println("Table " + nextId + " added successfully to both tables.");
+            System.out.println("Table " + nextId + " added successfully.");
             return true;
 
         } catch (SQLException e) {
@@ -281,6 +282,7 @@ public class TableDBController {
      */
     public static boolean deleteTable(int tableId) {
 
+    	int resId = serverLogic.serverRestaurant.RestaurantManager.getInstance().getRestaurantId();
         Connection conn = DBController.getInstance().getConnection();
 
         try {
@@ -305,7 +307,15 @@ public class TableDBController {
                 ps3.setInt(1, tableId);
                 int affected = ps3.executeUpdate();
                 conn.commit();
-                return affected > 0;
+                if (affected > 0) {
+                    // REFRESH THE RAM CACHE! 
+                    // This forces the RestaurantManager to recount tables from the DB
+                    serverLogic.serverRestaurant.RestaurantManager.reInitialize(resId);
+                    
+                    System.out.println("[Tables] Table #" + tableId + " deleted and cache synchronized.");
+                    return true;
+                }
+                return false;
             }
 
         } catch (SQLException e) {
