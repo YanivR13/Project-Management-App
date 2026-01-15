@@ -121,6 +121,12 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             } 
             // ------------------------------
             
+            else if (fxmlPath.contains("SubscribersList.fxml")) {
+                SubscribersListController controller = new SubscribersListController();
+                loader.setController(controller);
+                this.currentSubController = controller;
+            }
+            
             else {
                 // למסכים רגילים נשתמש ב-'this'
                 loader.setController(this);
@@ -411,10 +417,14 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         
     } // End of processCreateSubscriber method
 
-    @FXML void viewSubscribersList(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/SubscribersList.fxml"); // Loading sub-view
-    } // End method
-
+    @FXML 
+    void viewSubscribersList(ActionEvent event) { 
+        loadSubScreen("/managmentGUI/ActionsFXML/SubscribersList.fxml"); 
+        ArrayList<Object> message = new ArrayList<>();
+        message.add("GET_ALL_SUBSCRIBERS");
+        appendLog("System: Requesting subscriber list from server...");
+        client.handleMessageFromClientUI(message);
+    }
     
     
     
@@ -626,6 +636,16 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
                     // הזרקה לקונטרולר של טבלת הסועדים
                     if (currentSubController instanceof CurrentDinersController) {
                         ((CurrentDinersController) currentSubController).setTableData(visitsList);
+                    }
+                }
+                
+                else if (firstItem instanceof common.Subscriber) {
+                    @SuppressWarnings("unchecked")
+                    ArrayList<common.Subscriber> subList = (ArrayList<common.Subscriber>) genericList;
+                    appendLog("System: Received subscriber data.");
+                    
+                    if (currentSubController instanceof SubscribersListController) {
+                        ((SubscribersListController) currentSubController).setTableData(subList);
                     }
                 }
             }); 

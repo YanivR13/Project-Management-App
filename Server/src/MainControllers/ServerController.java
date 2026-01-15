@@ -321,6 +321,16 @@ public class ServerController extends AbstractServer {
                     } 
                     break; 
                     
+                case "GET_ALL_SUBSCRIBERS":
+                    ArrayList<common.Subscriber> subscribers = serverLogic.managmentLogic.SubscriberDBController.getAllSubscribers();
+                    try {
+                        client.sendToClient(subscribers);
+                        serverUI.appendLog("Sent " + subscribers.size() + " subscribers to client.");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                    
                 case "CANCEL_WAITING_LIST_BY_CODE": 
                     try { 
                         // Extract the code as a long instead of userId as an int 
