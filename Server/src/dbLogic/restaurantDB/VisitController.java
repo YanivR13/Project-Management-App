@@ -310,10 +310,9 @@ public class VisitController {
                 "LEFT JOIN reservation r ON v.confirmation_code = r.confirmation_code " +
                 "LEFT JOIN waiting_list_entry w ON v.confirmation_code = w.confirmation_code " +
                 "WHERE v.status = 'ACTIVE'";
-        
-        try (Connection conn = DBController.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql);
-             ResultSet rs = pstmt.executeQuery()) {
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement pstmt = conn.prepareStatement(sql);
+                ResultSet rs = pstmt.executeQuery()) {
 
             while (rs.next()) {
                 try {
@@ -334,16 +333,13 @@ public class VisitController {
                     activeDiners.add(v);
                     
                     // הדפסה ל-Console של השרת לצורך בדיקה
-                    System.out.println("DEBUG: Found active diner with code: " + v.getConfirmationCode());
                 } catch (IllegalArgumentException e) {
                     System.err.println("Enum Mapping Error: " + rs.getString("status") + " is not valid.");
                 }
             }
         } catch (SQLException e) {
             System.err.println("Database Execution Error: " + e.getMessage());
-        }
-        
-        System.out.println("DEBUG: Server returning list with " + activeDiners.size() + " diners.");
+        }       
         return activeDiners;
     }
     
