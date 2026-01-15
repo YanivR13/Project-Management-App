@@ -23,21 +23,31 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import ocsf.server.ConnectionToClient;
 
+/**
+ * Controller for the Waiting List size selection screen at the service terminal.
+ * This class handles the input for the number of diners, validates the request, 
+ * and processes server responses for either immediate table assignment or 
+ * entry into the restaurant's waiting list.
+ */
 public class TerminalWaitingListSizeController implements ChatIF {
 
-    // Reference to the active terminal client connection
+    /** Reference to the active terminal client connection for network communication. */
     private ChatClient client;
     
+    /** Input field for the user to specify the number of diners in the group. */
     @FXML
-    private TextField txtDiners; // Input field for number of diners
+    private TextField txtDiners; 
     
+    /** Label used to display validation errors or server-side rejection messages. */
     @FXML
-    private Label lblError; // Label for displaying validation and server errors
+    private Label lblError; 
 
     /**
-     * Injects the client and registers this controller as the UI listener.
+     * Injects the persistent ChatClient instance and registers this controller 
+     * as the active UI listener for server messages.
+     * @param client The active ChatClient instance.
+     * @return None.
      */
     public void setClient(ChatClient client) {
         this.client = client;
@@ -47,7 +57,9 @@ public class TerminalWaitingListSizeController implements ChatIF {
     }
 
     /**
-     * Navigates back to the terminal main menu screen.
+     * Navigates the UI back to the primary Terminal Menu screen.
+     * @param event The ActionEvent triggered by the back button.
+     * @return None.
      */
     @FXML
     private void backToTerminal(ActionEvent event) {
@@ -75,19 +87,22 @@ public class TerminalWaitingListSizeController implements ChatIF {
     }
 
     /**
-     * Validates diner count input and sends a request to join the waiting list.
+     * Validates the diner count input and transmits a JOIN_WAITING_LIST request 
+     * to the server if the input is valid.
+     * @param event The ActionEvent triggered by the continue button.
+     * @return None.
      */
     @FXML
     private void handleContinue(ActionEvent event) {
         int diners;
 
-        // Input validation: empty field
+        // Input validation: empty field check
         if (txtDiners.getText().isEmpty()) {
             showError("Please enter number of diners");
             return;
         }
 
-        // Input validation: numeric value
+        // Input validation: numeric value verification
         try {
             diners = Integer.parseInt(txtDiners.getText());
         } catch (NumberFormatException e) {
@@ -95,18 +110,18 @@ public class TerminalWaitingListSizeController implements ChatIF {
             return;
         }
 
-        // Input validation: positive number
+        // Input validation: positive integer constraint
         if (diners <= 0) {
             showError("Number of diners must be positive");
             return;
         }
 
-        // Build protocol message
+        // Build protocol message for the server controller
         ArrayList<Object> msg = new ArrayList<>();
-        msg.add("JOIN_WAITING_LIST"); // Server command
-        msg.add(diners);              // Number of diners
+        msg.add("JOIN_WAITING_LIST"); 
+        msg.add(diners);              
 
-        // Send request to server
+        // Send request to server via the communication pipe
         if (client != null) {
             client.handleMessageFromClientUI(msg);
         } else {
@@ -115,7 +130,9 @@ public class TerminalWaitingListSizeController implements ChatIF {
     }
     
     /**
-     * Displays a validation or server error message on the screen.
+     * Updates the error label with the specified message and makes it visible.
+     * @param msg The error message to display.
+     * @return None.
      */
     private void showError(String msg) {
         lblError.setText(msg);
@@ -123,7 +140,10 @@ public class TerminalWaitingListSizeController implements ChatIF {
     }
 
     /**
-     * Entry point for handling incoming server messages.
+     * Receives messages from the server. Transfers execution to the JavaFX 
+     * application thread to safely update UI components.
+     * @param message The message object received from the server.
+     * @return None.
      */
     @Override
     public void display(Object message) {
@@ -131,20 +151,23 @@ public class TerminalWaitingListSizeController implements ChatIF {
     }
     
     /**
-     * Handles server responses for waiting list requests.
-     * Supports immediate entry, waiting list addition, and error cases.
+     * Orchestrates the response logic based on the server's ServiceResponse.
+     * Handles errors (CLOSED, ALREADY_IN_LIST) and success modes (IMMEDIATE vs WAITING).
+     * 
+     * @param message The response object to be parsed.
+     * @return None.
      */
     @SuppressWarnings("unchecked")
     private void handleServerMessage(Object message) {
 
-        // Ignore unexpected message formats
+        // Validate message type to prevent casting exceptions
         if (!(message instanceof ServiceResponse)) {
             return;
         }
 
         ServiceResponse response = (ServiceResponse) message;
 
-        // Handle logical and system-level errors
+        // Handle logical rejections or system errors
         if (response.getStatus() == ServiceStatus.INTERNAL_ERROR) {
             String code = response.getData().toString();
 
@@ -161,14 +184,14 @@ public class TerminalWaitingListSizeController implements ChatIF {
             return;
         }
 
-        // Ignore non-success responses
+        // Terminate if the server did not report a successful update
         if (response.getStatus() != ServiceStatus.UPDATE_SUCCESS) {
             return;
         }
 
         Object data = response.getData();
 
-        // Immediate entry scenario
+        // Mode 1: Immediate entry (Table found without waiting)
         if (data instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) data;
 
@@ -188,7 +211,7 @@ public class TerminalWaitingListSizeController implements ChatIF {
             }
         }
 
-        // Waiting list entry scenario
+        // Mode 2: Standard waiting list addition
         String confirmationCode = data.toString();
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);

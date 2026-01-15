@@ -7,27 +7,30 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import terminalGUI.Controllers.TerminalControllers.TerminalLoginController;
-import terminalGUI.Controllers.TerminalControllers.TerminalMenuController;
 
 /**
  * Main entry point for the Bistro Customer Service Terminal application.
- * This class launches the JavaFX UI for the in-restaurant self-service terminal.
- *
- * Responsibilities:
- * 1. Bootstrapping the JavaFX application lifecycle.
- * 2. Loading and displaying the Terminal main screen.
- * 3. Initializing the ChatClient for server communication.
- * 4. Injecting the client into the Terminal controller.
+ * This class orchestrates the JavaFX lifecycle and establishes the initial 
+ * network connection for the self-service terminal.
  */
 public class TerminalClientUI extends Application {
 
-    /** Persistent network client instance */
+    /** Persistent network client instance for OCSF communication. */
     private ChatClient client;
 
+    /**
+     * The main entry point for the application. Launches the JavaFX environment.
+     * * @param args Command line arguments passed to the application.
+     */
     public static void main(String[] args) {
         launch(args);
     }
 
+    /**
+     * Initializes the primary stage, loads the FXML UI, and connects to the server.
+     * * @param primaryStage The main window for this JavaFX application.
+     * @throws Exception If FXML loading or server connection fails.
+     */
     @Override
     public void start(Stage primaryStage) throws Exception {
 
@@ -50,6 +53,7 @@ public class TerminalClientUI extends Application {
 
         // --- Network Initialization Phase ---
         try {
+            // Establish OCSF connection to the server
             client = new ChatClient("localhost", 5555, controller);
             controller.setClient(client);
 

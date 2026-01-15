@@ -3,7 +3,7 @@ package managmentGUI;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import client.ChatClient;              // <<< זה ה-client האמיתי של OCSF
+import client.ChatClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -13,13 +13,14 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.stage.Stage;
 
 /**
- * Controller for Month Selection screen.
- * Responsibility: choose month and send request to server via OCSF client.
+ * Controller class for the Month Selection interface.
+ * This class allows the manager to select a specific month and request 
+ * statistical reports (Time and Subscriber reports) from the server via the OCSF client.
  */
 public class MonthSelectionController {
 
-    /** OCSF client reference injected from ManagerDashboardController */
-    private ChatClient client;          // ✔ לא Object!
+    /** Reference to the OCSF client for network communication. */
+    private ChatClient client;
 
     @FXML
     private ComboBox<String> monthCombo;
@@ -33,12 +34,21 @@ public class MonthSelectionController {
     @FXML
     private Button btnback;
 
-    /** Called by the opening controller to inject the connected client */
+    /**
+     * Injects the active network client into this controller. 
+     * Part of the "Pipe" architecture used to maintain the server connection across windows.
+     * @param client The active ChatClient instance.
+     * @return None.
+     */
     public void setClient(ChatClient client) {
         this.client = client;
     }
 
-    /** Close the current window */
+    /**
+     * Closes the current month selection window and returns to the dashboard.
+     * @param event The ActionEvent triggered by the back button.
+     * @return None.
+     */
     @FXML
     void closeWin(ActionEvent event) {
         Stage stage = (Stage) btnback.getScene().getWindow();
@@ -46,7 +56,10 @@ public class MonthSelectionController {
     }
 
     /**
-     * Send request to generate Time Report for the selected month.
+     * Validates input and transmits a request to generate a Time Report for the selected month.
+     * Requests data for Restaurant ID 1 (standard project configuration).
+     * @param event The ActionEvent triggered by the generate time report button.
+     * @return None.
      */
     @FXML
     void generateTimeReports(ActionEvent event) {
@@ -61,8 +74,8 @@ public class MonthSelectionController {
         ArrayList<Object> message = new ArrayList<>();
 
         message.add("GET_TIME_REPORTS");
-        message.add(1);                 // מזהה מסעדה – כפי שקבענו
-        message.add(selectedMonth);     // >>> החודש שהמנהל בחר!
+        message.add(1);                 // Fixed Restaurant ID
+        message.add(selectedMonth);     // Selected month payload
 
         if (client != null) {
             client.handleMessageFromClientUI(message);
@@ -70,31 +83,37 @@ public class MonthSelectionController {
     }
 
     /**
-     * Send request to generate Subscriber Report for the selected month.
+     * Validates input and transmits a request to generate a Subscriber Activity Report.
+     * Uses direct server transmission via the client's sendToServer method.
+     * @param event The ActionEvent triggered by the generate subscriber report button.
+     * @return None.
      */
     @FXML
     void generateSubscriberReports(ActionEvent event) {
         String selectedMonth = monthCombo.getValue();
         if (selectedMonth == null) {
-            // אופציונלי: הצגת הודעה למשתמש לבחור חודש
             return;
         }
 
-        // יצירת ההודעה לשרת
         ArrayList<Object> message = new ArrayList<>();
-        message.add("GET_SUBSCRIBER_REPORTS"); // הפקודה שהגדרנו ב-ServerController
+        message.add("GET_SUBSCRIBER_REPORTS");
         message.add(selectedMonth);
 
         try {
-            client.sendToServer(message); // שליחה לשרת
-            // (אופציונלי) סגירת חלון הבחירה לאחר הלחיצה
-            // ((Stage)subRepBtn.getScene().getWindow()).close(); 
+            if (client != null) {
+                client.sendToServer(message);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    /** Popup helper for not-found or validation messages */
+    /**
+     * Displays a standardized information popup to the user for validation or feedback.
+     * @param title The title of the alert window.
+     * @param text  The content message to be displayed.
+     * @return None.
+     */
     private void showPopup(String title, String text) {
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle(title);

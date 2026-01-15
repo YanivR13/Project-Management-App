@@ -7,14 +7,14 @@ import dbLogic.cardReader.CardReaderDBController;
 import ocsf.server.ConnectionToClient;
 
 /**
- * Handler שמנהל את הלוגיקה של ה-Card Reader בשרת.
+ * Handler that manages the Card Reader logic on the server.
  */
 public class CardReaderHandler {
 
     /**
-     * מקבל הודעה מהשרת ומנתב אותה לפעולה המתאימה.
-     * @param data רשימה הכוללת: [0] פקודה, [1...] נתונים.
-     * @param client חיבור הלקוח.
+     * Receives a message from the server and routes it to the appropriate action.
+     * @param data A list containing: [0] command, [1...] data.
+     * @param client The client connection.
      */
 	public void handle(ArrayList<Object> data, ConnectionToClient client) {
 	    String command = (String) data.get(0); 
@@ -31,8 +31,8 @@ public class CardReaderHandler {
 	            case "CARD_READER_GET_CODES": {
 	                String idFromTerminal = (String) data.get(1);
 	                
-	                // במקום לקרוא ל-viewReservationController (שכנראה סוגר את החיבור)
-	                // קרא למתודה ב-DBController של הקורא כרטיסים שכתבנו למעלה
+                    // Instead of calling viewReservationController (which may close the connection),
+                    // call the Card Reader DBController method defined above
 	                List<String> codesList = db.getLostConfirmationCodes(idFromTerminal);
 	                
 	                client.sendToClient(codesList); 

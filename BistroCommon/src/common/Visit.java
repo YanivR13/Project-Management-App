@@ -3,181 +3,209 @@ package common; // Defining the package where the class is located
 import java.io.Serializable; // Importing the interface for object serialization
 
 /**
- * The Visit class represents a customer's presence in the restaurant.
- * It tracks the table occupancy and links the visit to a final bill.
+ * Represents a customer's visit to the Bistro restaurant.
+ * Tracks table occupancy, timing, and billing status throughout the visit lifecycle.
  */
-public class Visit implements Serializable { // Defining the Visit class which implements Serializable
+public class Visit implements Serializable { 
 
     /**
-     * Enum defining the possible lifecycle states of a restaurant visit.
+     * Enumeration defining the possible lifecycle states of a restaurant visit.
      */
-    public enum VisitStatus { // Defining internal Enum for visit lifecycle states
+    public enum VisitStatus { 
         
-        // The customer is currently seated and the visit is ongoing
+        /** The customer is currently seated and the visit is ongoing. */
         ACTIVE,
         
-        // The visit has concluded, payment is done, and the table is free
+        /** The visit has concluded, payment is done, and the table is free. */
         FINISHED,
         
-        //The visit has come to an end - the customer need to pay
+        /** The visit has ended and the customer is awaiting the final bill. */
         BILL_PENDING
-    } // End of VisitStatus enumeration
+    } 
 
-    // Standard serial version UID for ensuring compatibility during OCSF network transmission
+    /** Serial version UID for ensuring compatibility during OCSF network transmission. */
     private static final long serialVersionUID = 1L;
 
-    // Unique confirmation code derived from the initial reservation (Primary Link)
+    /** Unique confirmation code derived from the initial reservation. */
     private long confirmationCode;
     
-    // The specific identifier of the table where the customer is seated
+    /** The specific identifier of the table where the customer is seated. */
     private int tableId;
     
-    // The identifier of the user (customer) associated with this specific visit
+    /** The identifier of the user (customer) associated with this specific visit. */
     private int userId;
     
-    // The ID of the generated bill (Long wrapper allows null if bill isn't created yet)
+    /** The ID of the generated bill (null if bill isn't created yet). */
     private Long billId;
     
-    // String representation of the timestamp when the customer arrived
+    /** Timestamp when the customer arrived. */
     private String startTime;
     
-    // The current status of the visit (either ACTIVE or FINISHED)
+    /** The current status of the visit. */
     private VisitStatus status;
+
+    /** Field to hold the count of diners (for display purposes). */
+    private int numberOfGuests;
+
+    /** Field for the original reservation date and time. */
+    private String reservationDateTime;
 
     /**
      * Full constructor to initialize all fields of a Visit entity.
+     * * @param confirmationCode Unique ID linked to the reservation.
+     * @param tableId          ID of the assigned table.
+     * @param userId           ID of the customer.
+     * @param billId           ID of the generated bill.
+     * @param startTime        Timestamp of arrival.
+     * @param status           Initial lifecycle state of the visit.
      */
-    public Visit(long confirmationCode, int tableId, int userId, long billId, String startTime, VisitStatus status) { // Constructor start
-        
-        // Assigning the provided confirmation code to the instance variable
+    public Visit(long confirmationCode, int tableId, int userId, long billId, String startTime, VisitStatus status) {
         this.confirmationCode = confirmationCode;
-        
-        // Assigning the provided table ID to the instance variable
         this.tableId = tableId;
-        
-        // Assigning the provided user ID to the instance variable
         this.userId = userId;
-        
-        // Assigning the provided bill ID to the instance variable (can be null)
         this.billId = billId;
-        
-        // Assigning the provided start time string to the instance variable
         this.startTime = startTime;
-        
-        // Assigning the provided status enum to the instance variable
         this.status = status;
-        
-    } // Constructor end
+    }
 
-    // =========================================================================
-    // Getters and Setters Section
-    // =========================================================================
+    /**
+     * Retrieves the reservation confirmation code.
+     * @return The unique confirmation code as a long.
+     */
+    public long getConfirmationCode() {
+        return confirmationCode;
+    }
 
-    
+    /**
+     * Updates the reservation confirmation code.
+     * @param confirmationCode The new confirmation code to assign.
+     */
+    public void setConfirmationCode(long confirmationCode) {
+        this.confirmationCode = confirmationCode;
+    }
 
-    
-    
-    
-    public long getConfirmationCode() { // Method to retrieve confirmation code
-        return confirmationCode;        // Returns the long value
-    } // End method
+    /**
+     * Retrieves the identifier of the seated table.
+     * @return The table ID as an integer.
+     */
+    public int getTableId() {
+        return tableId;
+    }
 
-    public void setConfirmationCode(long confirmationCode) { // Method to update confirmation code
-        this.confirmationCode = confirmationCode;            // Assigning new value
-    } // End method
+    /**
+     * Updates the table identifier.
+     * @param tableId The new table ID to set.
+     */
+    public void setTableId(int tableId) {
+        this.tableId = tableId;
+    }
 
-    public int getTableId() { // Method to retrieve table ID
-        return tableId;       // Returns the int value
-    } // End method
+    /**
+     * Retrieves the customer's user identifier.
+     * @return The user ID as an integer.
+     */
+    public int getUserId() {
+        return userId;
+    }
 
-    public void setTableId(int tableId) { // Method to update table ID
-        this.tableId = tableId;           // Assigning new value
-    } // End method
+    /**
+     * Updates the user identifier for this visit.
+     * @param userId The new user ID to set.
+     */
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
 
-    public int getUserId() { // Method to retrieve user ID
-        return userId;       // Returns the int value
-    } // End method
+    /**
+     * Retrieves the associated bill identifier.
+     * @return The bill ID as a Long, or null if not yet created.
+     */
+    public Long getBillId() {
+        return billId;
+    }
 
-    public void setUserId(int userId) { // Method to update user ID
-        this.userId = userId;           // Assigning new value
-    } // End method
+    /**
+     * Updates the associated bill identifier.
+     * @param billId The new bill ID to assign.
+     */
+    public void setBillId(Long billId) {
+        this.billId = billId;
+    }
 
-    public Long getBillId() { // Method to retrieve bill ID
-        return billId;        // Returns the Long object (could be null)
-    } // End method
+    /**
+     * Retrieves the visit start time timestamp.
+     * @return The start time as a String.
+     */
+    public String getStartTime() {
+        return startTime;
+    }
 
-    public void setBillId(Long billId) { // Method to update bill ID
-        this.billId = billId;            // Assigning new value
-    } // End method
+    /**
+     * Updates the visit start time.
+     * @param startTime The arrival timestamp to set.
+     */
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
 
-    public String getStartTime() { // Method to retrieve start time
-        return startTime;          // Returns the time string
-    } // End method
+    /**
+     * Retrieves the current lifecycle status of the visit.
+     * @return The current VisitStatus enum value.
+     */
+    public VisitStatus getStatus() {
+        return status;
+    }
 
-    public void setStartTime(String startTime) { // Method to update start time
-        this.startTime = startTime;              // Assigning new value
-    } // End method
+    /**
+     * Updates the current status of the visit.
+     * @param status The new lifecycle state to set.
+     */
+    public void setStatus(VisitStatus status) {
+        this.status = status;
+    }
 
-    public VisitStatus getStatus() { // Method to retrieve visit status
-        return status;               // Returns the VisitStatus enum
-    } // End method
-
-    public void setStatus(VisitStatus status) { // Method to update visit status
-        this.status = status;                   // Assigning new value
-    } // End method
-
-    
-    
- // שדה חדש להחזקת כמות הסועדים (לצורכי תצוגה בלבד)
-    private int numberOfGuests;
-
+    /**
+     * Retrieves the number of guests in the dining group.
+     * @return The guest count as an integer.
+     */
     public int getNumberOfGuests() {
         return numberOfGuests;
     }
 
+    /**
+     * Updates the number of guests in the group.
+     * @param numberOfGuests The guest count to set.
+     */
     public void setNumberOfGuests(int numberOfGuests) {
         this.numberOfGuests = numberOfGuests;
     }
-    
-    
-    // =========================================================================
-    // Utility Methods
-    // =========================================================================
 
     /**
-     * Returns a summarized string representation of the Visit object.
+     * Provides a summarized string representation of the Visit.
+     * @return A string summary for logging and debugging.
      */
-    @Override // Overriding Object's toString method
-    public String toString() { // Method start
-        
-        // Building a clear string for console debugging and logging
+    @Override
+    public String toString() {
         return "Visit [" + 
                "Code=" + confirmationCode + 
                ", Table=" + tableId + 
                ", Status=" + status + 
                "]";
-               
-    } // End method
+    }
 
-    
-    
-    
-    
-    
-    
-    
- // הוסף את השדה הזה למעלה עם שאר השדות
-    private String reservationDateTime;
-
-    // הוסף את ה-Getter וה-Setter האלו
+    /**
+     * Retrieves the original reservation timestamp.
+     * @return The reservation date and time as a String.
+     */
     public String getReservationDateTime() {
         return reservationDateTime;
     }
 
+    /**
+     * Updates the original reservation timestamp.
+     * @param reservationDateTime The reservation date and time to set.
+     */
     public void setReservationDateTime(String reservationDateTime) {
         this.reservationDateTime = reservationDateTime;
     }
-    
-    
-    
-} // End of Visit class
+}

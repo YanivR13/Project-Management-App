@@ -16,174 +16,141 @@ import javafx.scene.Node; // Importing Node for accessing the scene graph
 import javafx.stage.Stage; // Importing Stage for window management
 
 /**
- * Controller class for the Reservation History screen.
- * This class fetches and displays all past and future reservations for a specific subscriber.
+ * Controller for the Reservation History screen in the Bistro system.
+ * Fetches and displays past and future reservations for a specific subscriber using a TableView.
  */
-public class ReservationHistoryController implements ChatIF { // Class start implementing ChatIF interface
+public class ReservationHistoryController implements ChatIF { 
 	
-    // Reference to the active network client
 	private ChatClient client;
 
     /**
-     * Injects the client and registers this controller as the active UI listener.
+     * Injects the network client and registers this controller as the UI listener.
+     * @param client The active ChatClient instance.
+     * @return None.
      */
-	public void setClient(ChatClient client) { // Start of setClient method
-	    this.client = client; // Assigning the provided client instance
-	    client.setUI(this); // Setting this controller to receive server messages
-	} // End of setClient method
+	public void setClient(ChatClient client) { 
+	    this.client = client; 
+	    client.setUI(this); 
+	} 
 	
-    // --- FXML UI Components ---
-    
-	@FXML private Button btnBack; // Reference to the back button
+	// --- FXML UI Components ---
 	
-	@FXML private TableView<Reservation> reservationsTable; // Reference to the main data table
-
-	@FXML private TableColumn<Reservation, Long> codeCol; // Column for the confirmation code
-	@FXML private TableColumn<Reservation, String> dateCol; // Column for the reservation date
-	@FXML private TableColumn<Reservation, String> timeCol; // Column for the reservation time
-	@FXML private TableColumn<Reservation, Integer> guestCol; // Column for the number of guests
-	@FXML private TableColumn<Reservation, String> statusCol; // Column for the reservation status
+	@FXML private Button btnBack; 
+	@FXML private TableView<Reservation> reservationsTable; 
+	@FXML private TableColumn<Reservation, Long> codeCol; 
+	@FXML private TableColumn<Reservation, String> dateCol; 
+	@FXML private TableColumn<Reservation, String> timeCol; 
+	@FXML private TableColumn<Reservation, Integer> guestCol; 
+	@FXML private TableColumn<Reservation, String> statusCol; 
 	
     /**
-     * Initializes the table columns by mapping them to Reservation class methods.
-     * Called automatically by JavaFX when the FXML is loaded.
+     * Initializes the TableView columns by mapping them to Reservation properties.
+     * Called automatically by JavaFX.
+     * @return None.
      */
-	@FXML // Link to FXML
-	private void initialize() { // Start of initialize method
-		
-        // Mapping the confirmation code column to the 'confirmationCode' property
-        codeCol.setCellValueFactory(new PropertyValueFactory<>("confirmationCode")); // Property mapping
-
-        // Mapping the date column to the 'getReservationDate' method logic
-	    dateCol.setCellValueFactory(new PropertyValueFactory<>("reservationDate")); // Property mapping
-
-        // Mapping the time column to the 'getReservationTime' method logic
-	    timeCol.setCellValueFactory(new PropertyValueFactory<>("reservationTime")); // Property mapping
-
-        // Mapping the guest count column to the 'numberOfGuests' property
-	    guestCol.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests")); // Property mapping
-
-        // Mapping the status column to the 'statusString' property logic
-	    statusCol.setCellValueFactory(new PropertyValueFactory<>("statusString")); // Property mapping
-        
-	} // End of initialize method
+	@FXML 
+	private void initialize() { 
+        codeCol.setCellValueFactory(new PropertyValueFactory<>("confirmationCode")); 
+	    dateCol.setCellValueFactory(new PropertyValueFactory<>("reservationDate")); 
+	    timeCol.setCellValueFactory(new PropertyValueFactory<>("reservationTime")); 
+	    guestCol.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests")); 
+	    statusCol.setCellValueFactory(new PropertyValueFactory<>("statusString")); 
+	} 
 
 	/**
-     * Closes the current history window.
+     * Closes the reservation history window.
+     * @param event The ActionEvent triggered by the back button.
+     * @return None.
      */
-	@FXML // Link to FXML action
-	private void clickBack(ActionEvent event) { // Start of clickBack method
-        // Identify the current window stage from the event source
-	    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Getting stage
-        // Close the window
-	    stage.close(); // Closing window
-	} // End of clickBack method
+	@FXML 
+	private void clickBack(ActionEvent event) { 
+	    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); 
+	    stage.close(); 
+	} 
 	
     /**
-     * Prepares and sends a request to the server to fetch history for a specific user.
+     * Sends a request to the server to fetch history for a specific subscriber.
+     * @param userId The unique identification of the subscriber.
+     * @return None.
      */
-	public void loadReservationsForUser(int userId) { // Start of loadReservationsForUser method
-        // Guard Clause: Ensure the client connection is initialized
-	    if (client == null) { // Check if client is null
-	        System.out.println("Error: client is null"); // Log technical error
-	        return; // Terminate execution
-	    } // End of null check
+	public void loadReservationsForUser(int userId) { 
+	    if (client == null) { 
+	        System.out.println("Error: client is null"); 
+	        return; 
+	    } 
 
-        // Creating a message list following the communication protocol
-	    ArrayList<Object> msg = new ArrayList<>(); // Initializing message list
-	    msg.add("GET_RESERVATIONS_HISTORY"); // Adding server command
-	    msg.add(userId); // Adding user ID as the parameter
+	    ArrayList<Object> msg = new ArrayList<>(); 
+	    msg.add("GET_RESERVATIONS_HISTORY"); 
+	    msg.add(userId); 
 
-        // Sending the request to the server
-	    client.handleMessageFromClientUI(msg); // Transmitting message
-	} // End of loadReservationsForUser method
+	    client.handleMessageFromClientUI(msg); 
+	} 
 
     /**
-     * Processes incoming data from the server and updates the UI table.
+     * Processes server responses and populates the TableView on the UI thread.
+     * @param message The server response containing a list of reservations or an error.
+     * @return None.
      */
-	@Override // Overriding from ChatIF
-	public void display(Object message) { // Start of display method
-        
-        // Logical Branching: Handle list-based responses and generic errors separately
-	    if (message instanceof ArrayList) { // Start if message is a list
-            
-            // Casting the message to a generic ArrayList
-	        ArrayList<?> data = (ArrayList<?>) message; // Casting
-	        
-            // Extracting the command identifier from the first index
-	        String command = data.get(0).toString(); // Getting command string
+	@Override 
+	public void display(Object message) { 
+	    if (message instanceof ArrayList) { 
+	        ArrayList<?> data = (ArrayList<?>) message; 
+	        String command = data.get(0).toString(); 
 
-            // Refactored: Using switch-case to handle different server commands
-            switch (command) { // Start switch on command
-                
-                case "RESERVATION_HISTORY": // Case for historical data retrieval
-                    
-                    // Extract the actual list of Reservation objects from the second index
-                    ArrayList<Reservation> reservations = (ArrayList<Reservation>) data.get(1); // Casting list
+            switch (command) { 
+                case "RESERVATION_HISTORY": 
+                    @SuppressWarnings("unchecked")
+                    ArrayList<Reservation> reservations = (ArrayList<Reservation>) data.get(1); 
 
-                    // Ensure the UI update runs on the main JavaFX Application Thread
-                    Platform.runLater(() -> { // Start of Platform.runLater
-                        
-                        // Check if no records were found in the database
-                        if (reservations == null || reservations.isEmpty()) { // Start empty check
-                            showNoReservationsAndClose(); // Show alert and close
-                            return; // Exit lambda
-                        } // End empty check
-                        
-                        // Clear existing table entries and populate with new data
-                        reservationsTable.getItems().clear(); // Clearing table
-                        reservationsTable.getItems().addAll(reservations); // Adding all items
-                        
-                    }); // End of Platform.runLater
-                    break; // Exit switch case
+                    Platform.runLater(() -> { 
+                        if (reservations == null || reservations.isEmpty()) { 
+                            showNoReservationsAndClose(); 
+                            return; 
+                        } 
+                        reservationsTable.getItems().clear(); 
+                        reservationsTable.getItems().addAll(reservations); 
+                    }); 
+                    break; 
 
-                default: // For any unhandled command strings within a list
-                    break; // Exit switch
-            } // End of switch block
-	    } // End of if message is list
-	    else { // If the message is not a list (Unexpected format or technical error)
-            // Show a technical error popup and close the window
-	    	Platform.runLater(() -> showUnexpectedErrorAndClose()); // Run error handling
-	    } // End of else block
-        
-	} // End of display method
+                default: 
+                    break; 
+            } 
+	    } 
+	    else { 
+	    	Platform.runLater(() -> showUnexpectedErrorAndClose()); 
+	    } 
+	} 
 	
 	/**
-	 * Displays a message indicating that no reservations exist and closes the window.
+	 * Displays an alert when no history is found and closes the window.
+	 * @return None.
 	 */
-	private void showNoReservationsAndClose() { // Start helper method
+	private void showNoReservationsAndClose() { 
+	    Alert alert = new Alert(Alert.AlertType.INFORMATION); 
+	    alert.setTitle("Reservation History"); 
+	    alert.setHeaderText(null); 
+	    alert.setContentText("You have no reservations in your history."); 
+	    alert.showAndWait(); 
 
-	    // Initializing an information alert
-	    Alert alert = new Alert(Alert.AlertType.INFORMATION); // Create alert
-	    alert.setTitle("Reservation History"); // Set title
-	    alert.setHeaderText(null); // Clear header
-	    alert.setContentText("You have no reservations in your history."); // Set message
-	    alert.showAndWait(); // Display and wait
-
-        // Identify the stage and close it
-	    Stage stage = (Stage) reservationsTable.getScene().getWindow(); // Get stage
-	    stage.close(); // Close stage
-        
-	} // End helper method
+	    Stage stage = (Stage) reservationsTable.getScene().getWindow(); 
+	    stage.close(); 
+	} 
 	
 	/**
-	 * Displays an unexpected error message and closes the window.
+	 * Displays an error alert for unexpected server responses and closes the window.
+	 * @return None.
 	 */
-    private void showUnexpectedErrorAndClose() { // Start helper method
-        
-        // Initializing an error alert
-        Alert alert = new Alert(Alert.AlertType.ERROR); // Create alert
-        alert.setTitle("Unexpected Error"); // Set title
-        alert.setHeaderText(null); // Clear header
-        alert.setContentText( // Set detailed error message
+    private void showUnexpectedErrorAndClose() { 
+        Alert alert = new Alert(Alert.AlertType.ERROR); 
+        alert.setTitle("Unexpected Error"); 
+        alert.setHeaderText(null); 
+        alert.setContentText( 
             "An unexpected error occurred while loading your reservation history.\n" +
             "Please try again later."
-        ); // End content text
-        alert.showAndWait(); // Display and wait
+        ); 
+        alert.showAndWait(); 
 
-        // Identify the stage and close it
-        Stage stage = (Stage) reservationsTable.getScene().getWindow(); // Get stage
-        stage.close(); // Close stage
-        
-    } // End helper method
-} // End of ReservationHistoryController class
+        Stage stage = (Stage) reservationsTable.getScene().getWindow(); 
+        stage.close(); 
+    } 
+}

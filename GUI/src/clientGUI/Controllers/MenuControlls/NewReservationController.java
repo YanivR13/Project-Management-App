@@ -33,321 +33,287 @@ import javafx.scene.control.TextField; // Import for single-line text input
 import javafx.stage.Stage; // Import for the primary window container
 
 /**
- * Controller class for the New Reservation interface.
+ * Controller for the New Reservation interface in the Bistro system.
+ * This class handles the creation of new bookings, including complex validation rules, 
+ * real-time availability checks, and handling alternative slot suggestions from the server.
  */
-public class NewReservationController extends BaseMenuController implements ChatIF, Initializable { // Start class definition
+public class NewReservationController extends BaseMenuController implements ChatIF, Initializable { 
 
-    // Injecting UI components linked to the FXML layout
-    @FXML private DatePicker dpDate; // Reference to the date selection field
-    @FXML private ComboBox<String> comboTime; // Reference to the time selection dropdown
-    @FXML private TextField txtGuests; // Reference to the guest count input field
-    @FXML private TextArea txtLog; // Reference to the status logging area
-    @FXML private Button btnConfirm; // Reference to the confirmation button
-    @FXML private Button btnBack; // Reference to the navigation back button
+    @FXML private DatePicker dpDate; 
+    @FXML private ComboBox<String> comboTime; 
+    @FXML private TextField txtGuests; 
+    @FXML private TextArea txtLog; 
+    @FXML private Button btnConfirm; 
+    @FXML private Button btnBack; 
     
-    // Internal cache to store restaurant operational data
+    /** Internal cache for restaurant operational data. */
     private Restaurant currentRestaurant; 
     
     /**
-     * Executes when the client instance is ready for network communication.
+     * Triggered when the client is ready. Requests restaurant operating hours from the server.
+     * @return None.
      */
-    @Override // Overriding method from BaseMenuController
-    public void onClientReady() { // Start method
-        // Prepare a message list to request work times from the server
-        ArrayList<Object> msg = new ArrayList<>(); // Initialize the list
-        msg.add("GET_RESTAURANT_WORKTIMES"); // Add the specific request command
+    @Override 
+    public void onClientReady() { 
+        ArrayList<Object> msg = new ArrayList<>(); 
+        msg.add("GET_RESTAURANT_WORKTIMES"); 
         
-        // Transmit the request to the server via the OCSF client
-        this.client.handleMessageFromClientUI(msg); // Send the list
-        
-        // Update the GUI log to inform the user of the process
-        appendLog("Fetching restaurant information..."); // Log action
-    } // End method
+        this.client.handleMessageFromClientUI(msg); 
+        appendLog("Fetching restaurant information..."); 
+    } 
    
     /**
-     * Initializes the controller and sets up UI constraints.
+     * Initializes UI components, configures date picker constraints, and populates time slots.
+     * @param location  The location used to resolve relative paths for the root object.
+     * @param resources The resources used to localize the root object.
+     * @return None.
      */
-    @Override // Overriding Initializable interface method
-    public void initialize(URL location, ResourceBundle resources) { // Start method
-        // Lock manual editing of the date picker to ensure format integrity
-        dpDate.setEditable(false); // Disable text editing
+    @Override 
+    public void initialize(URL location, ResourceBundle resources) { 
+        dpDate.setEditable(false); 
 
-        // Define a custom factory to control date availability in the calendar
-        dpDate.setDayCellFactory(picker -> new DateCell() { // Start cell factory lambda
-            @Override // Overriding updateItem for custom rendering
-            public void updateItem(LocalDate date, boolean empty) { // Start updateItem
-                super.updateItem(date, empty); // Call parent implementation
-                
-                // Logic: Check if the date being rendered is in the past
-                if (date.isBefore(LocalDate.now())) { // Check past date condition
-                    setDisable(true); // Disable interaction with past dates
-                    setStyle("-fx-background-color: #ffc0cb;"); // Color past dates pink
-                } // End if
-            } // End updateItem
-        }); // End cell factory
+        dpDate.setDayCellFactory(picker -> new DateCell() { 
+            @Override 
+            public void updateItem(LocalDate date, boolean empty) { 
+                super.updateItem(date, empty); 
+                if (date.isBefore(LocalDate.now())) { 
+                    setDisable(true); 
+                    setStyle("-fx-background-color: #ffc0cb;"); 
+                } 
+            } 
+        }); 
 
-        // Generate a list of time slots in 30-minute intervals
-        ObservableList<String> hours = FXCollections.observableArrayList(); // Create observable list
-        LocalTime time = LocalTime.MIDNIGHT; // Start time at 00:00
+        ObservableList<String> hours = FXCollections.observableArrayList(); 
+        LocalTime time = LocalTime.MIDNIGHT; 
         
-        do { // Start of loop to populate time slots
-            hours.add(time.toString()); // Convert current time to string and add to list
-            time = time.plusMinutes(30); // Increment time by 30 minutes
-        } while (!time.equals(LocalTime.MIDNIGHT)); // Continue until a full cycle is complete
+        do { 
+            hours.add(time.toString()); 
+            time = time.plusMinutes(30); 
+        } while (!time.equals(LocalTime.MIDNIGHT)); 
 
-        // Assign the generated list to the time ComboBox
-        comboTime.setItems(hours); // Set items in the UI component
+        comboTime.setItems(hours); 
+        dpDate.setValue(LocalDate.now()); 
         
-        // Default the selected date to today for convenience
-        dpDate.setValue(LocalDate.now()); // Set current date
-        
-        // Inform the user that the system is ready
-        appendLog("Ready to take your reservation."); // Log readiness
-    } // End method
+        appendLog("Ready to take your reservation."); 
+    } 
 
     /**
-     * Logic for processing the 'Confirm Reservation' action.
+     * Processes the confirmation action by validating inputs (future time, capacity) and sending data.
+     * @param event The ActionEvent triggered by the confirm button.
+     * @return None.
      */
-    @FXML // Link to FXML action
-    void clickConfirm(ActionEvent event) { // Start method
+    @FXML 
+    void clickConfirm(ActionEvent event) { 
         
-        // Guard Clause: Check for any empty or null inputs in mandatory fields
-        boolean isMissingInput = (dpDate.getValue() == null || comboTime.getValue() == null || txtGuests.getText().isEmpty()); // Validation logic
+        boolean isMissingInput = (dpDate.getValue() == null || comboTime.getValue() == null || txtGuests.getText().isEmpty()); 
         
-        if (isMissingInput) { // If inputs are missing
-            appendLog("Error: Missing input fields."); // Notify user via log
-            return; // Terminate method execution
-        } // End if
+        if (isMissingInput) { 
+            appendLog("Error: Missing input fields."); 
+            return; 
+        } 
 
-        try { // Start error handling block for parsing and validation
+        try { 
+            String guestsInput = txtGuests.getText().trim(); 
             
-            // Clean the guest input string from extra whitespace
-            String guestsInput = txtGuests.getText().trim(); // Trim input
+            if (!guestsInput.matches("\\d+")) { 
+                appendLog("Error: Guests field must contain only numbers (no letters or symbols)."); 
+                return; 
+            } 
             
-            // Regex validation: Ensure the string contains only numeric digits
-            if (!guestsInput.matches("\\d+")) { // Check for non-numeric characters
-                appendLog("Error: Guests field must contain only numbers (no letters or symbols)."); // Log error
-                return; // Terminate method execution
-            } // End if
+            int guestCount = Integer.parseInt(guestsInput); 
             
-            // Parse the string into an integer
-            int guestCount = Integer.parseInt(guestsInput); // Convert to int
+            if (guestCount <= 0) { 
+                throw new NumberFormatException(); 
+            } 
             
-            // Logic validation: Reservations must have a positive number of guests
-            if (guestCount <= 0) { // Check for zero or negative values
-                throw new NumberFormatException(); // Force catch block entry
-            } // End if
+            LocalDateTime requestedDT = LocalDateTime.of(dpDate.getValue(), LocalTime.parse(comboTime.getValue())); 
+            LocalDateTime now = LocalDateTime.now(); 
             
-            // Construct a LocalDateTime object for range checking
-            LocalDateTime requestedDT = LocalDateTime.of(dpDate.getValue(), LocalTime.parse(comboTime.getValue())); // Combine date and time
-            LocalDateTime now = LocalDateTime.now(); // Get current timestamp
-            
-            // Logic validation: Reservations must be at least 1 hour in the future
-            if (requestedDT.isBefore(now.plusHours(1))) { // Check 1-hour lead time
-                appendLog("Error: Reservations must be made at least 1 hour in advance."); // Log error
-                return; // Terminate execution
-            } // End if
+            if (requestedDT.isBefore(now.plusHours(1))) { 
+                appendLog("Error: Reservations must be made at least 1 hour in advance."); 
+                return; 
+            } 
 
-            // Logic validation: Limit reservations to one month ahead
-            if (requestedDT.isAfter(now.plusMonths(1))) { // Check 1-month limit
-                appendLog("Error: Reservations can only be made up to one month in advance."); // Log error
-                return; // Terminate execution
-            } // End if
+            if (requestedDT.isAfter(now.plusMonths(1))) { 
+                appendLog("Error: Reservations can only be made up to one month in advance."); 
+                return; 
+            } 
 
-            // Format the final date-time string for SQL (YYYY-MM-DD HH:mm:ss)
-            String sqlDateTime = dpDate.getValue().toString() + " " + comboTime.getValue() + ":00"; // Build string
+            String sqlDateTime = dpDate.getValue().toString() + " " + comboTime.getValue() + ":00"; 
             
-            // Create the Reservation DTO with session data
-            Reservation res = new Reservation(userId, sqlDateTime, guestCount); // Initialize DTO
+            Reservation res = new Reservation(userId, sqlDateTime, guestCount); 
             
-            // Encapsulate the command and DTO in a message for the server
-            ArrayList<Object> msg = new ArrayList<>(); // Initialize message list
-            msg.add("CREATE_RESERVATION"); // Add command header
-            msg.add(res); // Add the reservation object
+            ArrayList<Object> msg = new ArrayList<>(); 
+            msg.add("CREATE_RESERVATION"); 
+            msg.add(res); 
 
-            // Transmission logic: Ensure client is active and register UI for response
-            if (client != null) { // Check client existence
-                client.setUI(this); // Set this controller as the message listener
-                appendLog("Sending request to server..."); // Log transmission
-                client.handleMessageFromClientUI(msg); // Send to server
-            } // End if
+            if (client != null) { 
+                client.setUI(this); 
+                appendLog("Sending request to server..."); 
+                client.handleMessageFromClientUI(msg); 
+            } 
             
-        } catch (NumberFormatException e) { // Catch invalid numeric inputs
-            appendLog("Error: Please enter a valid number of guests."); // Log generic error
-        } // End catch
-        
-    } // End method
+        } catch (NumberFormatException e) { 
+            appendLog("Error: Please enter a valid number of guests."); 
+        } 
+    } 
 
     /**
-     * Handles navigation back to the main menu.
+     * Navigates the user back to their respective menu based on their user role.
+     * @param event The ActionEvent triggered by the back button.
+     * @return None.
      */
-    @FXML // Link to FXML action
-    void clickBack(ActionEvent event) { // Start method
+    @FXML 
+    void clickBack(ActionEvent event) { 
         
-        String fxmlPath = ""; // Variable to store the destination path
+        String fxmlPath = ""; 
         
-        // Refactored: Use switch for better readability in navigation logic
-        if (userType == null) { // Guard against null userType
-            appendLog("Error: Unknown user type for navigation."); // Log error
-            return; // Terminate
-        } // End if
+        if (userType == null) { 
+            appendLog("Error: Unknown user type for navigation."); 
+            return; 
+        } 
 
-        switch (userType) { // Evaluate user type for path selection
-            
-            case "Subscriber": // For registered subscribers
-                fxmlPath = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml"; // Assign path
-                break; // Exit switch
+        switch (userType) { 
+            case "Subscriber": 
+                fxmlPath = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml"; 
+                break; 
                 
-            case "Occasional": // For one-time users
-                fxmlPath = "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"; // Assign path
-                break; // Exit switch
+            case "Occasional": 
+                fxmlPath = "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"; 
+                break; 
                 
-            default: // For any unexpected role
-                appendLog("Error: Invalid role detected."); // Log error
-                return; // Terminate method
-                
-        } // End switch
+            default: 
+                appendLog("Error: Invalid role detected."); 
+                return; 
+        } 
 
-        try { // Start transition handling
+        try { 
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath)); 
+            Parent root = loader.load(); 
             
-            // Load the FXML file for the target menu
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath)); // Initialize loader
-            Parent root = loader.load(); // Generate the UI graph
-            
-            // Inject shared session dependencies into the target controller
-            BaseMenuController controller = loader.getController(); // Get controller instance
-            controller.setClient(client, userType, userId); // Pass client and session data
+            BaseMenuController controller = loader.getController(); 
+            controller.setClient(client, userType, userId); 
 
-            // Execute the scene transition on the current stage
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Identify window
-            Scene scene = new Scene(root); // Create new scene
-            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); // Apply styling
-            stage.setScene(scene); // Set scene to stage
-            stage.show(); // Display stage
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); 
+            Scene scene = new Scene(root); 
+            scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); 
+            stage.setScene(scene); 
+            stage.show(); 
             
-        } catch (Exception e) { // Catch any loading errors
-            e.printStackTrace(); // Print technical details
-            appendLog("Navigation Error: " + e.getMessage()); // Log user-friendly error
-        } // End catch
-        
-    } // End method
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            appendLog("Navigation Error: " + e.getMessage()); 
+        } 
+    } 
 
     /**
-     * Processes incoming server messages.
+     * Processes server responses, including restaurant metadata and reservation status updates.
+     * @param message The response object (Restaurant or ServiceResponse).
+     * @return None.
      */
-    @Override // Overriding ChatIF method
-    public void display(Object message) { // Start method
+    @Override 
+    public void display(Object message) { 
         
-        // Handle incoming Restaurant data (Operating hours setup)
-        if (message instanceof Restaurant) { // Check if message is a Restaurant object
-            this.currentRestaurant = (Restaurant) message; // Cast and store data
+        if (message instanceof Restaurant) { 
+            this.currentRestaurant = (Restaurant) message; 
 
-            Platform.runLater(() -> { // Execute UI update on main thread
-                appendLog("--- Restaurant Information Loaded ---"); // Log status
-                appendLog(currentRestaurant.getFormattedOpeningHours()); // Display hours in the log
-            }); // End thread block
-            return; // Exit method
-        } // End if
+            Platform.runLater(() -> { 
+                appendLog("--- Restaurant Information Loaded ---"); 
+                appendLog(currentRestaurant.getFormattedOpeningHours()); 
+            }); 
+            return; 
+        } 
 
-        // Handle logical server responses (Success, Failures, Suggestions)
-        if (message instanceof ServiceResponse) { // Check if message is a ServiceResponse
+        if (message instanceof ServiceResponse) { 
+            ServiceResponse sr = (ServiceResponse) message; 
             
-            ServiceResponse sr = (ServiceResponse) message; // Cast to specific response type
-            
-            Platform.runLater(() -> { // Ensure thread safety for UI modifications
-                
-                // Evaluating server status code using switch for clean branching
-                switch (sr.getStatus()) { // Start switch block
-                    
-                    case RESERVATION_SUCCESS: // Case: DB successfully updated
-                        showPopup(AlertType.INFORMATION, "Success", "Reservation confirmed! Code: " + sr.getData()); // Alert user
-                        appendLog("Reservation secured with code: " + sr.getData()); // Log confirmation
-                        break; // Exit switch
+            Platform.runLater(() -> { 
+                switch (sr.getStatus()) { 
+                    case RESERVATION_SUCCESS: 
+                        showPopup(AlertType.INFORMATION, "Success", "Reservation confirmed! Code: " + sr.getData()); 
+                        appendLog("Reservation secured with code: " + sr.getData()); 
+                        break; 
                         
-                    case RESERVATION_SUGGESTION: // Case: Slot busy, alternative found
-                        handleSuggestion(sr.getData().toString()); // Trigger suggestion flow
-                        break; // Exit switch
+                    case RESERVATION_SUGGESTION: 
+                        handleSuggestion(sr.getData().toString()); 
+                        break; 
                         
-                    case RESERVATION_FULL: // Case: No capacity at all
-                        showPopup(AlertType.WARNING, "Fully Booked", "Sorry, no tables available."); // Alert user
-                        appendLog("Server: No tables available."); // Log status
-                        break; // Exit switch
+                    case RESERVATION_FULL: 
+                        showPopup(AlertType.WARNING, "Fully Booked", "Sorry, no tables available."); 
+                        appendLog("Server: No tables available."); 
+                        break; 
                         
-                    case INTERNAL_ERROR: // Case: SQL or network error
-                        showPopup(AlertType.ERROR, "Server Error", sr.getData().toString()); // Alert user
-                        appendLog("Server Error: " + sr.getData()); // Log technical error
-                        break; // Exit switch
+                    case INTERNAL_ERROR: 
+                        showPopup(AlertType.ERROR, "Server Error", sr.getData().toString()); 
+                        appendLog("Server Error: " + sr.getData()); 
+                        break; 
                         
-                    case RESERVATION_OUT_OF_HOURS: // Case: Time not within operating range
-                        showPopup(AlertType.WARNING, "Restaurant Closed", sr.getData().toString()); // Alert user
-                        appendLog("Server: " + sr.getData()); // Log closure message
-                        break; // Exit switch
+                    case RESERVATION_OUT_OF_HOURS: 
+                        showPopup(AlertType.WARNING, "Restaurant Closed", sr.getData().toString()); 
+                        appendLog("Server: " + sr.getData()); 
+                        break; 
                         
-                    default: // Default case for unhandled statuses
-                        break; // Exit switch
-                        
-                } // End switch block
-                
-            }); // End runLater
-            
-        } // End if for ServiceResponse
-        
-    } // End method
+                    default: 
+                        break; 
+                } 
+            }); 
+        } 
+    } 
 
     /**
-     * Logic for handling alternative time slot suggestions.
+     * Handles the alternative time suggestion flow by prompting the user with a confirmation dialog.
+     * @param suggested The recommended time slot string provided by the server.
+     * @return None.
      */
-    private void handleSuggestion(String suggested) { // Start method
-        
-        // Prompt the user to accept or decline the server's recommendation
+    private void handleSuggestion(String suggested) { 
         Alert suggestionAlert = new Alert(Alert.AlertType.CONFIRMATION, 
             "Requested time is full. Would you like to reserve for " + suggested + " instead?", 
-            ButtonType.OK, ButtonType.CANCEL); // Initialize dialog
+            ButtonType.OK, ButtonType.CANCEL); 
             
-        suggestionAlert.setTitle("Alternative Slot Found"); // Set title
-        suggestionAlert.setHeaderText("No availability for requested time."); // Set header
+        suggestionAlert.setTitle("Alternative Slot Found"); 
+        suggestionAlert.setHeaderText("No availability for requested time."); 
         
-        // Execute the user's choice
-        if (suggestionAlert.showAndWait().get() == ButtonType.OK) { // If user accepts (OK clicked)
-            
-            try { // Attempt to process the alternative booking
+        if (suggestionAlert.showAndWait().get() == ButtonType.OK) { 
+            try { 
+                int guests = Integer.parseInt(txtGuests.getText()); 
+                Reservation res = new Reservation(userId, suggested + ":00", guests); 
                 
-                int guests = Integer.parseInt(txtGuests.getText()); // Read current guest input
-                Reservation res = new Reservation(userId, suggested + ":00", guests); // Create DTO for new slot
+                ArrayList<Object> msg = new ArrayList<>(); 
+                msg.add("CREATE_RESERVATION"); 
+                msg.add(res); 
                 
-                ArrayList<Object> msg = new ArrayList<>(); // Initialize new message
-                msg.add("CREATE_RESERVATION"); // Add same command
-                msg.add(res); // Add new reservation details
+                client.handleMessageFromClientUI(msg); 
+                appendLog("Attempting to book suggested slot: " + suggested); 
                 
-                client.handleMessageFromClientUI(msg); // Transmit back to server
-                appendLog("Attempting to book suggested slot: " + suggested); // Log action
-                
-            } catch (NumberFormatException e) { // Catch parsing issues
-                appendLog("Error reading guest number for suggestion."); // Log failure
-            } // End catch
-            
-        } // End if user accepts
-        
-    } // End method
+            } catch (NumberFormatException e) { 
+                appendLog("Error reading guest number for suggestion."); 
+            } 
+        } 
+    } 
 
     /**
-     * Utility method for displaying standardized JavaFX Alerts.
+     * Internal utility for displaying JavaFX alerts.
+     * @param type    The AlertType of the dialog.
+     * @param title   The title of the window.
+     * @param content The message body.
+     * @return None.
      */
-    private void showPopup(AlertType type, String title, String content) { // Start method
-        Alert alert = new Alert(type); // Create new alert of provided type
-        alert.setTitle(title); // Set title
-        alert.setHeaderText(null); // Remove header for simplicity
-        alert.setContentText(content); // Set body text
-        alert.showAndWait(); // Display and block
-    } // End method
+    private void showPopup(AlertType type, String title, String content) { 
+        Alert alert = new Alert(type); 
+        alert.setTitle(title); 
+        alert.setHeaderText(null); 
+        alert.setContentText(content); 
+        alert.showAndWait(); 
+    } 
 
     /**
-     * Thread-safe method to append text to the GUI logger.
+     * Updates the status log area on the UI thread.
+     * @param message The text message to append to the log.
+     * @return None.
      */
-    public void appendLog(String message) { // Start method
-        Platform.runLater(() -> { // Transition logic to the Application Thread
-            txtLog.appendText("> " + message + "\n"); // Append text with a prefix
-        }); // End thread block
-    } // End method
-    
-} // End of NewReservationController class
+    public void appendLog(String message) { 
+        Platform.runLater(() -> { 
+            txtLog.appendText("> " + message + "\n"); 
+        }); 
+    } 
+}

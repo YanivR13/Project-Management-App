@@ -20,164 +20,166 @@ import terminalGUI.Controllers.TerminalControllers.TerminalMenuController; // Ne
 import javafx.application.Platform; // Importing Platform for thread-safe UI updates
 
 /**
- * Integrated SubscriberLoginController.
- * Merges the professional "Pipe" architecture with Eden's Terminal/Remote source logic.
+ * Integrated controller for the Subscriber Login screen.
+ * This class handles authentication requests and orchestrates navigation to various 
+ * dashboards based on the user's role and the login source (Terminal vs. Remote).
  */
-public class SubscriberLoginController extends BaseMenuController { // Start class definition extending BaseMenuController
+public class SubscriberLoginController extends BaseMenuController { 
 
     // --- FXML UI Components ---
-    @FXML private TextField txtSubscriberID; // TextField for entering the unique Subscriber ID
-    @FXML private Button btnLogin; // Button to trigger the login verification process
-    @FXML private TextArea txtLog; // Multi-line text area for displaying status logs
+    @FXML private TextField txtSubscriberID; 
+    @FXML private Button btnLogin; 
+    @FXML private TextArea txtLog; 
 
     // --- Eden's Logic Integration ---
-    private LoginSource loginSource = LoginSource.REMOTE; // Defaulting to remote login source
+    private LoginSource loginSource = LoginSource.REMOTE; 
 
     /**
-     * Sets the origin of the login request (Terminal vs. Remote).
-     * @param source The source of the login.
+     * Sets the origin of the login request to distinguish between Terminal and Remote flows.
+     * @param source The login source (REMOTE or TERMINAL).
+     * @return None.
      */
-    public void setLoginSource(LoginSource source) { // Start method
-        this.loginSource = source; // Assigning the source value
-    } // End method
+    public void setLoginSource(LoginSource source) { 
+        this.loginSource = source; 
+    } 
 
     /**
-     * Triggered automatically when the client and session data are ready.
+     * Hook method triggered when the client connection is established.
+     * Logs the current session status and identity.
+     * @return None.
      */
-    @Override // Overriding method from BaseMenuController
-    public void onClientReady() { // Start of onClientReady method
-        // Inform the user that the portal connection is established
-        appendLog("Connected to Portal. Waiting for login..."); // Appending status log
+    @Override 
+    public void onClientReady() { 
+        appendLog("Connected to Portal. Waiting for login..."); 
+        appendLog("Identity: " + userType + " | Source: " + loginSource); 
+    } 
+
+    /**
+     * Processes the login attempt by sending the subscriber ID to the server.
+     * @param event The ActionEvent triggered by the login button.
+     * @return None.
+     */
+    @FXML 
+    void clickLogin(ActionEvent event) { 
+        String subID = txtSubscriberID.getText(); 
         
-        // Log the current session identity and the login source for tracking
-        appendLog("Identity: " + userType + " | Source: " + loginSource); // Appending session info
-    } // End of onClientReady method
+        if (subID.isEmpty()) { 
+            appendLog("Error: Please enter a Subscriber ID."); 
+            return; 
+        } 
 
-    /**
-     * Handles the login button click event.
-     */
-    @FXML // Linking the method to FXML action
-    void clickLogin(ActionEvent event) { // Start of clickLogin method
-        String subID = txtSubscriberID.getText(); // Extracting input string
-        
-        if (subID.isEmpty()) { // Validation check
-            appendLog("Error: Please enter a Subscriber ID."); // Log validation error
-            return; // Terminate execution
-        } // End of check
-
-        if (client != null) { // Start of client null check
-            appendLog("Attempting login for ID: " + subID); // Appending attempt log
-            ArrayList<String> msg = new ArrayList<>(); // Initializing protocol list
-            msg.add("LOGIN_SUBSCRIBER"); // Adding command
-            msg.add(subID); // Adding payload
-            client.handleMessageFromClientUI(msg); // Transmitting to server
-        } else { // If client is null
-            appendLog("Fatal Error: No server connection!"); // Logging error
-        } // End of else
-    } // End of clickLogin method
+        if (client != null) { 
+            appendLog("Attempting login for ID: " + subID); 
+            ArrayList<String> msg = new ArrayList<>(); 
+            msg.add("LOGIN_SUBSCRIBER"); 
+            msg.add(subID); 
+            client.handleMessageFromClientUI(msg); 
+        } else { 
+            appendLog("Fatal Error: No server connection!"); 
+        } 
+    } 
 
     /**
      * Navigates back to the appropriate previous screen based on the login source.
+     * @param event The ActionEvent triggered by the back button.
+     * @return None.
      */
-    @FXML // Linking to FXML action
-    void clickBack(ActionEvent event) { // Start of clickBack method
-        try { // Start of navigation try block
-            FXMLLoader loader; // Declaring loader
-            Parent root; // Declaring root node
+    @FXML 
+    void clickBack(ActionEvent event) { 
+        try { 
+            FXMLLoader loader; 
+            Parent root; 
 
-            // Branching logic based on Eden's loginSource
-            if (loginSource == LoginSource.TERMINAL) { // If originating from terminal
-                loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/TerminalLoginFrame.fxml")); // Set terminal path
-                root = loader.load(); // Loading terminal UI
+            if (loginSource == LoginSource.TERMINAL) { 
+                loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/TerminalLoginFrame.fxml")); 
+                root = loader.load(); 
                 
-                Object controller = loader.getController(); // Accessing controller
-                if (controller instanceof TerminalLoginController) { // If it's a Terminal controller
-                    ((TerminalLoginController) controller).setClient(client); // Injecting client
-                } // End terminal check
-            } else { // If originating from remote portal
-                loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml")); // Set remote path
-                root = loader.load(); // Loading remote UI
+                Object controller = loader.getController(); 
+                if (controller instanceof TerminalLoginController) { 
+                    ((TerminalLoginController) controller).setClient(client); 
+                } 
+            } else { 
+                loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml")); 
+                root = loader.load(); 
                 
-                Object controller = loader.getController(); // Accessing controller
-                if (controller instanceof BaseMenuController) { // If it uses the Base architecture
-                    ((BaseMenuController) controller).setClient(client, userType, userId); // Injecting session
-                } // End remote check
-            } // End of source branching
+                Object controller = loader.getController(); 
+                if (controller instanceof BaseMenuController) { 
+                    ((BaseMenuController) controller).setClient(client, userType, userId); 
+                } 
+            } 
 
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Getting stage
-            stage.setScene(new Scene(root)); // Updating scene
-            stage.show(); // Displaying window
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); 
+            stage.setScene(new Scene(root)); 
+            stage.show(); 
             
-        } catch (Exception e) { // Handling errors
-            e.printStackTrace(); // Printing trace
-        } // End of try-catch
-    } // End of clickBack method
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+        } 
+    } 
 
     /**
-     * Processes incoming server messages and routes to the correct Menu based on source.
+     * Handles server responses and routes the user to the correct dashboard on the UI thread.
+     * @param message The server response object.
+     * @return None.
      */
-    @Override // Overriding display method from ChatIF
-    @SuppressWarnings("unchecked") // Suppressing cast warnings
-    public void display(Object message) { // Start of display method
-        if (message instanceof ArrayList) { // Start of ArrayList check
-            ArrayList<Object> res = (ArrayList<Object>) message; // Casting object
-            String status = res.get(0).toString(); // Getting status string
+    @Override 
+    @SuppressWarnings("unchecked") 
+    public void display(Object message) { 
+        if (message instanceof ArrayList) { 
+            ArrayList<Object> res = (ArrayList<Object>) message; 
+            String status = res.get(0).toString(); 
 
-            if (status.equals("LOGIN_SUCCESS")) { // Successful authentication
-                appendLog("Login confirmed! Loading dashboard..."); // Logging success
-                int userIdFromDB = (int) res.get(1); // Extracting official ID
+            if (status.equals("LOGIN_SUCCESS")) { 
+                appendLog("Login confirmed! Loading dashboard..."); 
+                int userIdFromDB = (int) res.get(1); 
                 String userStatusFromDB = (String)res.get(2);
                 
-                // Transition to the JavaFX Application thread for navigation
-                Platform.runLater(() -> { // Start of UI thread execution
-                    // Branching navigation based on Eden's loginSource logic
-                    if (loginSource == LoginSource.TERMINAL) { // If terminal source
-                        navigateToTerminal(userIdFromDB); // Navigate to Terminal Menu
-                    } else { 
-                    	// Navigation based on subscriber status
-                    	if ("subscriber".equalsIgnoreCase(userStatusFromDB)) {
+                Platform.runLater(() -> { 
+                    if (loginSource == LoginSource.TERMINAL) { 
+                        navigateToTerminal(userIdFromDB); 
+                    } else {  
+                        if ("subscriber".equalsIgnoreCase(userStatusFromDB)) {
                             navigateToMenu(userIdFromDB);
                         } else if ("manager".equalsIgnoreCase(userStatusFromDB)) {
-                                navigateToManagerMenu(userIdFromDB);
+                            navigateToManagerMenu(userIdFromDB);
                         } else if ("representative".equalsIgnoreCase(userStatusFromDB)) {
-                                navigateToRepresentativeMenu(userIdFromDB);
+                            navigateToRepresentativeMenu(userIdFromDB);
                         }
-
-                    } // End of branching
-                }); // End of runLater lambda
-            } else { // For any other server response
-                appendLog("Server Response: " + res.toString()); // Logging raw feedback
-            } // End status check
-        } else if (message != null) { // Simple string message check
-            appendLog(message.toString()); // Logging message content
-        } // End of message processing
-    } // End of display method
+                    } 
+                }); 
+            } else { 
+                appendLog("Server Response: " + res.toString()); 
+            } 
+        } else if (message != null) { 
+            appendLog(message.toString()); 
+        } 
+    } 
 
     /**
-     * Navigates the subscriber to the standard Subscriber Menu.
+     * Navigates the user to the standard Subscriber Menu.
+     * @param userIdFromDB The unique database ID of the subscriber.
+     * @return None.
      */
-    private void navigateToMenu(int userIdFromDB) { // Start method
-        try { // Start try
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml")); // Set path
-            Parent root = loader.load(); // Load root
+    private void navigateToMenu(int userIdFromDB) { 
+        try { 
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml")); 
+            Parent root = loader.load(); 
             
-            if (loader.getController() instanceof BaseMenuController) { // Check type
-                ((BaseMenuController) loader.getController()).setClient(client, "Subscriber", userIdFromDB); // Inject session
-            } // End check
+            if (loader.getController() instanceof BaseMenuController) { 
+                ((BaseMenuController) loader.getController()).setClient(client, "Subscriber", userIdFromDB); 
+            } 
             
-            updateStage(root, "Subscriber Dashboard"); // Update display
-        } catch (Exception e) { // Handle error
-            e.printStackTrace(); // Log trace
-            appendLog("UI Error: Could not load Menu."); // Inform user
-        } // End try-catch
-    } // End method
+            updateStage(root, "Subscriber Dashboard"); 
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            appendLog("UI Error: Could not load Menu."); 
+        } 
+    } 
 
     /**
-     * Navigates the subscriber to the Physical Terminal Menu (Eden's logic).
-     */
-    /**
-     * Navigates the subscriber to the Physical Terminal Menu (Eden's logic).
-     * מעביר את ה-ID הנכון כדי ששחזור הקודים יעבוד
+     * Navigates the user to the Physical Terminal Menu.
+     * @param userIdFromDB The unique database ID of the subscriber.
+     * @return None.
      */
     private void navigateToTerminal(int userIdFromDB) {
         try {
@@ -185,7 +187,6 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
             Parent root = loader.load();
             TerminalMenuController controller = loader.getController();
             
-            // הזרקת ה-ID האמיתי (למשל 1) לקונטרולר של התפריט
             controller.setClient(client, "Subscriber", userIdFromDB);
 
             updateStage(root, "Customer Service Terminal");
@@ -195,17 +196,17 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
     }
     
     /**
-     * Navigates the manager to the Manager Menu.
+     * Navigates the user to the Manager dashboard.
+     * @param userIdFromDB The unique database ID of the manager.
+     * @return None.
      */
     private void navigateToManagerMenu(int userIdFromDB) {
         try {
-            FXMLLoader loader = new FXMLLoader(
-            		getClass().getResource("/managmentGUI/ManagerDashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/managmentGUI/ManagerDashboard.fxml"));
             Parent root = loader.load();
 
             if (loader.getController() instanceof BaseMenuController) {
-                ((BaseMenuController) loader.getController())
-                    .setClient(client, "Manager", userIdFromDB);
+                ((BaseMenuController) loader.getController()).setClient(client, "Manager", userIdFromDB);
             }
 
             updateStage(root, "Manager Dashboard");
@@ -215,19 +216,18 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
         }
     }
     
-    
     /**
-     * Navigates the representative to the Representative Menu.
+     * Navigates the user to the Representative dashboard.
+     * @param userIdFromDB The unique database ID of the representative.
+     * @return None.
      */
     private void navigateToRepresentativeMenu(int userIdFromDB) {
         try {
-            FXMLLoader loader = new FXMLLoader(
-            		getClass().getResource("/managmentGUI/RepresentativeDashboard.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/managmentGUI/RepresentativeDashboard.fxml"));
             Parent root = loader.load();
 
             if (loader.getController() instanceof BaseMenuController) {
-                ((BaseMenuController) loader.getController())
-                    .setClient(client, "Representative", userIdFromDB);
+                ((BaseMenuController) loader.getController()).setClient(client, "Representative", userIdFromDB);
             }
 
             updateStage(root, "Representative Dashboard");
@@ -237,15 +237,16 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
         }
     }
 
-
     /**
-     * Shared utility for updating the stage and applying CSS.
+     * Updates the primary stage with a new scene and sets the window title.
+     * @param root  The root node of the new scene.
+     * @param title The title for the stage.
+     * @return None.
      */
     private void updateStage(Parent root, String title) {
         Stage stage = (Stage) btnLogin.getScene().getWindow();
         Scene scene = new Scene(root);
 
-        // Apply global CSS only for non-management screens
         if (!title.contains("Manager") && !title.contains("Representative")) {
             if (getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css") != null) {
                 scene.getStylesheets().add(
@@ -259,16 +260,16 @@ public class SubscriberLoginController extends BaseMenuController { // Start cla
         stage.show();
     }
 
-
     /**
-     * Appends a message to the UI log area in a thread-safe manner.
+     * Appends a status message to the UI log area in a thread-safe manner.
+     * @param message The text message to display.
+     * @return None.
      */
-    public void appendLog(String message) { // Start method
-        Platform.runLater(() -> { // Ensuring UI thread execution
-            if (txtLog != null) { // Component check
-                txtLog.appendText("> " + message + "\n"); // Appending text
-            } // End check
-        }); // End lambda
-    } // End method
-    
-} // End of integrated SubscriberLoginController class
+    public void appendLog(String message) { 
+        Platform.runLater(() -> { 
+            if (txtLog != null) { 
+                txtLog.appendText("> " + message + "\n"); 
+            } 
+        }); 
+    } 
+}

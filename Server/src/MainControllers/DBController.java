@@ -64,10 +64,8 @@ public class DBController {
             "root",
             "Ya212104483"
 
-        );
+        );}
 
-        System.out.println("SQL connection succeed");
-    }
     
     /**
      * Provides the global connection object to other DAOs and Controllers.

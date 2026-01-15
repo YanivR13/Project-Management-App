@@ -14,112 +14,107 @@ import common.Bill; // Import the Bill data transfer object
 import common.Visit; // Import the Visit entity class
 
 /**
- * Controller class for the Payment UI screen.
- * Handles the final bill calculation, display, and submission to the server.
+ * Controller for the Payment UI screen in the Bistro system.
+ * This class manages the final billing phase, including dynamic price generation, 
+ * membership discount application, and secure transmission of payment data to the server.
  */
-public class PaymentUIController extends BaseMenuController implements ICustomerActions { // Start class definition
+public class PaymentUIController extends BaseMenuController implements ICustomerActions { 
 
-    // Injecting UI labels linked to the FXML layout
-    @FXML private Label lblTableId; // Label to display the table number
-    @FXML private Label lblStartTime; // Label to display the visit start time
-    @FXML private Label lblBaseAmount; // Label to display the initial price
-    @FXML private Label lblDiscount; // Label to display the discount applied
-    @FXML private Label lblFinalAmount; // Label to display the total after discount
-    @FXML private Button btnConfirmPay; // Button to process the payment
+    @FXML private Label lblTableId; 
+    @FXML private Label lblStartTime; 
+    @FXML private Label lblBaseAmount; 
+    @FXML private Label lblDiscount; 
+    @FXML private Label lblFinalAmount; 
+    @FXML private Button btnConfirmPay; 
 
-    // Internal session and data storage fields
-    //private ChatClient client; // Reference to the active network client
-    //private String userType; // Stores the role of the user (e.g., Subscriber)
-    //private int userId; // Stores the unique identifier of the user
-
-    // Tracking IDs required for the backend transaction
-    private long currentBillId; // The ID of the bill being processed
-    private long currentConfirmationCode; // The code linking the bill to a reservation
+    /** Cached ID for the bill record in the database. */
+    private long currentBillId; 
+    
+    /** Cached confirmation code linking the payment to a specific reservation. */
+    private long currentConfirmationCode; 
 
     /**
-     * Initializes the payment screen with visit details and calculates the final price.
+     * Initializes the payment dashboard with visit-specific data and performs price calculations.
+     * Generates a random base amount and applies a 10% discount for registered subscribers.
+     * @param client       The active network client instance.
+     * @param userType     The role/type of the user.
+     * @param userId       The unique identification of the user.
+     * @param visit        The Visit object containing table and timing information.
+     * @param isSubscriber Flag indicating if the user is eligible for a member discount.
+     * @return None.
      */
-    public void setupPayment(ChatClient client, String userType, int userId, Visit visit, boolean isSubscriber) { // Start method
+    public void setupPayment(ChatClient client, String userType, int userId, Visit visit, boolean isSubscriber) { 
         
-        // Initializing the session data fields
-        this.client = client; // Assign client reference
-        this.userType = userType; // Assign user role string
-        this.userId = userId; // Assign user unique ID
+        this.client = client; 
+        this.userType = userType; 
+        this.userId = userId; 
         
-        // Caching IDs needed for the database update later
-        this.currentBillId = visit.getBillId(); // Retrieve bill ID from visit object
-        this.currentConfirmationCode = visit.getConfirmationCode(); // Retrieve confirmation code
+        this.currentBillId = visit.getBillId(); 
+        this.currentConfirmationCode = visit.getConfirmationCode(); 
         
-        // Updating the UI with the static visit information
-        lblTableId.setText(String.valueOf(visit.getTableId())); // Set table ID text
-        lblStartTime.setText(visit.getStartTime()); // Set start time text
+        lblTableId.setText(String.valueOf(visit.getTableId())); 
+        lblStartTime.setText(visit.getStartTime()); 
 
-        // Business Logic Simulation: Generate a random base price (Range: 150 - 450)
-        Random random = new Random(); // Initialize random generator
-        double randomBaseAmount = 150 + (300 * random.nextDouble()); // Perform random calculation
-        lblBaseAmount.setText(String.format("%.2f ₪", randomBaseAmount)); // Format and display base price
+        Random random = new Random(); 
+        double randomBaseAmount = 150 + (300 * random.nextDouble()); 
+        lblBaseAmount.setText(String.format("%.2f ₪", randomBaseAmount)); 
 
-        // Initialization of calculation variables
-        double discountPercent = 0.0; // Default discount to zero
+        double discountPercent = 0.0; 
         
-        // Refactored Logic: Using a cleaner approach for discount assignment and styling
-        if (isSubscriber) { // Check if the user is a registered member
-            discountPercent = 10.0; // Apply the 10% discount logic
-            lblDiscount.setText("10% (Member)"); // Update label text for members
-            lblDiscount.setStyle("-fx-text-fill: green; -fx-font-weight: bold;"); // Apply positive visual styling
-        } else { // Handle non-subscriber (Occasional) users
-            discountPercent = 0.0; // Ensure discount remains zero
-            lblDiscount.setText("0%"); // Update label text
-            lblDiscount.setStyle("-fx-text-fill: red;"); // Apply standard visual styling
-        } // End of subscriber check
+        if (isSubscriber) { 
+            discountPercent = 10.0; 
+            lblDiscount.setText("10% (Member)"); 
+            lblDiscount.setStyle("-fx-text-fill: green; -fx-font-weight: bold;"); 
+        } else { 
+            discountPercent = 0.0; 
+            lblDiscount.setText("0%"); 
+            lblDiscount.setStyle("-fx-text-fill: red;"); 
+        } 
 
-        // Final Calculation: Calculate the total after applying the percentage
-        double finalTotal = randomBaseAmount * (1 - (discountPercent / 100)); // Mathematical calculation
-        lblFinalAmount.setText(String.format("%.2f ₪", finalTotal)); // Display formatted total to user
+        double finalTotal = randomBaseAmount * (1 - (discountPercent / 100)); 
+        lblFinalAmount.setText(String.format("%.2f ₪", finalTotal)); 
         
-    } // End of setupPayment method
+    } 
 
     /**
-     * Event handler for the "Confirm & Pay" button.
+     * Processes the payment transaction when the confirm button is clicked.
+     * Parses the calculated values into a Bill DTO and transmits it to the server.
+     * @param event The ActionEvent triggered by the payment button.
+     * @return None.
      */
-    @FXML // Link to FXML action
-    private void onPayClicked(ActionEvent event) { // Start of pay action method
+    @FXML 
+    private void onPayClicked(ActionEvent event) { 
         
-        try { // Start error handling block for data parsing
-            
-            // Step 1: Extract numeric values from the UI labels using string cleanup
-            double base = Double.parseDouble(lblBaseAmount.getText().replace(" ₪", "")); // Remove currency symbol and parse
-            double discount = Double.parseDouble(lblDiscount.getText().replaceAll("[^0-9.]", "")); // Extract only numbers from discount text
-            double finalPrice = Double.parseDouble(lblFinalAmount.getText().replace(" ₪", "")); // Remove currency symbol and parse
+        try { 
+            double base = Double.parseDouble(lblBaseAmount.getText().replace(" ₪", "")); 
+            double discount = Double.parseDouble(lblDiscount.getText().replaceAll("[^0-9.]", "")); 
+            double finalPrice = Double.parseDouble(lblFinalAmount.getText().replace(" ₪", "")); 
 
-            // Step 2: Create a Bill DTO object with the parsed values and cached IDs
-            Bill bill = new Bill(currentBillId, currentConfirmationCode, base, discount, finalPrice); // Initialize Bill object
+            Bill bill = new Bill(currentBillId, currentConfirmationCode, base, discount, finalPrice); 
 
-            // Step 3: Construct the communication message and transmit to server
-            ArrayList<Object> message = new ArrayList<>(); // Initialize message list
-            message.add("PROCESS_PAYMENT"); // Add the command header
-            message.add(bill); // Add the bill payload
-            client.handleMessageFromClientUI(message); // Send list through the client
+            ArrayList<Object> message = new ArrayList<>(); 
+            message.add("PROCESS_PAYMENT"); 
+            message.add(bill); 
+            client.handleMessageFromClientUI(message); 
 
-            // Step 4: UI Feedback - Show success message to the user
-            Alert alert = new Alert(AlertType.INFORMATION); // Create information alert
-            alert.setTitle("Payment Confirmation"); // Set window title
-            alert.setHeaderText("Transaction Successful!"); // Set header text
-            alert.setContentText("Payment processed and Table " + lblTableId.getText() + " is now available.\nReturning to Main Menu..."); // Set body text
-            alert.showAndWait(); // Display dialog and wait for user to close it
+            Alert alert = new Alert(AlertType.INFORMATION); 
+            alert.setTitle("Payment Confirmation"); 
+            alert.setHeaderText("Transaction Successful!"); 
+            alert.setContentText("Payment processed and Table " + lblTableId.getText() + " is now available.\nReturning to Main Menu..."); 
+            alert.showAndWait(); 
 
-            // Step 5: Transition - Return the user to the appropriate menu screen
-            returnToMainMenu(event); // Call navigation helper
+            returnToMainMenu(event); 
 
-        } catch (Exception e) { // Catch any parsing or communication errors
-            // Log the exception stack trace for debugging purposes
-            e.printStackTrace(); // Print technical error details
-        } // End of try-catch block
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+        } 
         
-    } // End of onPayClicked method
+    } 
 
     /**
-     * Navigates the user back to their respective main menu based on their user type.
+     * Helper method to determine the correct navigation path and return the user to the main menu.
+     * @param event The ActionEvent used to identify the current window stage.
+     * @return None.
      */
     private void returnToMainMenu(ActionEvent event) {
         String path = "";
@@ -139,8 +134,20 @@ public class PaymentUIController extends BaseMenuController implements ICustomer
         navigateTo(client, event, userType, userId, path, "Bistro - Main Menu");
     }
 
-    // Interface requirement implementations (No logic changes permitted)
-    @Override public void viewOrderHistory(ChatClient client, int userId) {} // Empty stub
-    @Override public void editPersonalDetails(ChatClient client, int userId) {} // Empty stub
+    /**
+     * Implementation stub for viewing order history.
+     * @param client The network client.
+     * @param userId The unique user identifier.
+     * @return None.
+     */
+    @Override public void viewOrderHistory(ChatClient client, int userId) {} 
     
-} // End of PaymentUIController class
+    /**
+     * Implementation stub for editing personal details.
+     * @param client The network client.
+     * @param userId The unique user identifier.
+     * @return None.
+     */
+    @Override public void editPersonalDetails(ChatClient client, int userId) {} 
+    
+}

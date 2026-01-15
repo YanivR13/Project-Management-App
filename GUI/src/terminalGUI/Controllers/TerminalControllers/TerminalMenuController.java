@@ -9,8 +9,6 @@ import javafx.stage.Stage;
 import java.util.List;
 import java.util.ArrayList;
 
-
-import javafx.scene.control.Alert;
 import client.ChatClient;
 import clientGUI.Controllers.RemoteLoginController;
 import clientGUI.Controllers.MenuControlls.BaseMenuController;
@@ -19,27 +17,17 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.control.Button;
-import clientGUI.Controllers.MenuControlls.BaseMenuController;
 
 /**
- * Minimal controller for the Customer Service Terminal screen.
- *
- * This controller currently serves as a placeholder to:
- * 1. Allow the Terminal UI to load correctly.
- * 2. Maintain architectural consistency with other client controllers.
- * 3. Support future expansion (button actions, navigation, server requests).
- *
- * No button logic is implemented at this stage.
- *
- * @author Software Engineering Student
+ * Controller for the main Customer Service Terminal menu.
+ * This class handles the primary navigation for walk-in customers and existing reservation 
+ * holders, providing access to arrival confirmation, waiting list management, and 
+ * reservation code recovery.
+ * * @author Software Engineering Student
  * @version 1.0
  */
 public class TerminalMenuController extends BaseMenuController implements ChatIF {
 
-    /** Persistent network client (injected on application startup) */
-    
-    
     // FXML Button Bindings
     @FXML
     private Button btnLostConfirmationCode;
@@ -53,22 +41,23 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
     @FXML
     private Button btnArrival;
    
-
     /**
-     * Injects the shared ChatClient instance into the controller.
-     *
-     * @param client Active network client
+     * Injects the shared ChatClient instance into the controller to maintain the network session.
+     * @param client The active network client instance.
+     * @return None.
      */
     public void setClient(ChatClient client) {
         this.client = client;
     }
     
     /**
-     * Handles "Lost Reservation Code" button click.
+     * Handles the "Lost Reservation Code" action. Sends a request to the server 
+     * to retrieve all active codes associated with the current user's ID.
+     * @param event The ActionEvent triggered by the button click.
+     * @return None.
      */
     @FXML
     private void handleLostConfirmationCode(ActionEvent event) {
-        // שליחת הודעה לשרת עם ה-ID של המשתמש (למשל "1")
         ArrayList<Object> message = new ArrayList<>();
         message.add("CARD_READER_GET_CODES");
         message.add(String.valueOf(userId)); 
@@ -79,20 +68,14 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
     }
     
     /**
-     * Handles "Manage Reservation" button click.
+     * Handles the "Manage Reservation" action. Navigates the user to the management 
+     * frame where they can cancel or pay for their reservation.
+     * @param event The ActionEvent triggered by the button click.
+     * @return None.
      */
-    
-    
-    
-    
-    
-    
-    
-    
-    
     @FXML
     private void handleManageReservation(ActionEvent event) {
-    	try {
+        try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/ManageReservationFrame.fxml"));
             Parent root = loader.load();
 
@@ -109,7 +92,10 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
     }
     
     /**
-     * Handles "Join Waiting List" button click.
+     * Handles the "Join Waiting List" action. Navigates the user to the waiting list 
+     * configuration screen to select group size and join the queue.
+     * @param event The ActionEvent triggered by the button click.
+     * @return None.
      */
     @FXML
     private void handleJoinWaitingList(ActionEvent event) {
@@ -122,13 +108,10 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
 
             Parent root = loader.load();
 
-            // Inject ChatClient
-            TerminalWaitingListSizeController controller =
-                    loader.getController();
+            TerminalWaitingListSizeController controller = loader.getController();
             controller.setClient(client);
 
-            Stage stage = (Stage) ((Node) event.getSource())
-                    .getScene().getWindow();
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
 
             stage.setScene(new Scene(root));
             stage.setTitle("Join Waiting List");
@@ -140,21 +123,21 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
     }
     
     /**
-     * Handles "I'm Here" button click.
+     * Handles the "I'm Here" (Arrival) action. Transitions to the code entry screen 
+     * for reservation confirmation and table assignment.
+     * @param event The ActionEvent triggered by the button click.
+     * @return None.
      */
     @FXML
     private void handleArrival(ActionEvent event) {
-    	try {
-            // 1. Load the Arrival Code Entry screen
+        try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalArrivalFrame.fxml"));
             Parent root = loader.load();
 
-            // 2. Access the new controller and inject the ChatClient
             VisitUIController controller = loader.getController();
             controller.setClient(client);
-            controller.onClientReady(); // Register this screen to receive server messages
+            controller.onClientReady(); 
 
-            // 3. Switch the Scene
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.setTitle("Bistro - Customer Arrival");
@@ -166,7 +149,9 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
     }
     
     /**
-     * Logs out from the terminal and returns to the terminal login screen.
+     * Logs the current session out from the terminal and returns to the terminal login portal.
+     * @param event The ActionEvent triggered by the logout button.
+     * @return None.
      */
     @FXML
     private void clickLogOut(ActionEvent event) {
@@ -181,7 +166,6 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
                 ((TerminalLoginController) nextController).setClient(client);
             }
 
-            // (Optional but clean) rebind UI
             if (nextController instanceof ChatIF && client != null) {
                 client.setUI((ChatIF) nextController);
             }
@@ -205,10 +189,11 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
     }
 
     /**
-     * Receives messages from the server.
-     * Currently logs messages to stdout (placeholder behavior).
-     *
-     * @param message Incoming server message
+     * Receives and processes messages from the server.
+     * Specifically handles the recovery of active reservation codes and displays 
+     * them in a thread-safe UI alert.
+     * @param message The server response object (expected to be a List of strings).
+     * @return None.
      */
     @Override
     public void display(Object message) {
@@ -229,9 +214,11 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
         }
     }
 
-    
     /**
-     * פונקציית עזר להצגת הודעה (מופיעה פעם אחת בלבד!)
+     * Internal utility method to display a standardized information alert.
+     * @param title   The alert window title.
+     * @param content The message body.
+     * @return None.
      */
     private void showInformationAlert(String title, String content) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -240,10 +227,4 @@ public class TerminalMenuController extends BaseMenuController implements ChatIF
         alert.setContentText(content);
         alert.showAndWait();
     }
-    
-    
-    
-    
-    
-    
 }

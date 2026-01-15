@@ -1,69 +1,67 @@
 package common; // Defining the package location for this class
 
-import java.io.Serializable; // Importing the Serializable interface for object transmission
+import java.io.Serializable; // Importing the interface for object transmission
 
 /**
- * The WaitingListEntry class represents a customer waiting for an available table.
- * This class is used to track people who couldn't find an immediate reservation.
+ * Represents a customer on the restaurant's waiting list.
+ * This class tracks entries for diners who could not find an immediate reservation.
  */
-public class WaitingListEntry implements Serializable { // Defining the class and implementing Serializable
+public class WaitingListEntry implements Serializable { 
 
-    // Serial version identifier to ensure class compatibility during serialization
+    /** Serial version identifier for serialization compatibility. */
     private static final long serialVersionUID = 1L;
 
-    // Unique confirmation code identifying this specific waiting entry
+    /** Unique confirmation code identifying this specific waiting entry. */
     private long confirmationCode;
     
-    // The timestamp when the customer was added to the waiting list
+    /** The timestamp when the customer was added to the waiting list. */
     private String entryTime;
     
-    // Total number of guests associated with this entry
+    /** Total number of guests associated with this entry. */
     private int numberOfGuests;
     
-    // The unique ID of the user who is waiting
+    /** The unique ID of the user who is waiting. */
     private int userId;
     
-    // Current status of the entry stored as a String (WAITING, NOTIFIED, etc.)
+    /** Current status of the entry (e.g., WAITING, NOTIFIED). */
     private String status; 
     
-    // The timestamp when the customer was notified about an available table
+    /** The timestamp when the customer was notified about an available table. */
     private String notificationTime;
 
     /**
-     * Enum for statuses to avoid typos and provide a reference for valid states.
+     * Enumeration of valid statuses for a waiting list entry.
      */
-    public enum WaitingStatus { // Beginning of WaitingStatus enum definition
-        WAITING,   // The customer is currently in the queue
-        NOTIFIED,  // The customer has been alerted that a table is ready
-        CANCELLED, // The customer removed the entry
-        ARRIVED,    // The customer has arrived and been seated
-        NOSHOW      //The customer didn't arrived to the table
-    } // End of WaitingStatus enum definition
+    public enum WaitingStatus { 
+        /** The customer is currently in the queue. */
+        WAITING,   
+        /** The customer has been alerted that a table is ready. */
+        NOTIFIED,  
+        /** The customer removed the entry. */
+        CANCELLED, 
+        /** The customer has arrived and been seated. */
+        ARRIVED,    
+        /** The customer did not arrive at the table. */
+        NOSHOW      
+    } 
 
     /**
-     * Constructor to initialize a new WaitingListEntry with all required fields.
+     * Constructs a new WaitingListEntry with complete details.
+     * * @param confirmationCode Unique ID identifying this entry.
+     * @param entryTime        Timestamp of addition to the list.
+     * @param numberOfGuests   Total count of diners in the group.
+     * @param userId           Unique ID of the waiting user.
+     * @param status           Current operational status string.
+     * @param notificationTime Timestamp when notification was sent.
      */
-    public WaitingListEntry(long confirmationCode, String entryTime, int numberOfGuests, int userId, String status, String notificationTime) { // Constructor start
-        
-        // Assigning the provided confirmation code to the instance field
+    public WaitingListEntry(long confirmationCode, String entryTime, int numberOfGuests, int userId, String status, String notificationTime) {
         this.confirmationCode = confirmationCode;
-        
-        // Assigning the provided entry time to the instance field
         this.entryTime = entryTime;
-        
-        // Assigning the provided number of guests to the instance field
         this.numberOfGuests = numberOfGuests;
-        
-        // Assigning the provided user ID to the instance field
         this.userId = userId;
-        
-        // Assigning the provided status string to the instance field
         this.status = status;
-        
-        // Assigning the provided notification time to the instance field
         this.notificationTime = notificationTime;
-        
-    } // End of constructor
+    }
 
     // =========================================================================
     // Getters and Setters Section
@@ -71,36 +69,40 @@ public class WaitingListEntry implements Serializable { // Defining the class an
 
     /**
      * Retrieves the confirmation code of the entry.
-     * @return long confirmationCode
+     * * @return The confirmation code as a long.
      */
-    public long getConfirmationCode() { // Start of getConfirmationCode method
-        return confirmationCode;        // Returning the long value
-    } // End of method
+    public long getConfirmationCode() { 
+        return confirmationCode;        
+    } 
 
     /**
      * Retrieves the user ID associated with this entry.
-     * @return int userId
+     * * @return The user ID as an integer.
      */
-    public int getUserId() { // Start of getUserId method
-        return userId;       // Returning the integer value
-    } // End of method
+    public int getUserId() { 
+        return userId;       
+    } 
 
     /**
      * Retrieves the current status of the waiting entry.
-     * @return String status
+     * * @return The status as a String.
      */
-    public String getStatus() { // Start of getStatus method
-        return status;          // Returning the status string
-    } // End of method
+    public String getStatus() { 
+        return status;          
+    } 
     
     /**
      * Retrieves the number of guests for this waiting list entry.
-     * @return int numberOfGuests
+     * * @return The guest count as an integer.
      */
     public int getNumberOfGuests() {
         return numberOfGuests;
     }
     
+    /**
+     * Retrieves the timestamp when the entry was created.
+     * * @return The entry time as a String.
+     */
     public String getEntryTime() {
         return entryTime;
     }

@@ -4,23 +4,34 @@ import java.util.ArrayList;
 import client.ChatClient;
 
 /**
- * קונטרולר צד לקוח - משמש רק כגשר לשליחת הודעות לשרת.
- * אין פה חיבור ל-Database!
+ * Client-side controller for the Card Reader module in the Bistro system.
+ * Acts as a communication bridge to forward hardware-related requests to the server.
  */
 public class CardReaderController {
     
+    /** Static reference to the communication client. */
     private static ChatClient client;
 
+    /**
+     * Sets the static ChatClient instance for server communication.
+     * * @param chatClient The active ChatClient instance to be used.
+     */
     public static void setClient(ChatClient chatClient) {
         client = chatClient;
     }
     
+    /**
+     * Retrieves the current ChatClient instance.
+     * * @return The static ChatClient used for communication.
+     */
     public static ChatClient getClient() {
         return client;
     }
 
-    // שליחת בקשת לוגין לשרת
-  //abc
+    /**
+     * Sends a subscriber login/validation request to the server.
+     * * @param id The identification string of the subscriber.
+     */
     public void validateSubscriber(String id) {
         ArrayList<Object> message = new ArrayList<>();
         // שינוי קריטי: משתמשים ב-LOGIN_SUBSCRIBER כדי שיהיה זהה לטרמינל
@@ -29,7 +40,10 @@ public class CardReaderController {
         client.handleMessageFromClientUI(message);
     }
     
-    // שליחת בקשה לשחזור קודים לשרת
+    /**
+     * Requests a list of lost confirmation codes for a specific user.
+     * * @param id The identification string of the user.
+     */
     public void getLostConfirmationCodes(String id) {
         ArrayList<Object> message = new ArrayList<>();
         message.add("CARD_READER_GET_CODES");
@@ -37,7 +51,11 @@ public class CardReaderController {
         client.handleMessageFromClientUI(message);
     }
 
-    // שליחת בקשה לאימות קוד הגעה לשרת
+    /**
+     * Sends a request to verify a specific arrival confirmation code.
+     * * @param code The confirmation code to be verified.
+     * @param id   The identification string of the user.
+     */
     public void verifyConfirmationCode(String code, String id) {
         ArrayList<Object> message = new ArrayList<>();
         message.add("CARD_READER_VERIFY_CODE");
