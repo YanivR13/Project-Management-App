@@ -100,5 +100,9 @@ public class WaitingListEntry implements Serializable { // Defining the class an
     public int getNumberOfGuests() {
         return numberOfGuests;
     }
+    
+    public String getEntryTime() {
+        return entryTime;
+    }
 
 } // End of WaitingListEntry class

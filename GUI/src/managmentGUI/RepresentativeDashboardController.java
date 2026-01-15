@@ -109,7 +109,14 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
                 ActiveReservationsController controller = new ActiveReservationsController();
                 loader.setController(controller);
                 this.currentSubController = controller;
-            } 
+            }
+            
+         // טיפול במסך רשימת ההמתנה
+            else if (fxmlPath.contains("WaitingList.fxml")) {
+                WaitingListController controller = new WaitingListController();
+                loader.setController(controller);
+                this.currentSubController = controller;
+            }
             
             // --- כאן הוספנו את החלק החדש ---
             // 2. טיפול במסך הסועדים הנוכחיים
@@ -118,7 +125,9 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
                 CurrentDinersController controller = new CurrentDinersController();
                 loader.setController(controller);
                 this.currentSubController = controller;
-            } 
+            }
+            
+            
             // ------------------------------
             
             else {
@@ -475,9 +484,26 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     
     
     
-    @FXML void viewWaitingList(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/WaitingList.fxml"); // Loading sub-view
-    } // End method
+    @FXML 
+    void viewWaitingList(ActionEvent event) { 
+        // 1. טעינת תת-המסך הגרפי (ה-FXML)
+        loadSubScreen("/managmentGUI/ActionsFXML/WaitingList.fxml"); 
+
+        // 2. שליחת הבקשה לשרת לקבלת נתוני רשימת ההמתנה
+        try {
+            appendLog("System: Requesting current waiting list from server...");
+            
+            ArrayList<Object> message = new ArrayList<>();
+            message.add("GET_WAITING_LIST"); // הפקודה החדשה שנממש בשרת
+            
+            if (client != null) {
+                client.handleMessageFromClientUI(message); 
+            }
+        } catch (Exception e) {
+            appendLog("Error: Failed to send request for waiting list.");
+            e.printStackTrace();
+        }
+    }
 
   
     
@@ -626,6 +652,19 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
                     // הזרקה לקונטרולר של טבלת הסועדים
                     if (currentSubController instanceof CurrentDinersController) {
                         ((CurrentDinersController) currentSubController).setTableData(visitsList);
+                    }
+                }
+                
+             // מקרה ג': רשימת ממתינים (WaitingListEntry)
+                else if (firstItem instanceof common.WaitingListEntry) {
+                    @SuppressWarnings("unchecked")
+                    ArrayList<common.WaitingListEntry> waitingList = (ArrayList<common.WaitingListEntry>) genericList;
+                    
+                    appendLog("System: Displaying the active waiting list.");
+
+                    // הזרקה לקונטרולר של טבלת הממתינים
+                    if (currentSubController instanceof WaitingListController) {
+                        ((WaitingListController) currentSubController).setTableData(waitingList);
                     }
                 }
             }); 

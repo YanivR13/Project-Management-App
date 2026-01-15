@@ -29,6 +29,9 @@
             <Button mnemonicParsing="false" onAction="#createNewSubscriber" prefWidth="200.0" text="Create New Subscriber" />
             <Button mnemonicParsing="false" onAction="#viewSubscribersList" prefWidth="200.0" text="View Subscribers List" />
             <Button mnemonicParsing="false" onAction="#viewActiveReservations" prefWidth="200.0" text="View Active Reservations" />
+            
+            <Button mnemonicParsing="false" onAction="#viewWaitingList" prefWidth="200.0" text="View Waiting List" />
+            
             <Button mnemonicParsing="false" onAction="#viewCurrentDiners" prefWidth="200.0" text="View Current Seated Diners" />
             
             <Separator prefWidth="200.0" />

@@ -8,6 +8,7 @@ import serverLogic.managmentLogic.CreateSubscriberHandler;
 import serverLogic.managmentLogic.DeleteSpecialHoursHandler;
 import serverLogic.managmentLogic.GenerateSubReportsHandler;
 import serverLogic.managmentLogic.GenerateTimeReportsHandler;
+import serverLogic.managmentLogic.GetWaitingListHandler;
 import serverLogic.managmentLogic.UpdateHoursHandler; // Import handler for regular hours updates
 import serverLogic.managmentLogic.UpdateSpecialHoursHandler; // Import handler for special hours updates
 import serverLogic.menuLogic.*; // Import all menu-related logic handlers
@@ -449,7 +450,12 @@ public class ServerController extends AbstractServer {
                     } catch (IOException e) {
                         System.err.println("שגיאה בשליחת רשימת הסועדים ללקוח: " + e.getMessage());
                     }
-                    break;     
+                    break;    
+                    
+                case "GET_WAITING_LIST":
+                    // יצירת ה-Handler והפעלה שלו בדיוק לפי התבנית הקיימת בקוד שלך
+                    new GetWaitingListHandler().handle(client);
+                    break;
 
                     
                     

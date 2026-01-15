@@ -6,6 +6,7 @@ import java.sql.ResultSet; // Importing ResultSet to handle query results
 import java.sql.SQLException; // Importing SQLException for database error handling
 import java.sql.Statement; // Importing Statement to retrieve generated keys
 import java.time.LocalDate; // Importing LocalDate for modern date handling
+import java.util.ArrayList;
 import java.util.Date; // Importing Date for legacy support if needed
 import java.util.Map; // Importing Map for storing day-to-range associations
 import MainControllers.DBController; // Importing the singleton DB controller
@@ -396,6 +397,44 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
             } catch (SQLException e) { e.printStackTrace(); }
         } // End finally
     } // End method
+    
+    /**
+     * Fetches all waiting list entries that are in 'WAITING' or 'NOTIFIED' status.
+     * This method is used by the GetWaitingListHandler to provide data for the staff dashboard.
+     * * @return ArrayList of WaitingListEntry objects filtered by status.
+     */
+    public static ArrayList<common.WaitingListEntry> getWaitingListEntries() {
+        ArrayList<common.WaitingListEntry> list = new ArrayList<>();
+        
+        // שאילתה המסננת רשומות שהן בסטטוס המתנה או שכבר קיבלו הודעה
+        String sql = "SELECT * FROM waiting_list_entry WHERE status = 'WAITING' OR status = 'NOTIFIED'";
+        
+        // שימוש בחיבור הקיים דרך ה-DBController של השרת
+        Connection conn = MainControllers.DBController.getInstance().getConnection();
+        
+        try (PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            
+            while (rs.next()) {
+                // יצירת אובייקט WaitingListEntry עבור כל שורה ב-DB
+                // סדר הפרמטרים: confirmationCode, entryTime, numberOfGuests, userId, status, notificationTime
+                common.WaitingListEntry entry = new common.WaitingListEntry(
+                    rs.getLong("confirmation_code"),
+                    rs.getString("entry_time"),
+                    rs.getInt("number_of_guests"),
+                    rs.getInt("user_id"),
+                    rs.getString("status"),
+                    rs.getString("notification_time")
+                );
+                list.add(entry);
+            }
+        } catch (SQLException e) {
+            // תיעוד השגיאה במקרה של בעיה בשליפה מה-DB
+            e.printStackTrace();
+        }
+        
+        return list;
+    }
 
 } // End of class
 
