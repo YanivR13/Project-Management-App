@@ -28,18 +28,17 @@ public class CardReaderHandler {
 	                client.sendToClient(isValid); 
 	                break;
 
-	            case "CARD_READER_GET_CODES": { // השתמש בסוגריים {} למניעת שגיאת Duplicate variable
-	                // 1. קבלת ה-ID מהטרמינל (למשל "502")
+	            case "CARD_READER_GET_CODES": {
 	                String idFromTerminal = (String) data.get(1);
 	                
-	                // 2. קריאה ישירה ללוגיקה ב-viewReservationController (הקישור שביקשת)
-	                List<String> codesList = dbLogic.restaurantDB.viewReservationController.getCodesBySubscriberId(idFromTerminal);
+	                // במקום לקרוא ל-viewReservationController (שכנראה סוגר את החיבור)
+	                // קרא למתודה ב-DBController של הקורא כרטיסים שכתבנו למעלה
+	                List<String> codesList = db.getLostConfirmationCodes(idFromTerminal);
 	                
-	                // 3. שליחה חזרה לטרמינל
 	                client.sendToClient(codesList); 
 	                break;
 	            }
-
+	            
 	            case "CARD_READER_VERIFY_CODE":
 	                String codeStr = (String) data.get(1);
 	                long code = Long.parseLong(codeStr);

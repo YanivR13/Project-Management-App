@@ -242,7 +242,7 @@ public class CardReaderView extends Application implements common.ChatIF {
 	                        codesContainer.getChildren().add(new Label("No active codes found."));
 	                    } else {
 	                        for (String codeStr : codes) {
-	                            Label codeLabel = new Label("Code: " + codeStr);
+	                            Label codeLabel = new Label( codeStr);
 	                            codeLabel.setStyle("-fx-font-size: 18px; -fx-text-fill: #1565c0; -fx-font-weight: bold;");
 	                            codesContainer.getChildren().add(codeLabel);
 	                        }

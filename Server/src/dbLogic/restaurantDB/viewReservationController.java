@@ -137,13 +137,14 @@ public class viewReservationController {
 	*/
 	public static List<String> getCodesBySubscriberId(String idFromClient) {
 	    List<String> codes = new ArrayList<>();
-	    // שאילתה שבודקת גם מול subscriber_id וגם מול user_id
 	    String query = "SELECT r.confirmation_code FROM prototypedb.reservation r " +
 	                   "LEFT JOIN prototypedb.subscriber s ON r.user_id = s.user_id " +
 	                   "WHERE (s.subscriber_id = ? OR r.user_id = ?) AND r.status = 'ACTIVE'";
 
-	    try (Connection conn = MainControllers.DBController.getInstance().getConnection();
-	         PreparedStatement pstmt = conn.prepareStatement(query)) {
+	    // תיקון: הוצאת ה-Connection מה-try-with-resources
+	    Connection conn = MainControllers.DBController.getInstance().getConnection();
+	    
+	    try (PreparedStatement pstmt = conn.prepareStatement(query)) {
 	        pstmt.setString(1, idFromClient);
 	        pstmt.setString(2, idFromClient);
 	        try (ResultSet rs = pstmt.executeQuery()) {
@@ -152,8 +153,10 @@ public class viewReservationController {
 	            }
 	        }
 	    } catch (SQLException e) {
-	        System.err.println("Database Error: " + e.getMessage());
+	        // כאן השגיאה מודפסת והמתודה מחזירה רשימה ריקה במקום לקרוס
+	        System.err.println("Database Error during recovery: " + e.getMessage());
 	    }
 	    return codes;
 	}
+	
 }

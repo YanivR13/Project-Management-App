@@ -40,22 +40,20 @@ public class CardReaderDBController {
     /**
      * פונקציה 2: שליפת קודים אבודים מטבלת ה-reservation.
      */
-    public List<String> getLostConfirmationCodes(String subscriberID) {
+    public List<String> getLostConfirmationCodes(String id) {
         List<String> activeCodes = new ArrayList<>();
-        // שליפת הקוד והתאריך מטבלת reservation המחוברת למנוי
+        // עדכון השאילתה: חיפוש כפול (גם לפי מזהה מנוי וגם לפי מזהה משתמש)
         String query = "SELECT r.confirmation_code, r.reservation_datetime FROM reservation r " +
-                       "JOIN subscriber s ON r.user_id = s.user_id " +
-                       "WHERE s.subscriber_id = ? AND r.status = 'ACTIVE'";
+                       "LEFT JOIN subscriber s ON r.user_id = s.user_id " +
+                       "WHERE (s.subscriber_id = ? OR r.user_id = ?) AND r.status = 'ACTIVE'";
 
         Connection conn = DBController.getInstance().getConnection();
-
         try (PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setString(1, subscriberID);
+            pstmt.setString(1, id); // יחפש 1028
+            pstmt.setString(2, id); // יחפש 28
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    String code = rs.getString("confirmation_code"); 
-                    String dateTime = rs.getString("reservation_datetime");   
-                    activeCodes.add("Date: " + dateTime + " | Code: " + code);
+                    activeCodes.add("Code: " + rs.getString("confirmation_code"));
                 }
             }
         } catch (SQLException e) {
@@ -63,7 +61,8 @@ public class CardReaderDBController {
         }
         return activeCodes;
     }
-
+    
+    
     /**
      * פונקציה 3: אימות קוד הגעה ועדכון סטטוס ל-COMPLETED בטבלת reservation.
      */
