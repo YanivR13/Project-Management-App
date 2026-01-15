@@ -60,17 +60,10 @@ public class DBController {
          * - serverTimezone: Aligns Java LocalDateTime with the database's clock.
          */
         conn = DriverManager.getConnection(
-            "jdbc:mysql://localhost:3306/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false&allowPublicKeyRetrieval=true",
-            "root",
-<<<<<<< HEAD
-            "Ss5157110!"
-=======
-            "Rochlin99!"
->>>>>>> branch 'development' of https://github.com/YanivR13/Project-Management-App.git
-        );
-
-        System.out.println("SQL connection succeed");
-    }
+        	    "jdbc:mysql://localhost:3306/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false&allowPublicKeyRet",
+        	    "root",
+        	    "Rochlin99!"); 
+        	System.out.println("SQL connection succeed"); }
     
     /**
      * Provides the global connection object to other DAOs and Controllers.
