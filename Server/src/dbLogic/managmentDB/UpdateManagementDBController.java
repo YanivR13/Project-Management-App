@@ -289,22 +289,22 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
         }
     }
     
-    
     /**
-     * Automated method to monitor diner stay duration.
-     * This method fetches all visits currently in 'ARRIVED' status where the start_time 
-     * exceeds 120 minutes from the current time. 
-     * For each violation, an alert is logged to the Server UI, and the visit status 
-     * is updated to 'BILL_PENDING' to ensure the notification is sent only once.
+     * Automated task to send pre-arrival reminders for upcoming reservations.
+     * This method scans the 'reservation' table for 'ACTIVE' status records 
+     * where the 'reservation_datetime' is within the next 2 hours.
+     * Upon detection, a reminder is logged to the Server UI, and the status 
+     * is updated to 'NOTIFIED' to prevent duplicate notifications in the next cycle.
      */
     public static void checkReservationReminders() {
-        // שאילתה: שולפת הזמנות בסטטוס ACTIVE שהמועד שלהן הוא בעוד שעתיים או פחות
-        // CONCAT מחבר את התאריך והשעה למחרוזת אחת לצורך השוואה מול NOW()
-        String selectSql = "SELECT r.reservation_id, r.user_id, r.reservation_time " +
+        // השאילתה המעודכנת:
+        // 1. משתמשת ב-reservation_datetime המאוחד
+        // 2. בודקת הפרש דקות בין עכשיו לבין זמן ההזמנה
+        String selectSql = "SELECT r.confirmation_code, r.user_id, r.reservation_datetime " +
                            "FROM reservation r " +
                            "WHERE r.status = 'ACTIVE' " + 
-                           "AND TIMESTAMPDIFF(MINUTE, NOW(), STR_TO_DATE(CONCAT(r.reservation_date, ' ', r.reservation_time), '%Y-%m-%d %H:%i:%s')) <= 120 " +
-                           "AND TIMESTAMPDIFF(MINUTE, NOW(), STR_TO_DATE(CONCAT(r.reservation_date, ' ', r.reservation_time), '%Y-%m-%d %H:%i:%s')) > 0";
+                           "AND TIMESTAMPDIFF(MINUTE, NOW(), r.reservation_datetime) <= 120 " +
+                           "AND TIMESTAMPDIFF(MINUTE, NOW(), r.reservation_datetime) > 0";
 
         Connection conn = DBController.getInstance().getConnection();
 
@@ -312,36 +312,38 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
              ResultSet rs = stmt.executeQuery(selectSql)) {
          
             while (rs.next()) {
-                int resId = rs.getInt("reservation_id");
+                String confCode = rs.getString("confirmation_code"); 
                 int userId = rs.getInt("user_id");
-                String resTime = rs.getString("reservation_time");
+                String fullDateTime = rs.getString("reservation_datetime");
 
-                // שלב 2: כתיבת הודעה ללוג השרת (כדי שתראה שזה עבד)
-                String alertMsg = String.format("[REMINDER] Reminder sent to User %d for Reservation #%d (Time: %s). Status updated to NOTIFIED.", 
-                                                userId, resId, resTime);
+                // הדפסת הודעה לסרבר לוג
+                String alertMsg = String.format("[REMINDER] Notification for User %d (Code: %s) for reservation at %s.", 
+                                                userId, confCode, fullDateTime);
                 ServerController.log(alertMsg);
 
-                // שלב 3: עדכון הסטטוס ל-NOTIFIED כדי שהשאילתה לא תשלוף אותה שוב בדקה הבאה
-                updateReservationStatus(resId, "NOTIFIED");
+                // עדכון סטטוס ל-NOTIFIED כדי שלא נשלח שוב
+                updateReservationStatus(confCode, "NOTIFIED");
             }
         } catch (SQLException e) { 
             ServerController.log("Error in reservation reminder: " + e.getMessage());
         }
     }
 
+    
     /**
-     * Updates the reservation status in the database.
-     * * @param resId     The unique ID of the reservation.
-     * @param newStatus The new status to be applied (e.g., 'NOTIFIED').
+     * Updates the status of a specific reservation in the database.
+     * * @param confCode  The unique confirmation code for the reservation.
+     * @param newStatus The new status to be assigned (e.g., 'NOTIFIED').
      */
-    private static void updateReservationStatus(int resId, String newStatus) {
-        String updateSql = "UPDATE reservation SET status = ? WHERE reservation_id = ?";
+    private static void updateReservationStatus(String confCode, String newStatus) {
+        // עדכון לפי confirmation_code כפי שמופיע בטבלה שצילמת
+        String updateSql = "UPDATE reservation SET status = ? WHERE confirmation_code = ?";
         try (PreparedStatement pstmt = DBController.getInstance().getConnection().prepareStatement(updateSql)) {
             pstmt.setString(1, newStatus);
-            pstmt.setInt(2, resId);
+            pstmt.setString(2, confCode);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Failed to update reservation status: " + e.getMessage());
+            System.err.println("Failed to update status for " + confCode + ": " + e.getMessage());
         }
     }
 
