@@ -244,50 +244,66 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
      * Fixed: Now checks 'visit' table for actual 'start_time' instead of reservation time.
      */
     public static void checkStayDurationAlerts() {
-        // שלב 1: שליפת לקוחות שיושבים מעל שעתיים ועדיין בסטטוס ARRIVED
-        String selectSql = "SELECT v.table_id, v.user_id, v.confirmation_code " +
-                           "FROM visit v " +
-                           "WHERE v.status = 'ACTIVE' " + 
-                           "AND TIMESTAMPDIFF(MINUTE, v.start_time, NOW()) >= 120";
+
+        String selectSql =
+            "SELECT v.table_id, v.user_id, v.confirmation_code " +
+            "FROM visit v " +
+            "WHERE v.status = 'ACTIVE' " +
+            "AND TIMESTAMPDIFF(MINUTE, v.start_time, NOW()) >= 120";
 
         Connection conn = DBController.getInstance().getConnection();
 
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(selectSql)) {
-         
+
             while (rs.next()) {
+
                 int tableId = rs.getInt("table_id");
                 int userId = rs.getInt("user_id");
-                String confCode = rs.getString("confirmation_code");
+                long confCode = rs.getLong("confirmation_code");
 
-                // שלב 2: כתיבת הודעה ללוג השרת (כאילו נשלחה הודעה ללקוח)
-                String alertMsg = String.format("[STAY ALERT] Table %d (User %d) reached 2 hours. Status updated to BILL_PENDING.", 
-                                                tableId, userId);
-                ServerController.log(alertMsg);
+                // קודם עדכון סטטוס
+                boolean updated = updateVisitStatus(confCode, "BILL_PENDING");
 
-                // שלב 3: עדכון הסטטוס ב-DB כדי שלא נחזור על הפעולה בדקה הבאה
-                updateVisitStatus(confCode, "BILL_PENDING");
+                // רק אם באמת עודכן – נכתוב התראה
+                if (updated) {
+                    String alertMsg = String.format("[STAY ALERT] Table %d (User %d) exceeded 2 hours. Visit %d moved to BILL_PENDING.",tableId, userId, confCode);
+                    ServerController.log(alertMsg);
+                }
             }
-        } catch (SQLException e) { 
+
+        } catch (SQLException e) {
             ServerController.log("Error in stay duration automation: " + e.getMessage());
         }
     }
 
+
     /**
-    * Updates the visit status in the database.
-    * * @param confCode  The unique confirmation code for the visit.
-    * @param newStatus The new status to be applied (e.g., 'BILL_PENDING').
-    */
-    private static void updateVisitStatus(String confCode, String newStatus) {
-        String updateSql = "UPDATE visit SET status = ? WHERE confirmation_code = ?";
-        try (PreparedStatement pstmt = DBController.getInstance().getConnection().prepareStatement(updateSql)) {
+     * Updates the status of a visit in the database.
+     * The update is applied only if the visit is currently in ACTIVE status.
+     * @param confCode  The unique confirmation code identifying the visit.
+     * @param newStatus The new status to set for the visit (e.g., 'BILL_PENDING').
+     * @return true if the visit status was successfully updated, false otherwise.
+     */
+    private static boolean updateVisitStatus(long confCode, String newStatus) {
+
+        String updateSql =
+            "UPDATE visit SET status = ? " +
+            "WHERE confirmation_code = ? AND status = 'ACTIVE'";
+
+        try (PreparedStatement pstmt =DBController.getInstance().getConnection().prepareStatement(updateSql)) {
+
             pstmt.setString(1, newStatus);
-            pstmt.setString(2, confCode);
-            pstmt.executeUpdate();
-        } catch (SQLException e) {
-            System.err.println("Failed to update status for code " + confCode + ": " + e.getMessage());
+            pstmt.setLong(2, confCode);
+
+            int affectedRows = pstmt.executeUpdate();
+            return affectedRows == 1;
+
+        } catch (SQLException e) {ServerController.log("Failed to update visit status for code " + confCode + ": " + e.getMessage());
+            return false;
         }
     }
+
     
     /**
      * Automated task to send pre-arrival reminders for upcoming reservations.
@@ -503,7 +519,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
         
         return list;
     }
-
+ 
 } // End of class
 
 
