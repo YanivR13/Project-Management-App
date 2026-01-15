@@ -247,7 +247,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
         // שלב 1: שליפת לקוחות שיושבים מעל שעתיים ועדיין בסטטוס ARRIVED
         String selectSql = "SELECT v.table_id, v.user_id, v.confirmation_code " +
                            "FROM visit v " +
-                           "WHERE v.status = 'ARRIVED' " + 
+                           "WHERE v.status = 'ACTIVE' " + 
                            "AND TIMESTAMPDIFF(MINUTE, v.start_time, NOW()) >= 120";
 
         Connection conn = DBController.getInstance().getConnection();
