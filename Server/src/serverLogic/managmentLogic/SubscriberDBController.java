@@ -5,8 +5,16 @@ import java.util.ArrayList;
 import common.Subscriber;
 import MainControllers.DBController;
 
+/**
+ * Database controller responsible for retrieving subscriber data.
+ */
 public class SubscriberDBController {
     
+    /**
+     * Retrieves all subscribers from the database.
+     *
+     * @return A list containing all subscribers stored in the database.
+     */
     public static ArrayList<Subscriber> getAllSubscribers() {
         ArrayList<Subscriber> list = new ArrayList<>();
         String query = "SELECT user_id, subscriber_id, username, qr_code FROM subscriber";
