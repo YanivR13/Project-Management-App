@@ -29,7 +29,16 @@
                   <Button fx:id="btnPayBill" maxWidth="Infinity" onAction="#clickPayBill" prefHeight="60.0" styleClass="btn-pay" text="Pay Bill" GridPane.columnIndex="1" GridPane.rowIndex="0" />
                   <Button fx:id="btnViewRes" maxWidth="Infinity" onAction="#clickViewRes" prefHeight="60.0" styleClass="btn-view" text="Active Reservation" GridPane.columnIndex="0" GridPane.rowIndex="1" />
                   <Button fx:id="btnExitWait" maxWidth="Infinity" onAction="#clickExitWait" prefHeight="60.0" styleClass="btn-exit" text="Exit Waiting List" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <Button fx:id="btnHistory" maxWidth="Infinity" onAction="#clickHistory" prefHeight="60.0" styleClass="btn-history" text="Reservations History" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+                 <Button fx:id="btnHistory" 
+        maxWidth="Infinity" 
+        onAction="#clickHistory" 
+        prefHeight="60.0" 
+        wrapText="true" 
+        alignment="CENTER"
+        styleClass="btn-history" 
+        text="Reservations and Visit History" 
+        GridPane.columnIndex="0" 
+        GridPane.rowIndex="2" />
                   <Button fx:id="btnEditProfile" maxWidth="Infinity" onAction="#clickEditProfile" prefHeight="60.0" styleClass="btn-profile" text="Edit Details" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                </children>
             </GridPane>
