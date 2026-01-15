@@ -66,6 +66,7 @@ public class CardReaderDBController {
     /**
      * פונקציה 3: אימות קוד הגעה ועדכון סטטוס ל-COMPLETED בטבלת reservation.
      */
+    //abc
     public String verifyConfirmationCode(String code, String subscriberID) {
         // שאילתה לבדיקת קיום הקוד עבור המנוי הספציפי
         String checkQuery = "SELECT r.confirmation_code FROM reservation r " +

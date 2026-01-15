@@ -218,7 +218,7 @@ public class CardReaderView extends Application implements common.ChatIF {
 	}
     
     
-
+//abc
 	@Override
 	public void display(Object message) {
 	    System.out.println(">>> MESSAGE RECEIVED FROM SERVER: " + message);

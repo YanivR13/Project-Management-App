@@ -20,6 +20,7 @@ public class CardReaderController {
     }
 
     // שליחת בקשת לוגין לשרת
+  //abc
     public void validateSubscriber(String id) {
         ArrayList<Object> message = new ArrayList<>();
         // שינוי קריטי: משתמשים ב-LOGIN_SUBSCRIBER כדי שיהיה זהה לטרמינל
