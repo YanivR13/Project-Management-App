@@ -16,12 +16,18 @@ import ocsf.server.ConnectionToClient;
 import java.util.HashMap;
 import java.util.Map;
 
-
+/**
+ * Handler responsible for processing join waiting list requests from terminal clients.
+ * Determines whether a subscriber can be seated immediately or added to the waiting list.
+ */
 public class JoinWaitingListHandler {
 
     /**
      * Handles the "JOIN_WAITING_LIST" server command.
      * Determines whether the subscriber can be seated immediately or added to the waiting list.
+     *
+     * @param messageList A list containing the request data sent from the client.
+     * @param client The OCSF client connection used to send responses.
      */
     public void handle(ArrayList<Object> messageList, ConnectionToClient client) {
 
@@ -29,23 +35,23 @@ public class JoinWaitingListHandler {
         System.out.println("JOIN_WAITING_LIST HANDLER CALLED");
 
         try {
-            // --- STEP 1: Extract number of guests from protocol ---
+            //  STEP 1: Extract number of guests from protocol 
             int numberOfGuests = (int) messageList.get(1);
 
-            // --- STEP 2: Retrieve authenticated user ID from connection context ---
+            // STEP 2: Retrieve authenticated user ID from connection context
             Integer userId = (Integer) client.getInfo("userId");
             if (userId == null) {
                 sendError(client, "User not authenticated");
                 return;
             }
             
-            // --- STEP 3: Validate restaurant operational status ---
+            // STEP 3: Validate restaurant operational status 
             if (!JoinWaitingListDBController.isRestaurantOpenNow()) {
                 sendError(client, "RESTAURANT_CLOSED");
                 return;
             }
 
-            // --- STEP 4: Check if user is already active in the waiting list ---
+            // STEP 4: Check if user is already active in the waiting list 
             try {
                 if (JoinWaitingListDBController.isUserAlreadyActive(userId)) {
                     // Prevent duplicate active waiting list entries
@@ -58,7 +64,7 @@ public class JoinWaitingListHandler {
                 return;
             }
             
-         // --- STEP 5: Fairness rule: if someone is already waiting, do not allow immediate entry ---
+         // STEP 5: Fairness rule: if someone is already waiting, do not allow immediate entry
             try {
                 if (JoinWaitingListDBController.hasWaitingGuests()) {
 
@@ -77,10 +83,10 @@ public class JoinWaitingListHandler {
             }
 
 
-            // --- STEP 6: Generate confirmation code ---
+            // STEP 6: Generate confirmation code
             long confirmationCode = System.currentTimeMillis();
 
-            // --- STEP 7: Retrieve candidate tables based on party size ---
+            // STEP 7: Retrieve candidate tables based on party size 
             List<Integer> candidateTables = TableDBController.getCandidateTables(numberOfGuests);
 
             //DEBUG
@@ -88,7 +94,7 @@ public class JoinWaitingListHandler {
 
             Integer chosenTableId = null;
 
-         // --- STEP 8: Check seating availability against future reservations ---
+         // STEP 8: Check seating availability against future reservations 
             /*
              * This step determines whether an immediate seating is possible without
              * compromising future reservations.
@@ -128,7 +134,7 @@ public class JoinWaitingListHandler {
                 }
             }
 
-            // --- STEP 9: Immediate seating scenario ---
+            // STEP 9: Immediate seating scenario 
             if (chosenTableId != null) {
 
                 // Mark the selected table as unavailable
@@ -148,7 +154,7 @@ public class JoinWaitingListHandler {
                 return;
             }
 
-            // --- STEP 9: No table available – add to waiting list ---
+            // STEP 10: No table available – add to waiting list 
             JoinWaitingListDBController.insertWaitingListEntry(confirmationCode,userId,numberOfGuests,"WAITING");
 
             // Send success response with confirmation code only
