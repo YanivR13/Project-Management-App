@@ -58,12 +58,18 @@ public class SeatingAvailabilityController {
             LocalDateTime end
     ) {
 
-        String sql =
-            "SELECT COALESCE(SUM(number_of_guests), 0) " +
-            "FROM reservation " +
-            "WHERE reservation_datetime >= ? " +
-            "AND reservation_datetime < ? " +
-            "AND status = 'ACTIVE'";
+    	String sql = 
+    		    "SELECT COALESCE(SUM(total_guests), 0) FROM (" +
+    		    "  SELECT number_of_guests AS total_guests " +
+    		    "  FROM reservation " +
+    		    "  WHERE reservation_datetime >= ? " +
+    		    "  AND reservation_datetime < ? " +
+    		    "  AND status IN ('ACTIVE', 'WAITING_AT_RESTAURANT', 'NOTIFIED') " +
+    		    "  UNION ALL " +
+    		    "  SELECT number_of_guests AS total_guests " +
+    		    "  FROM waiting_list_entry " +
+    		    "  WHERE status = 'NOTIFIED'" +
+    		    ") AS combined_data";
 
         // Acquire database connection
         Connection conn = DBController.getInstance().getConnection();
