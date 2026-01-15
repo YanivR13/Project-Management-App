@@ -89,6 +89,14 @@ public abstract class BaseMenuController implements ChatIF { // Defining the abs
     public void setOriginalUserType(String originalUserType) {
         this.originalUserType = originalUserType;
     }
+    
+//    /**
+//     * Enables staff "acting as subscriber" mode before setClient() triggers onClientReady().
+//     */
+//    public void enterSubscriberMode(String originalUserType) {
+//        this.actingAsSubscriber = true;
+//        this.originalUserType = originalUserType;
+//    }
 
     /**
      * Sets the client and triggers the session logic.

@@ -343,9 +343,10 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             Parent root = loader.load();
             Object nextController = loader.getController();
             if (nextController instanceof BaseMenuController) {
+            	((BaseMenuController) nextController).setOriginalUserType(userType);
+            	((BaseMenuController) nextController).setActingAsSubscriber(true);
                 ((BaseMenuController) nextController).setClient(client, "Subscriber", userId);
-                ((BaseMenuController) nextController).setOriginalUserType(userType);
-                ((BaseMenuController) nextController).setActingAsSubscriber(true);
+                
             }
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle("Bistro - Subscriber Menu");
