@@ -1,4 +1,4 @@
-package clientGUI.Controllers.MenuControlls; // Define the package for menu control helpers
+package clientGUI.Controllers.MenuControlls; // Defining the package for menu control helpers
 
 import javafx.application.Platform; // Import Platform to run UI updates on the JavaFX thread
 import javafx.scene.control.Alert; // Import Alert class for displaying dialog boxes
@@ -8,13 +8,17 @@ import client.ChatClient; // Import ChatClient to communicate with the server
 import java.util.ArrayList; // Import ArrayList to structure messages sent to the server
 
 /**
- * A dedicated helper class to manage all waiting list operations 
- * for both Subscriber and Occasional menus.
+ * Utility helper class for managing waiting list removal operations in the Bistro system.
+ * It handles the user confirmation dialog, server request transmission, and processing of feedback.
  */
 public class ExitWaitingListHelper { // Start of ExitWaitingListHelper class definition
 
     /**
-     * Shows a confirmation dialog and sends a leave request to the server.
+     * Initiates the process of leaving the waiting list by showing a confirmation dialog.
+     * If the user confirms, a cancellation request is sent to the server.
+     * @param client The active network client used for server communication.
+     * @param userId The unique identifier of the user requesting to leave the list.
+     * @return None.
      */
     public static void requestLeaveWaitingList(ChatClient client, int userId) { // Method to initiate leaving process
         
@@ -51,7 +55,10 @@ public class ExitWaitingListHelper { // Start of ExitWaitingListHelper class def
     } // End of requestLeaveWaitingList method
 
     /**
-     * Handles server responses and displays the appropriate success/failure popup.
+     * Processes server responses related to waiting list cancellation and triggers UI feedback.
+     * This method ensures that alerts are displayed on the JavaFX Application Thread.
+     * @param response The response code string received from the server.
+     * @return None.
      */
     public static void handleServerResponse(String response) { // Method to process server feedback
         
@@ -90,7 +97,11 @@ public class ExitWaitingListHelper { // Start of ExitWaitingListHelper class def
     } // End of handleServerResponse method
 
     /**
-     * Internal helper to show the popup window.
+     * Internal utility to create and display standardized JavaFX alert popups.
+     * @param title   The text to be displayed in the window title bar.
+     * @param content The main message body to be shown to the user.
+     * @param type    The AlertType defining the visual style (Info, Warning, Error).
+     * @return None.
      */
     private static void showPopup(String title, String content, AlertType type) { // Helper method for alerts
         

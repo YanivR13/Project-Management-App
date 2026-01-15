@@ -4,131 +4,122 @@ import client.ChatClient; // Importing the ChatClient class for communication
 import common.ChatIF; // Importing the ChatIF interface for UI consistency
 
 /**
- * BaseMenuController is an abstract class that provides common session data 
- * and client handling for all menu screens in the application.
+ * Abstract base controller that defines the shared session state for the Bistro UI.
+ * It serves as the foundation for the "Pipe" architecture, ensuring that the 
+ * network client and user identity are propagated across all menu screens.
+ * 
  */
-public abstract class BaseMenuController implements ChatIF { // Defining the abstract class and implementing ChatIF
+public abstract class BaseMenuController implements ChatIF { 
 
-    // Protected reference to the client to allow subclasses to send messages
+    /** Protected reference to the network client for sending requests. */
     protected ChatClient client;
     
-    // Protected field to store the type of user (e.g., "Representative", "Customer")
+    /** The role/type of the current user (e.g., "Manager", "Subscriber"). */
     protected String userType;
     
-    // Protected field to store the unique database ID of the user
+    /** The unique database identifier for the current user session. */
     protected int userId; 
     
-    // Protected flag that indicates whether the current user entered the Subscriber menu in staff (Manager/Representative) mode
+    /** Flag indicating if a staff member (Manager/Representative) is in "Subscriber Mode". */
     protected boolean actingAsSubscriber = false;
     
-    // Stores the original role before entering Subscriber mode
+    /** Stores the original user role to allow returning from "Subscriber Mode". */
     protected String originalUserType;
 
     // --- Public Getters ---
 
     /**
-     * Returns the current ChatClient instance.
+     * Retrieves the active network client instance.
+     * @return The ChatClient used for server communication.
      */
-    public ChatClient getClient() { // Start of getClient method
-        return client; // Returning the client reference
-    } // End of getClient method
+    public ChatClient getClient() { 
+        return client; 
+    } 
 
     /**
-     * Returns the user type string.
+     * Retrieves the current user's role type.
+     * @return A String representing the user's role.
      */
-    public String getUserType() { // Start of getUserType method
-        return userType; // Returning the userType value
-    } // End of getUserType method
+    public String getUserType() { 
+        return userType; 
+    } 
 
     /**
-     * Returns the unique user identifier.
+     * Retrieves the unique identifier of the user.
+     * @return The database user ID as an integer.
      */
-    public int getUserId() { // Start of getUserId method
-        return userId; // Returning the userId value
-    } // End of getUserId method
+    public int getUserId() { 
+        return userId; 
+    } 
 
     /**
-     * Updates session-specific data and applies role-based logic.
+     * Updates the session-specific data for the current screen.
+     * @param userType The role type to assign to this session.
+     * @param userId   The unique user ID to assign.
+     * @return None.
      */
-    public void setSessionData(String userType, int userId) { // Start of setSessionData method
-        // Assign the provided user type to the instance variable
+    public void setSessionData(String userType, int userId) { 
         this.userType = userType;
-        
-        // Assign the provided user ID to the instance variable
         this.userId = userId;
 
-        // Guard Clause: If userType is null, stop processing to avoid NullPointerException
-        if (userType == null) { // Checking if userType is null
-            return; // Exiting the method immediately
-        } // End of null check
-
-//        // Refactored to use switch for better readability as requested
-//        switch (userType) { // Start of switch block on userType string
-//            
-//            case "Representative": // Case for staff members
-//                this.userId = -1; // Setting ID to -1 to represent administrative/staff status
-//                break; // Exiting switch after matching "Representative"
-//                
-//            default: // Default case for other user types (e.g., Subscriber)
-//                // No specific override needed, keeping the assigned userId
-//                break; // Exiting switch
-//        } // End of switch block
-        
-    } // End of setSessionData method
+        if (userType == null) { 
+            return; 
+        } 
+    } 
     
     /**
-     * Sets whether the current session is acting in Subscriber mode.
+     * Configures whether the current controller is operating in "Acting as Subscriber" mode.
+     * @param actingAsSubscriber True if staff is in customer mode, false otherwise.
+     * @return None.
      */
     public void setActingAsSubscriber(boolean actingAsSubscriber) {
         this.actingAsSubscriber = actingAsSubscriber;
     }
     
     /**
-     * Stores the original user role before entering Subscriber mode.
+     * Preserves the original user role before a role-switch occurs.
+     * @param originalUserType The role string (e.g., "Manager") to be saved.
+     * @return None.
      */
     public void setOriginalUserType(String originalUserType) {
         this.originalUserType = originalUserType;
     }
-    
-//    /**
-//     * Enables staff "acting as subscriber" mode before setClient() triggers onClientReady().
-//     */
-//    public void enterSubscriberMode(String originalUserType) {
-//        this.actingAsSubscriber = true;
-//        this.originalUserType = originalUserType;
-//    }
 
     /**
-     * Sets the client and triggers the session logic.
+     * Injects the network client, applies session data, and triggers the lifecycle hook.
+     * This is the primary entry point for the "Pipe" data injection.
+     * @param client   The active ChatClient instance.
+     * @param userType The role of the user.
+     * @param userId   The unique ID of the user.
+     * @return None.
      */
-    public void setClient(ChatClient client, String userType, int userId) { // Start of setClient method
-        // Initializing the client reference
+    public void setClient(ChatClient client, String userType, int userId) { 
         this.client = client;
-        
-        // Using setSessionData to apply business rules (like the Representative ID override)
         setSessionData(userType, userId);
 
-        // Verification: If client exists, link this controller as the active UI
-        if (this.client != null) { // Checking if client is not null
-            this.client.setUI(this); // Registering this controller as the UI in the client
-            onClientReady(); // Triggering the lifecycle method for specific screen setup
-        } // End of client check
-        
-    } // End of setClient method
+        if (this.client != null) { 
+            this.client.setUI(this); 
+            onClientReady(); 
+        } 
+    } 
 
     /**
-     * Placeholder method meant to be overridden by subclasses for screen-specific logic.
+     * Lifecycle hook method that is automatically called after the client and session data are injected.
+     * Subclasses should override this to perform screen-specific initialization.
+     * @return None.
      */
-    public void onClientReady() { // Start of onClientReady method
-        // Default implementation does nothing; subclasses will implement their own logic
-    } // End of onClientReady method
+    public void onClientReady() { 
+        // Default implementation does nothing
+    } 
 
     /**
-     * Implementation of ChatIF display method.
+     * Implementation of the ChatIF interface for receiving asynchronous server messages.
+     * @param message The data object received from the server.
+     * @return None.
      */
-    @Override // Overriding the method from ChatIF interface
-    public void display(Object message) { // Start of display method
-        // Default implementation for receiving messages from the client
-    } // End of display method
+    @Override 
+    public void display(Object message) { 
+        // Default implementation for receiving messages
+    } 
     
 } // End of BaseMenuController class

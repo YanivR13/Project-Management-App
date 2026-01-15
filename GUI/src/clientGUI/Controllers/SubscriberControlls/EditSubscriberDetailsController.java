@@ -13,216 +13,169 @@ import javafx.scene.Node; // Importing Node for UI hierarchy access
 import javafx.stage.Stage; // Importing Stage for window management
 
 /**
- * Controller class for editing subscriber profile details.
- * It manages the input validation and updates the subscriber's information in the DB.
+ * Controller for editing subscriber profile details in the Bistro system.
+ * Manages input validation and transmits update requests to the server.
  */
-public class EditSubscriberDetailsController implements ChatIF { // Class start implementing ChatIF
+public class EditSubscriberDetailsController implements ChatIF { 
 
-    // Reference to the active network client
+    /** Reference to the active network client. */
     private ChatClient client;
     
-    // Unique identifier for the logged-in user
+    /** Unique identifier for the logged-in user. */
     private int userId;
     
     // --- FXML UI Fields ---
     
-    @FXML // Injection of the username input field
-    private TextField txtUsername;
-
-    @FXML // Injection of the phone number input field
-    private TextField txtPhone;
-
-    @FXML // Injection of the email input field
-    private TextField txtEmail;
-
-    @FXML // Injection of the save button
-    private Button btnSave;
-
-    @FXML // Injection of the cancel button
-    private Button btnCancel;
+    @FXML private TextField txtUsername;
+    @FXML private TextField txtPhone;
+    @FXML private TextField txtEmail;
+    @FXML private Button btnSave;
+    @FXML private Button btnCancel;
 
     // --- Configuration Methods ---
 
     /**
-     * Injects the client and registers this controller as the UI listener.
+     * Injects the network client and registers this controller as the UI listener.
+     * @param client The active ChatClient instance.
+     * @return None.
      */
-    public void setClient(ChatClient client) { // Start setClient method
-        this.client = client; // Assigning the client instance
-        client.setUI(this); // Setting this class as the receiver for server messages
-    } // End setClient method
+    public void setClient(ChatClient client) { 
+        this.client = client; 
+        client.setUI(this); 
+    } 
 
     /**
      * Sets the user ID for identifying which subscriber to update.
+     * @param userId The unique identifier of the user.
+     * @return None.
      */
-    public void setUserId(int userId) { // Start setUserId method
-        this.userId = userId; // Assigning the user ID value
-    } // End setUserId method
+    public void setUserId(int userId) { 
+        this.userId = userId; 
+    } 
     
     // --- UI Action Handlers ---
 
     /**
-     * Closes the current edit window without saving.
+     * Closes the current edit window without saving changes.
+     * @param event The ActionEvent triggered by the cancel button.
+     * @return None.
      */
-    @FXML // Link to FXML action
-    private void clickCancel(ActionEvent event) { // Start clickCancel method
-        // Get the current window stage from the event source
+    @FXML 
+    private void clickCancel(ActionEvent event) { 
         Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); 
-        // Close the stage immediately
         stage.close(); 
-    } // End clickCancel method
+    } 
     
     /**
      * Validates input fields and sends an update request to the server.
+     * @param event The ActionEvent triggered by the save button.
+     * @return None.
      */
-    @FXML // Link to FXML action
-    private void clickSave(ActionEvent event) { // Start clickSave method
+    @FXML 
+    private void clickSave(ActionEvent event) { 
 
-        // Ensure the client connection is active before proceeding
-        if (client == null) { // Check if client is null
-            System.out.println("Error: client is null"); // Log technical error
-            return; // Terminate execution
-        } // End null check
+        if (client == null) { 
+            System.out.println("Error: client is null"); 
+            return; 
+        } 
 
-        // Retrieve and trim values from all text fields
-        String username = txtUsername.getText().trim(); // Get username text
-        String phone = txtPhone.getText().trim(); // Get phone text
-        String email = txtEmail.getText().trim(); // Get email text
+        String username = txtUsername.getText().trim(); 
+        String phone = txtPhone.getText().trim(); 
+        String email = txtEmail.getText().trim(); 
         
-     // --- Input Validation ---
+        // --- Input Validation ---
+        if (!username.isEmpty() && username.length() > 10) {
+            showAlert("Invalid Username", "Username must contain up to 10 characters.", Alert.AlertType.WARNING);
+            return;
+        }
 
-     // Username: max 10 characters
-     if (!username.isEmpty() && username.length() > 10) {
-         showAlert(
-             "Invalid Username",
-             "Username must contain up to 10 characters.",
-             Alert.AlertType.WARNING
-         );
-         return;
-     }
+        if (!phone.isEmpty() && !phone.matches("\\d{10}")) {
+            showAlert("Invalid Phone Number", "Phone number must contain exactly 10 digits.", Alert.AlertType.WARNING);
+            return;
+        }
 
-     // Phone: exactly 10 digits
-     if (!phone.isEmpty()) {
-         if (!phone.matches("\\d{10}")) {
-             showAlert(
-                 "Invalid Phone Number",
-                 "Phone number must contain exactly 10 digits.",
-                 Alert.AlertType.WARNING
-             );
-             return;
-         }
-     }
+        if (!email.isEmpty() && !email.contains("@")) {
+            showAlert("Invalid Email", "Email address must contain '@'.", Alert.AlertType.WARNING);
+            return;
+        }
 
-     // Email: must contain '@'
-     if (!email.isEmpty() && !email.contains("@")) {
-         showAlert(
-             "Invalid Email",
-             "Email address must contain '@'.",
-             Alert.AlertType.WARNING
-         );
-         return;
-     }
-
-
-        // Guard Clause: If all fields are empty, no update is necessary
-        boolean isAllEmpty = (username.isEmpty() && phone.isEmpty() && email.isEmpty()); // Logic check
+        boolean isAllEmpty = (username.isEmpty() && phone.isEmpty() && email.isEmpty()); 
         
-        if (isAllEmpty) { // If nothing was entered
-            // Prompt the user to fill at least one field
+        if (isAllEmpty) { 
             showAlert("No Changes", "Please enter at least one field to update.", Alert.AlertType.INFORMATION); 
-            return; // Terminate execution
-        } // End validation
+            return; 
+        } 
 
-        // Construct the message list for the server protocol
-        ArrayList<Object> msg = new ArrayList<>(); // Initialize message list
-        msg.add("UPDATE_SUBSCRIBER_DETAILS"); // Command header
-        msg.add(userId); // Target user ID
+        ArrayList<Object> msg = new ArrayList<>(); 
+        msg.add("UPDATE_SUBSCRIBER_DETAILS"); 
+        msg.add(userId); 
+        msg.add(username.isEmpty() ? null : username); 
+        msg.add(phone.isEmpty() ? null : phone); 
+        msg.add(email.isEmpty() ? null : email); 
 
-        // Logic: Send null if a field is empty, otherwise send the trimmed string
-        msg.add(username.isEmpty() ? null : username); // Add username or null
-        msg.add(phone.isEmpty() ? null : phone); // Add phone or null
-        msg.add(email.isEmpty() ? null : email); // Add email or null
-
-        // Transmit the update request to the server
-        client.handleMessageFromClientUI(msg); // Calling the client handler
-    } // End clickSave method
+        client.handleMessageFromClientUI(msg); 
+    } 
 
     /**
-     * Processes incoming feedback from the server regarding the update request.
+     * Processes incoming feedback from the server on the JavaFX thread.
+     * @param message The response object from the server.
+     * @return None.
      */
-    @Override // Overriding from ChatIF
-    public void display(Object message) { // Start display method
+    @Override 
+    public void display(Object message) { 
 
-        // Ensure all UI updates happen on the JavaFX Application Thread
-        Platform.runLater(() -> { // Start of runLater lambda
+        Platform.runLater(() -> { 
 
-            // Handling structured responses sent as ArrayList
-            if (message instanceof ArrayList<?>) { // Check if message is a list
-                
-                // Casting to the specific list type
-                ArrayList<?> data = (ArrayList<?>) message; // Casting
-                
-                // Extracting the command identifier from the first index
-                String command = data.get(0).toString(); // Get command
+            if (message instanceof ArrayList<?>) { 
+                ArrayList<?> data = (ArrayList<?>) message; 
+                String command = data.get(0).toString(); 
 
-                // Refactored: Using switch-case for command identification
-                switch (command) { // Start switch on command
-                    
-                    case "EDIT_DETAILS_RESULT": // Case handling the result of the edit
-                        
-                        // Extracting the result status from the second index
-                        String result = data.get(1).toString(); // Get result status
-                        
-                        // Nested switch to handle specific success/no-change statuses
-                        switch (result) { // Start switch on result
-                            
-                            case "SUCCESS": // Update was successful in DB
+                switch (command) { 
+                    case "EDIT_DETAILS_RESULT": 
+                        String result = data.get(1).toString(); 
+                        switch (result) { 
+                            case "SUCCESS": 
                                 showAlert("Profile Updated", "Your personal details were updated successfully.", Alert.AlertType.INFORMATION); 
-                                closeWindow(); // Close the edit popup
-                                break; // Exit switch
-                                
-                            case "NO_CHANGES": // Update performed but no data actually changed
+                                closeWindow(); 
+                                break; 
+                            case "NO_CHANGES": 
                                 showAlert("No Changes", "No details were updated.", Alert.AlertType.INFORMATION); 
-                                break; // Exit switch
-                                
-                            default: // For any unhandled status codes
-                                break; // Exit switch
-                        } // End inner switch
-                        break; // Exit outer switch
-
-                    default: // For any other commands received
-                        break; // Exit switch
-                } // End outer switch
-            } // End ArrayList check
-            
-            // Handling general technical errors sent as simple strings
-            else if (message instanceof String && "ERROR_EDITING_DETAILS".equals(message)) { // Check for error string
-                // Notify the user about the technical failure
+                                break; 
+                            default: 
+                                break; 
+                        } 
+                        break; 
+                    default: 
+                        break; 
+                } 
+            } 
+            else if (message instanceof String && "ERROR_EDITING_DETAILS".equals(message)) { 
                 showAlert("Error", "An error occurred while updating your details.", Alert.AlertType.ERROR); 
-            } // End error string check
-            
-        }); // End of runLater lambda
-    } // End display method
-    
-    // --- Helper Methods ---
-
-    /**
-     * Reusable utility for displaying JavaFX Alerts.
-     */
-    private void showAlert(String title, String content, Alert.AlertType type) { // Start showAlert
-        Alert alert = new Alert(type); // Create new alert of provided type
-        alert.setTitle(title); // Set title
-        alert.setHeaderText(null); // Clear header for simplicity
-        alert.setContentText(content); // Set the body content
-        alert.showAndWait(); // Display and block
-    } // End showAlert
+            } 
+        }); 
+    } 
     
     /**
-     * Closes the window using the save button's reference to the current scene.
+     * Reusable utility for displaying JavaFX Alerts to the user.
+     * @param title   The title of the alert window.
+     * @param content The message body of the alert.
+     * @param type    The AlertType (Error, Warning, Information).
+     * @return None.
      */
-    private void closeWindow() { // Start closeWindow
-        // Accessing the window via a UI element and closing it
+    private void showAlert(String title, String content, Alert.AlertType type) { 
+        Alert alert = new Alert(type); 
+        alert.setTitle(title); 
+        alert.setHeaderText(null); 
+        alert.setContentText(content); 
+        alert.showAndWait(); 
+    } 
+    
+    /**
+     * Closes the active window stage.
+     * @return None.
+     */
+    private void closeWindow() { 
         Stage stage = (Stage) btnSave.getScene().getWindow(); 
         stage.close(); 
-    } // End closeWindow
-
-} // End of EditSubscriberDetailsController class
+    } 
+}

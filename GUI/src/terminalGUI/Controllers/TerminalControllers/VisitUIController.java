@@ -21,25 +21,29 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 /**
- * Controller for the Arrival Terminal screen.
- * This class handles the logic for entering a confirmation code and 
- * processing the check-in result from the server.
+ * Controller class for the Arrival Terminal interface.
+ * This class facilitates the check-in process for customers upon arrival, 
+ * validating confirmation codes and providing real-time status updates regarding 
+ * table availability through active server polling.
  */
 public class VisitUIController implements ChatIF {
 	
+    /** Persistent network client used for server communication. */
     private ChatClient client;
     
+    /** Timer used to poll the server for status updates when a table is not immediately ready. */
     private Timeline statusTimer;
 
     // FXML injected UI components
-    @FXML private TextField txtCode; // Field for entering confirmation code
-    @FXML private Button btnVerify; // Button to start arrival process
-    @FXML private Button btnBack; // Back to main terminal menu
-    @FXML private Label lblStatus; // For displaying status messages
+    @FXML private TextField txtCode; 
+    @FXML private Button btnVerify; 
+    @FXML private Button btnBack; 
+    @FXML private Label lblStatus; 
     
     /**
      * Injects the shared ChatClient instance into the controller.
-     * @param client Active network client
+     * @param client The active network client instance.
+     * @return None.
      */
     public void setClient(ChatClient client) {
         this.client = client;
@@ -47,7 +51,10 @@ public class VisitUIController implements ChatIF {
 
 
     /**
-     * Handles the click on the "I'm Here" verify button.
+     * Handles the "I'm Here" verification process. Validates the input format 
+     * and transmits the arrival request to the server.
+     * @param event The ActionEvent triggered by the verification button.
+     * @return None.
      */
     @FXML
     void onVerifyClicked(ActionEvent event) {
@@ -78,7 +85,10 @@ public class VisitUIController implements ChatIF {
     }
 
     /**
-     * Internal logic to process the string response from the Server.
+     * Processes specific response strings from the server. 
+     * Handles logic for invalid codes, early arrivals, and table readiness.
+     * @param response The response string received from the server.
+     * @return None.
      */
     private void handleServerResponse(String response) {
         lblStatus.setText(""); // Clear waiting message
@@ -92,12 +102,10 @@ public class VisitUIController implements ChatIF {
         else if (response.equals("TABLE_NOT_READY_WAIT")) {
             showAlert("Welcome", "Your table is not ready yet. Please wait, we will notify you via SMS.", AlertType.INFORMATION);
             startPollingForStatus(Long.parseLong(txtCode.getText().trim()));
-            // Optional: returnToMainMenu();
         } 
         else if (response.startsWith("SUCCESS_TABLE_")) {
             String tableId = response.split("_")[2]; // Extract table number from the string
             showAlert("Welcome!", "Your table is ready! Please proceed to Table #" + tableId, AlertType.CONFIRMATION);
-            // Optional: Transition to a "Enjoy your meal" screen
         } 
         else if (response.equals("DATABASE_ERROR")) {
             showAlert("System Error", "Communication with database failed. Please see the host.", AlertType.ERROR);
@@ -105,7 +113,10 @@ public class VisitUIController implements ChatIF {
     }
     
     /**
-     * Starts a background timer that asks the server for the status every few seconds.
+     * Initiates a background Timeline that polls the server every 5 seconds 
+     * to check if the assigned table has become available.
+     * @param code The reservation confirmation code to poll for.
+     * @return None.
      */
     private void startPollingForStatus(long code) {
         if (statusTimer != null) statusTimer.stop();
@@ -125,7 +136,11 @@ public class VisitUIController implements ChatIF {
     }
     
     /**
-     * Updated display method to handle polling quietly.
+     * Handles server messages on the UI thread. 
+     * Specifically manages polling updates and notifies the user when the status changes to "NOTIFIED".
+     * 
+     * @param message The message object received from the server.
+     * @return None.
      */
     @Override
     public void display(Object message) {
@@ -138,6 +153,7 @@ public class VisitUIController implements ChatIF {
                     showTableReadyPopup();
                 } 
                 else if (response.equals("WAITING_AT_RESTAURANT") || response.equals("WAITING")) {
+                    // Silence polling updates that maintain current state
                 }
                 else {
                     handleServerResponse(response);
@@ -146,6 +162,10 @@ public class VisitUIController implements ChatIF {
         }
     }
 
+    /**
+     * Displays a success popup when a table is ready and stops the active polling timer.
+     * @return None.
+     */
     private void showTableReadyPopup() {
         if (statusTimer != null) statusTimer.stop();
 
@@ -157,7 +177,11 @@ public class VisitUIController implements ChatIF {
     }
     
     /**
-     * Helper for standardized alerts.
+     * Utility method to display a standardized JavaFX Alert dialog.
+     * @param title   The window title of the alert.
+     * @param content The main body text of the alert.
+     * @param type    The visual style of the alert (Error, Warning, Information).
+     * @return None.
      */
     private void showAlert(String title, String content, AlertType type) {
         Alert alert = new Alert(type);
@@ -167,19 +191,21 @@ public class VisitUIController implements ChatIF {
         alert.showAndWait();
     }
 
+    /**
+     * Navigates the user back to the primary Terminal Menu.
+     * @param event The ActionEvent from the back button click.
+     * @return None.
+     */
     @FXML
     void onBackClicked(ActionEvent event) {
     	
     	try {
-            // Load the Terminal Menu screen [cite: 2]
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalMenuFrame.fxml"));
             Parent root = loader.load();
 
-            // Inject ChatClient into the menu controller
             TerminalMenuController controller = loader.getController();
             controller.setClient(client);
 
-            // Switch scene
             Stage stage = (Stage) btnBack.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.setTitle("Bistro - Service Terminal");
@@ -192,12 +218,13 @@ public class VisitUIController implements ChatIF {
     }
     
     /**
-     * Called when the client connection is ready. 
-     * Registers this controller to receive server messages.
+     * Registers this controller instance as the active UI for the ChatClient 
+     * upon successful connection initialization.
+     * @return None.
      */
     public void onClientReady() {
         if (client != null) {
-            client.setUI(this); // Register this controller as the active UI
+            client.setUI(this); 
         }
     }
     

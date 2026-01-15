@@ -22,175 +22,164 @@ import javafx.scene.control.TextArea; // Import for multi-line text display
 import javafx.stage.Stage; // Import for window management
 
 /**
- * The OccasionalMenuController serves as the main dashboard for Guest (Occasional) users.
- * It manages navigation to reservations, payments, and waiting list features.
+ * The OccasionalMenuController serves as the main dashboard for Guest (Occasional) users in the Bistro system.
+ * It manages navigation to reservations, payments, and provides an interface for leaving the waiting list.
  */
-public class OccasionalMenuController extends BaseMenuController implements ICustomerActions { // Start class definition
+public class OccasionalMenuController extends BaseMenuController implements ICustomerActions { 
 
     // FXML injected buttons for guest dashboard navigation
-    @FXML private Button btnNewReservation; // Button to start a new reservation
-    @FXML private Button btnPayBill; // Button to navigate to the payment screen
-    @FXML private Button btnViewReservation; // Button to view existing reservations
-    @FXML private Button btnLogout; // Button to sign out and return to portal
-    @FXML private Button btnExitWaitingList; // Button to request removal from waiting list
+    @FXML private Button btnNewReservation; 
+    @FXML private Button btnPayBill; 
+    @FXML private Button btnViewReservation; 
+    @FXML private Button btnLogout; 
+    @FXML private Button btnExitWaitingList; 
     
     // Console-style log area for providing real-time feedback
-    @FXML private TextArea txtLog; // Reference to the log text area
+    @FXML private TextArea txtLog; 
 
     // --- 1. Initialization & UI Setup ---
 
     /**
-     * Executes automatically when the controller is ready and data is injected.
+     * Executes automatically when the controller is ready and session data is injected.
+     * Logs the activation of the guest portal for the specific user ID.
+     * @return None.
      */
-    @Override // Overriding method from BaseMenuController
-    public void onClientReady() { // Start of onClientReady method
-        // Inform the user that the Guest Portal is now active
-        appendLog("Guest Portal Active. Welcome, User ID: " + userId); // Log greeting with user ID
-    } // End of onClientReady method
+    @Override 
+    public void onClientReady() { 
+        appendLog("Guest Portal Active. Welcome, User ID: " + userId); 
+    } 
 
     // --- 2. Reservation & Billing Action Handlers ---
 
     /**
-     * Navigates the guest to the New Reservation screen.
+     * Navigates the guest user to the New Reservation screen.
+     * @param event The ActionEvent triggered by clicking the new reservation button.
+     * @return None.
      */
-    @FXML // Link method to FXML action
-    void clickNewReservation(ActionEvent event) { // Start of clickNewReservation method
-        // Call the shared interface method inherited from BaseMenuController
-        createNewReservation(client, event, userType, userId); // Trigger navigation
-    } // End of method
+    @FXML 
+    void clickNewReservation(ActionEvent event) { 
+        createNewReservation(client, event, userType, userId); 
+    } 
     
     /**
-     * Navigates the guest to the Pay Bill (verification) screen.
+     * Navigates the guest user to the Pay Bill (verification) screen.
+     * @param event The ActionEvent triggered by clicking the pay bill button.
+     * @return None.
      */
-    @FXML // Link method to FXML action
-    void clickPayBill(ActionEvent event) { // Start of clickPayBill method
-        // Call the shared interface method to initiate payment process
-        payBill(client, event, userType, userId); // Trigger navigation
-    } // End of method
+    @FXML 
+    void clickPayBill(ActionEvent event) { 
+        payBill(client, event, userType, userId); 
+    } 
     
     /**
-     * Navigates the guest to the View Reservation screen.
+     * Navigates the guest user to the View Reservation screen to see active bookings.
+     * @param event The ActionEvent triggered by clicking the view reservation button.
+     * @return None.
      */
-    @FXML // Link method to FXML action
-    void clickViewReservation(ActionEvent event) { // Start of clickViewReservation method
-        // Call the shared interface method to show active bookings
-        viewReservation(client, event, userType, userId); // Trigger navigation
-    } // End of method
+    @FXML 
+    void clickViewReservation(ActionEvent event) { 
+        viewReservation(client, event, userType, userId); 
+    } 
 
     /**
-     * Initiates the process to leave the waiting list.
+     * Initiates the process to remove the guest from the restaurant's waiting list.
+     * @param event The ActionEvent triggered by clicking the exit waiting list button.
+     * @return None.
      */
-    @FXML // Link method to FXML action
-    void clickExitWaitingList(ActionEvent event) { // Start of clickExitWaitingList method
-        // Log the action for user feedback
-        appendLog("Exit Waiting List triggered."); // Appending to UI log
-        // Use the helper class to send the request to the server
-        ExitWaitingListHelper.requestLeaveWaitingList(this.client, this.userId); // Triggering helper logic
-    } // End of method
+    @FXML 
+    void clickExitWaitingList(ActionEvent event) { 
+        appendLog("Exit Waiting List triggered."); 
+        ExitWaitingListHelper.requestLeaveWaitingList(this.client, this.userId); 
+    } 
   
     // --- 3. Session Termination (Logout) ---
 
     /**
-     * Handles the logout process and returns the user to the portal.
+     * Logs the guest out and returns them to the primary Remote Login portal.
+     * @param event The ActionEvent triggered by clicking the logout button.
+     * @return None.
      */
-    @FXML // Link method to FXML action
-    void clickLogout(ActionEvent event) { // Start of clickLogout method
-        try { // Start of navigation try block
-            // Prepare the loader for the main login portal
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml")); // Setting FXML path
+    @FXML 
+    void clickLogout(ActionEvent event) { 
+        try { 
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml")); 
+            Parent root = loader.load(); 
             
-            // Generate the parent root from the FXML file
-            Parent root = loader.load(); // Loading the UI graph
+            Object nextController = loader.getController(); 
             
-            // Extract the controller of the next screen for dependency injection
-            Object nextController = loader.getController(); // Accessing controller instance
+            if (nextController instanceof BaseMenuController) { 
+                ((BaseMenuController) nextController).setClient(client, null, 0); 
+            } 
             
-            // Check if the target controller supports the shared BaseMenuController architecture
-            if (nextController instanceof BaseMenuController) { // Start of type check
-                // Reset user session data but preserve the active server connection
-                ((BaseMenuController) nextController).setClient(client, null, 0); // Injecting cleared session
-            } // End of if block
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); 
+            stage.setScene(new Scene(root)); 
+            stage.show(); 
             
-            // Identify the current window stage
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Getting current stage
-            
-            // Apply the login portal scene to the stage
-            stage.setScene(new Scene(root)); // Switching scenes
-            
-            // Render the window
-            stage.show(); // Displaying stage
-            
-        } catch (Exception e) { // Catch block for navigation or loading errors
-            // Log technical stack trace for debugging
-            e.printStackTrace(); // Printing error details
-            // Inform the user of the failure via the UI log
-            appendLog("Logout Error: Unable to return to portal."); // Logging failure
-        } // End of try-catch block
-    } // End of clickLogout method
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+            appendLog("Logout Error: Unable to return to portal."); 
+        } 
+    } 
 
     // --- 4. ICustomerActions Stubs (Role-based exclusions) ---
 
     /**
      * Implementation stub for viewing order history.
+     * Note: Occasional guests do not have stored history in this system.
+     * @param client The active network client.
+     * @param userId The unique user ID.
+     * @return None.
      */
-    @Override // Required by ICustomerActions
-    public void viewOrderHistory(ChatClient client, int userId) { // Start method
-        // Occasional guests do not have long-term history stored in this system version
-    } // End method
+    @Override 
+    public void viewOrderHistory(ChatClient client, int userId) { 
+    } 
     
     /**
      * Implementation stub for editing personal profile details.
+     * Note: Profile management is disabled for guest accounts.
+     * @param client The active network client.
+     * @param userId The unique user ID.
+     * @return None.
      */
-    @Override // Required by ICustomerActions
-    public void editPersonalDetails(ChatClient client, int userId) { // Start method
-        // Profile management is not available for one-time guest users
-    } // End method
+    @Override 
+    public void editPersonalDetails(ChatClient client, int userId) { 
+    } 
 
     // --- 5. Server Communication (ChatIF) ---
 
     /**
-     * Processes incoming data or status messages from the server.
+     * Processes incoming server responses and delegates waiting list logic to the helper class.
+     * @param message The message object received from the server.
+     * @return None.
      */
-    @Override // Overriding display method from BaseMenuController/ChatIF
-    public void display(Object message) { // Start of display method
+    @Override 
+    public void display(Object message) { 
         
-        // Basic Guard: Ensure the message is not null before processing
-        if (message != null) { // Start check
-            // Append any incoming message directly to the UI log for tracking
-            appendLog(message.toString()); // Log the raw message
-        } // End check
+        if (message != null) { 
+            appendLog(message.toString()); 
+        } 
         
-        // Logical Branching: Specifically handle string-based protocol responses
-        if (message instanceof String) { // Start type check
+        if (message instanceof String) { 
+            String response = (String) message; 
             
-            // Cast the generic object to a String for pattern matching
-            String response = (String) message; // Casting
+            boolean isWaitingListResponse = (response.startsWith("CANCEL_WAITING") || response.equals("NOT_ON_WAITING_LIST")); 
             
-            // Define criteria for waiting list related feedback
-            boolean isWaitingListResponse = (response.startsWith("CANCEL_WAITING") || response.equals("NOT_ON_WAITING_LIST")); // Validation logic
-            
-            // If the message relates to the waiting list status
-            if (isWaitingListResponse) { // Start block
-                // Delegate the visual feedback (popups) to the helper class
-                ExitWaitingListHelper.handleServerResponse(response); // Handle server status
-            } // End of inner if
-            
-        } // End of String check
-        
-    } // End of display method
+            if (isWaitingListResponse) { 
+                ExitWaitingListHelper.handleServerResponse(response); 
+            } 
+        } 
+    } 
 
     /**
-     * Updates the UI log area in a thread-safe manner.
+     * Appends text messages to the UI log area in a thread-safe manner using Platform.runLater.
+     * @param message The string message to append to the log.
+     * @return None.
      */
-    public void appendLog(String message) { // Start of appendLog method
-        // Force the execution to the JavaFX Application Thread
-        Platform.runLater(() -> { // Start of lambda block
-            // Verify that the UI component is properly injected before writing
-            if (txtLog != null) { // Null check for txtLog
-                // Append the formatted message to the text area
-                txtLog.appendText("> " + message + "\n"); // Adding text with prefix
-            } // End of null check
-        }); // End of lambda block
-    } // End of appendLog method
-    
-} // End of OccasionalMenuController class
+    public void appendLog(String message) { 
+        Platform.runLater(() -> { 
+            if (txtLog != null) { 
+                txtLog.appendText("> " + message + "\n"); 
+            } 
+        }); 
+    } 
+}

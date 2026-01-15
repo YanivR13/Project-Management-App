@@ -16,109 +16,118 @@ import javafx.scene.Node; // Importing Node to identify the current window
 /**
  * Integrated TerminalLoginController.
  * This class handles the transition from a physical terminal to specific login portals
- * while maintaining the "Pipe" architecture and Eden's terminal logic.
+ * while maintaining the "Pipe" architecture and specific terminal logic.
  */
-public class TerminalLoginController implements ChatIF { // Start of TerminalLoginController class definition
+public class TerminalLoginController implements ChatIF { 
 
     /** Shared network client instance used for server communication. */
-    private ChatClient client; // Declaring the active network client
+    private ChatClient client; 
 
     /**
      * Injects the persistent ChatClient instance into this controller.
      * @param client The active network client.
+     * @return None.
      */
-    public void setClient(ChatClient client) { // Start of setClient method
-        this.client = client; // Assigning the client reference
-    } // End of setClient method
+    public void setClient(ChatClient client) { 
+        this.client = client; 
+    } 
 
     /**
      * Event handler for the 'Subscriber Login' button on the terminal.
+     * Initiates navigation to the Subscriber login portal.
+     * @param event The ActionEvent triggered by the button click.
+     * @return None.
      */
-    @FXML // Link method to FXML button action
-    void clickSubscriber(ActionEvent event) { // Start of clickSubscriber method
-        // Navigate to the subscriber login portal with terminal-specific context
-        loadScreen(event, "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberLoginFrame.fxml", true, "Subscriber Login"); // Calling loadScreen
-    } // End of clickSubscriber method
+    @FXML 
+    void clickSubscriber(ActionEvent event) { 
+        loadScreen(event, "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberLoginFrame.fxml", true, "Subscriber Login"); 
+    } 
 
     /**
      * Event handler for the 'Occasional Login' button on the terminal.
+     * Initiates navigation to the Occasional (Guest) login portal.
+     * @param event The ActionEvent triggered by the button click.
+     * @return None.
      */
-    @FXML // Link method to FXML button action
-    void clickOccasional(ActionEvent event) { // Start of clickOccasional method
-        // Navigate to the guest login portal with terminal-specific context
-        loadScreen(event, "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalLoginFrame.fxml", false, "Occasional Login"); // Calling loadScreen
-    } // End of clickOccasional method
+    @FXML 
+    void clickOccasional(ActionEvent event) { 
+        loadScreen(event, "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalLoginFrame.fxml", false, "Occasional Login"); 
+    } 
 
     /**
-     * Core Navigation Engine: Loads the target FXML and injects session data + terminal flag.
+     * Core Navigation Engine: Loads the target FXML and injects session data and terminal flag.
+     * This method ensures the "Pipe" architecture is maintained by passing the client 
+     * and setting the LoginSource to TERMINAL.
+     * 
+     * @param event        The ActionEvent used to identify the current window.
      * @param fxmlPath     The path to the login FXML.
-     * @param isSubscriber Flag to distinguish between subscriber and guest controllers.
-     * @param title        The title for the new stage.
+     * @param isSubscriber Flag to distinguish between subscriber and guest controllers for casting.
+     * @param title        The title for the new window stage.
+     * @return None.
      */
-    private void loadScreen(ActionEvent event, String fxmlPath, boolean isSubscriber, String title) { // Start loadScreen
+    private void loadScreen(ActionEvent event, String fxmlPath, boolean isSubscriber, String title) { 
         
-        try { // Start of navigation try-block
+        try { 
             
             // Step 1: Initialize the FXML loader for the requested login portal
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath)); // Creating loader
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath)); 
             
             // Step 2: Load the UI graph root from the FXML resource
-            Parent root = loader.load(); // Loading root node
+            Parent root = loader.load(); 
             
             // Step 3: Extract the controller instance from the loader
-            Object controller = loader.getController(); // Retrieving controller
+            Object controller = loader.getController(); 
 
-            // --- THE 300% FIX: Aligning with the new 3-parameter 'Pipe' architecture ---
-            
-            if (isSubscriber) { // If navigating to the Subscriber login screen
-                // Casting to the refactored SubscriberLoginController
-                SubscriberLoginController subController = (SubscriberLoginController) controller; // Performing cast
+            // Branching logic to handle specific controller casting and data injection
+            if (isSubscriber) { 
+                SubscriberLoginController subController = (SubscriberLoginController) controller; 
                 
-                // Preserving Eden's logic: Marking the origin as a physical Terminal
-                subController.setLoginSource(LoginSource.TERMINAL); // Setting terminal source
+                // Marking the origin as a physical Terminal for backend logic
+                subController.setLoginSource(LoginSource.TERMINAL); 
                 
-                // Providing (client, userType, userId). Using -1 as ID is not yet known.
-                subController.setClient(client, "Subscriber", -1); // Injecting session into the Pipe
-                            
-            } else { // If navigating to the Occasional (Guest) login screen
-                // Casting to the refactored OccasionalLoginController
-                OccasionalLoginController occController = (OccasionalLoginController) controller; // Performing cast
+                // Injecting the client and session parameters into the Pipe
+                subController.setClient(client, "Subscriber", -1); 
+                                            
+            } else { 
+                OccasionalLoginController occController = (OccasionalLoginController) controller; 
                 
-                // Preserving Eden's logic: Marking the origin as a physical Terminal
-                occController.setLoginSource(LoginSource.TERMINAL); // Setting terminal source
+                // Marking the origin as a physical Terminal for backend logic
+                occController.setLoginSource(LoginSource.TERMINAL); 
                 
-                // FIXED: Providing (client, userType, userId). Using -1 as ID is not yet known.
-                occController.setClient(client, "Occasional", -1); // Injecting session into the Pipe
+                // Injecting the client and session parameters into the Pipe
+                occController.setClient(client, "Occasional", -1); 
                 
-            } // End of injection branching
+            } 
 
             // Step 4: Configure the window (Stage) and assign the new scene
-            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); // Identifying current stage
-            Scene scene = new Scene(root); // Creating scene with loaded root
+            Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow(); 
+            Scene scene = new Scene(root); 
             
             // Step 5: Apply global CSS styling for terminal UI consistency
-            if (getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css") != null) { // Checking for CSS
-                scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); // Adding styles
-            } // End CSS check
+            if (getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css") != null) { 
+                scene.getStylesheets().add(getClass().getResource("/clientGUI/cssStyle/GlobalStyles.css").toExternalForm()); 
+            } 
 
             // Step 6: Update stage properties and display
-            stage.setTitle(title); // Updating window title
-            stage.setScene(scene); // Setting scene to stage
-            stage.show(); // Displaying window
+            stage.setTitle(title); 
+            stage.setScene(scene); 
+            stage.show(); 
 
-        } catch (Exception e) { // Handling potential FXML loading or injection errors
-            // Print technical details for debugging terminal-specific navigation issues
-            e.printStackTrace(); // Printing technical stack trace
-        } // End of try-catch block
+        } catch (Exception e) { 
+            e.printStackTrace(); 
+        } 
         
-    } // End of the loadScreen method
+    } 
 
     /**
      * Implementation of the ChatIF display method for server communication.
+     * This allows the terminal login screen to process incoming server broadcasts if necessary.
+     * @param message The message object received from the server.
+     * @return None.
      */
-    @Override // Overriding from the ChatIF interface
-    public void display(Object message) { // Start of display method
-        // This method can be implemented for terminal-wide broadcast messages
-    } // End of display method
+    @Override 
+    public void display(Object message) { 
+        // Broadcast implementation placeholder
+    } 
     
-} // End of integrated TerminalLoginController class
+}

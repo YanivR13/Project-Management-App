@@ -16,8 +16,9 @@ import javafx.scene.control.TextField; // Import for text input fields
 import javafx.stage.Stage; // Import for the primary window container
 
 /**
- * Controller for the initial payment entry screen. This class handles the
- * verification of the confirmation code provided by the customer.
+ * Controller for the initial payment entry screen in the Bistro system.
+ * This class handles the validation and verification of the confirmation code 
+ * provided by the customer to initiate the billing process.
  */
 public class PayBillEntryController extends BaseMenuController implements ICustomerActions { // Class definition start
 
@@ -30,7 +31,9 @@ public class PayBillEntryController extends BaseMenuController implements ICusto
 	private Button btnVerify; // Button to initiate the code verification process
 
 	/**
-	 * Called when the client connection is ready.
+	 * Lifecycle hook called when the client connection is ready.
+	 * Registers this controller as the active UI listener for server messages.
+	 * @return None.
 	 */
 	@Override // Overriding method from BaseMenuController
 	public void onClientReady() { // Start of onClientReady method
@@ -41,7 +44,10 @@ public class PayBillEntryController extends BaseMenuController implements ICusto
 	} // End of onClientReady method
 
 	/**
-	 * Handles the "Verify" button click.
+	 * Handles the "Verify" button click event.
+	 * Validates numeric input and sends a request to the server to fetch visit data.
+	 * @param event The ActionEvent triggered by the verification button.
+	 * @return None.
 	 */
 	@FXML // Link method to FXML action
 	void onVerifyClicked(ActionEvent event) { // Start of verify click handler
@@ -79,7 +85,10 @@ public class PayBillEntryController extends BaseMenuController implements ICusto
 	} // End of onVerifyClicked method
 
 	/**
-	 * Callback method to handle messages received from the server.
+	 * Processes responses from the server regarding visit verification.
+	 * If successful, transitions the UI to the detailed payment screen.
+	 * @param message The response object from the server (ArrayList or Error String).
+	 * @return None.
 	 */
 	@Override
 	public void display(Object message) {
@@ -110,7 +119,8 @@ public class PayBillEntryController extends BaseMenuController implements ICusto
 	}
 
 	/**
-	 * Logic to determine the correct main menu path based on the user's role.
+	 * Determines the correct destination and navigates back to the main menu based on the user's role.
+	 * @return None.
 	 */
 	private void returnToMainMenu() { // Start of returnToMainMenu method
 
@@ -144,7 +154,9 @@ public class PayBillEntryController extends BaseMenuController implements ICusto
 	} // End of returnToMainMenu method
 
 	/**
-	 * Navigates back when the "Back" button is clicked.
+	 * Handles the "Back" button click event.
+	 * @param event The ActionEvent triggered by the back button.
+	 * @return None.
 	 */
 	@FXML // Link to FXML action
 	void onBackClicked(ActionEvent event) { // Start of back click handler
@@ -152,7 +164,11 @@ public class PayBillEntryController extends BaseMenuController implements ICusto
 	} // End of onBackClicked method
 
 	/**
-	 * Helper method to display standardized JavaFX Alert dialogs.
+	 * Internal helper utility for displaying standardized JavaFX alert dialogs.
+	 * @param title   The title of the alert window.
+	 * @param content The main body text of the alert.
+	 * @param type    The AlertType (Information, Warning, Error).
+	 * @return None.
 	 */
 	private void showAlert(String title, String content, AlertType type) { // Start of showAlert method
 		Alert alert = new Alert(type); // Instantiate a new alert with specified type
@@ -162,11 +178,22 @@ public class PayBillEntryController extends BaseMenuController implements ICusto
 		alert.showAndWait(); // Display and block execution until closed
 	} // End of showAlert method
 
-	// Interface stubs for ICustomerActions (No logic changes permitted)
+	/**
+	 * Interface stub for viewing order history.
+	 * @param client The network client.
+	 * @param userId The unique user identifier.
+	 * @return None.
+	 */
 	@Override
 	public void viewOrderHistory(client.ChatClient client, int userId) {
 	} // Empty implementation stub
 
+	/**
+	 * Interface stub for editing personal details.
+	 * @param client The network client.
+	 * @param userId The unique user identifier.
+	 * @return None.
+	 */
 	@Override
 	public void editPersonalDetails(client.ChatClient client, int userId) {
 	} // Empty implementation stub

@@ -16,23 +16,33 @@ import javafx.scene.chart.XYChart;
 import javafx.stage.Stage;
 
 /**
- * קונטרולר עבור דשבורד מנהל.
- * יורש את כל הפונקציונליות של נציג ומוסיף יכולות הפקת דוחות.
+ * Controller for the Manager Dashboard in the Bistro system.
+ * Inherits core functionality from RepresentativeDashboardController and adds 
+ * administrative features such as complex reporting and graphical data analysis.
  */
 public class ManagerDashboardController extends RepresentativeDashboardController {
 
+    /**
+     * Triggered when the client is fully initialized. Enables manager-specific tools.
+     * @return None.
+     */
     @Override
     public void onClientReady() {
         super.onClientReady();
         appendLog("Manager Mode Active: Additional reporting tools enabled.");
     }
     
+    /**
+     * Opens the month selection window for generating management reports.
+     * @param event The ActionEvent triggered by the report button.
+     * @return None.
+     */
     @FXML
     public void openMonthSelection(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(
-        		    getClass().getResource("/managmentGUI/ActionsFXML/monthSelection.fxml")
-        		);
+                    getClass().getResource("/managmentGUI/ActionsFXML/monthSelection.fxml")
+                );
             Parent root = loader.load();
             
             MonthSelectionController ctrl = loader.getController();
@@ -49,20 +59,25 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
         }
     }
 
-    
+    /**
+     * Processes incoming server messages. Specifically handles report data results 
+     * while delegating standard visit data to the parent controller.
+     * @param message The response object from the server.
+     * @return None.
+     */
     @Override
     public void display(Object message) {
-        // בדיקה ראשונית: האם מדובר ב-ArrayList
+        // Initial check: Verify if the message is a structured response list
         if (message instanceof ArrayList) {
             ArrayList<Object> responseList = (ArrayList<Object>) message;
 
-            // תיקון קריטי: בודקים שהרשימה לא ריקה ושהאיבר הראשון הוא אכן String (כותרת של דוח)
-            // אם האיבר הראשון הוא לא String (למשל הוא אובייקט Visit), הקוד ידלג ישר ל-super.display
+            // Validate that the list is not empty and begins with a String command header
             if (!responseList.isEmpty() && responseList.get(0) instanceof String) {
                 String header = (String) responseList.get(0);
 
-                // 1. בדיקה עבור דוח זמנים ואיחורים
+                // 1. Handling Time and Delay report data
                 if ("REPORT_TIME_DATA_SUCCESS".equals(header)) {
+                    @SuppressWarnings("unchecked")
                     List<Map<String, Object>> data = (List<Map<String, Object>>) responseList.get(1);
                     Platform.runLater(() -> {
                         if (data == null || data.isEmpty()) {
@@ -75,12 +90,13 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
                     return; 
                 } 
                 
-                // 2. בדיקה עבור דוח מנויים ורשימות המתנה
+                // 2. Handling Subscriber and Waiting List activity reports
                 else if ("RECEIVE_SUBSCRIBER_REPORTS".equals(header)) {
+                    @SuppressWarnings("unchecked")
                     List<Map<String, Object>> subData = (List<Map<String, Object>>) responseList.get(1);
                     Platform.runLater(() -> {
                         if (subData == null || subData.isEmpty()) {
-                            showErrorAlert("No Data Found", "No subscriber or waiting list activity found for the selected month.");
+                            showErrorAlert("No Data Found", "No subscriber activity found for the selected month.");
                         } else {
                             appendLog("Subscriber Report Data Received Successfully.");
                             showSubGraph(subData);
@@ -89,7 +105,7 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
                     return; 
                 }
                 
-                // 3. בדיקה אם קיבלנו שגיאת דוח ספציפית מהשרת
+                // 3. Handling specific error messages returned by the reporting engine
                 else if ("REPORT_ERROR".equals(header)) {
                     String errorMsg = (String) responseList.get(1);
                     Platform.runLater(() -> {
@@ -101,12 +117,17 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
         }
 
         /**
-         * אם הגענו לכאן, זה אומר שאו שזו לא רשימה, או שזו רשימה של אובייקטים (כמו Visit).
-         * אנחנו מעבירים אותה למחלקת האב (RepresentativeDashboardController) שתטפל בהצגה בטבלה.
+         * If the message is not a report header, forward it to the 
+         * RepresentativeDashboardController for standard TableView handling.
          */
         super.display(message); 
     }
     
+    /**
+     * Initializes and displays the Time and Delay statistical graph.
+     * @param reportData A list containing the mapped time statistics.
+     * @return None.
+     */
     public void showGraph(List<Map<String, Object>> reportData) {
         Platform.runLater(() -> {
             try {
@@ -126,7 +147,9 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
     }
 
     /**
-     * מתודה לפתיחת גרף דוח מנויים (הזמנות מול המתנות)
+     * Initializes and displays the Subscriber Activity statistical graph.
+     * @param reportData A list containing subscriber and waiting list records.
+     * @return None.
      */
     public void showSubGraph(List<Map<String, Object>> reportData) {
         Platform.runLater(() -> {
@@ -134,7 +157,6 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/managmentGUI/ActionsFXML/SubscriberReportGraph.fxml"));
                 Parent root = loader.load();
                 
-                // השגת הקונטרולר של גרף המנויים
                 SubReportGraphController subGraphCtrl = loader.getController();
                 subGraphCtrl.initData(reportData);
                 
@@ -150,6 +172,12 @@ public class ManagerDashboardController extends RepresentativeDashboardControlle
         });
     }
     
+    /**
+     * Internal helper to display standardized information popups.
+     * @param title   The alert window title.
+     * @param content The alert body message.
+     * @return None.
+     */
     private void showErrorAlert(String title, String content) {
         javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
         alert.setTitle(title);

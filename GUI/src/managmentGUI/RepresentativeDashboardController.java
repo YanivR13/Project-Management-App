@@ -28,51 +28,51 @@ import javafx.stage.Stage; // Importing for window stage management
 
 /**
  * Controller class for the Representative Dashboard.
- * Manages the dynamic loading of sub-screens within a central pane and handles operational updates.
+ * This class serves as the main hub for staff operations, managing sub-screens, 
+ * operating hours updates, and subscriber management.
  */
-public class RepresentativeDashboardController extends BaseMenuController { // Class definition start
+public class RepresentativeDashboardController extends BaseMenuController { 
 
     // --- 1. Primary FXML Fields ---
-    @FXML protected TextArea txtLog; // Console area for system feedback
+    @FXML protected TextArea txtLog; 
     private Object currentSubController;
-    @FXML protected AnchorPane contentPane; // The central container where sub-screens are injected
+    @FXML protected AnchorPane contentPane; 
 
-    // --- Sub-screen FXML Fields (Injected only when specific FXMLs are loaded) ---
-    @FXML private TableView<DayScheduleRow> tableHours; // Table for displaying regular hours
-    @FXML private TableColumn<DayScheduleRow, String> colDay; // Column for the day of the week
-    @FXML private TableColumn<DayScheduleRow, String> colOpen; // Column for opening time
-    @FXML private TableColumn<DayScheduleRow, String> colClose; // Column for closing time
+    // --- Sub-screen FXML Fields ---
+    @FXML private TableView<DayScheduleRow> tableHours; 
+    @FXML private TableColumn<DayScheduleRow, String> colDay; 
+    @FXML private TableColumn<DayScheduleRow, String> colOpen; 
+    @FXML private TableColumn<DayScheduleRow, String> colClose; 
     
-    @FXML private DatePicker dpSpecialDate; // Date selector for special hours overrides
-    @FXML private ComboBox<String> comboSpecialOpen; // Dropdown for special opening time
-    @FXML private ComboBox<String> comboSpecialClose; // Dropdown for special closing time
+    @FXML private DatePicker dpSpecialDate; 
+    @FXML private ComboBox<String> comboSpecialOpen; 
+    @FXML private ComboBox<String> comboSpecialClose; 
     
-    // --- Fields for CreateNewSubscriber sub-screen ---
-    @FXML private TextField txtPhone; // Linked to fx:id="txtPhone" in the new FXML
-    @FXML private TextField txtEmail; // Linked to fx:id="txtEmail" in the new FXML
+    @FXML private TextField txtPhone; 
+    @FXML private TextField txtEmail; 
 
-    // Observable list to maintain live data for the hours table
-    private ObservableList<DayScheduleRow> scheduleData = FXCollections.observableArrayList(); // List initialization
+    private ObservableList<DayScheduleRow> scheduleData = FXCollections.observableArrayList(); 
 
     // --- 2. Initialization and Infrastructure ---
 
-    @Override // Overriding method from BaseMenuController
-    public void onClientReady() { // Start of onClientReady method
-        // Check if the inherited client instance is initialized
-        if (client != null) { // Start if block
-            // Register this dashboard instance as the UI for the client
-            client.setUI(this); // Setting UI listener
-            
-            // Log successful loading and display the session user ID
-            appendLog("Representative Dashboard Loaded. System ID: " + userId); // Appending log
-            
-            // Automatically load the default sub-screen (Regular Hours) upon startup
-            showRegularHoursScreen(null); // Initial screen load
-        } // End if block
-    } // End of onClientReady method
+    /**
+     * Initializes the dashboard when the client is ready. 
+     * Registers the UI listener and loads the default hours screen.
+     * @return None.
+     */
+    @Override 
+    public void onClientReady() { 
+        if (client != null) { 
+            client.setUI(this); 
+            appendLog("Representative Dashboard Loaded. System ID: " + userId); 
+            showRegularHoursScreen(null); 
+        } 
+    } 
     
     /**
-     * Sends a request to the server to fetch the current restaurant operating hours.
+     * Fetches current restaurant operating hours from the server.
+     * @param event The action event from the UI button.
+     * @return None.
      */
     @FXML 
     void showCurrentWorkTimes(ActionEvent event) { 
@@ -87,32 +87,31 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     }
 
     /**
-     * Utility method to load FXML sub-screens into the central contentPane.
+     * Dynamically loads an FXML sub-screen into the central content pane.
+     * Identifies and assigns child controllers for specific data routing.
+     * @param fxmlPath The resource path to the target FXML file.
+     * @return None.
      */
     private void loadSubScreen(String fxmlPath) {
         try {
             contentPane.getChildren().clear();
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
 
-            // 1. טיפול במסך ההזמנות הפעילות
             if (fxmlPath.contains("ActiveReservations.fxml")) {
                 ActiveReservationsController controller = new ActiveReservationsController();
                 loader.setController(controller);
                 this.currentSubController = controller;
             }
-            // 2. טיפול במסך רשימת ההמתנה (מקומי)
             else if (fxmlPath.contains("WaitingList.fxml")) {
                 WaitingListController controller = new WaitingListController();
                 loader.setController(controller);
                 this.currentSubController = controller;
             }
-            // 3. טיפול במסך הסועדים הנוכחיים
             else if (fxmlPath.contains("CurrentDiners.fxml")) {
                 CurrentDinersController controller = new CurrentDinersController();
                 loader.setController(controller);
                 this.currentSubController = controller;
             }
-            // 4. טיפול במסך רשימת מנויים (GitHub)
             else if (fxmlPath.contains("SubscribersList.fxml")) {
                 SubscribersListController controller = new SubscribersListController();
                 loader.setController(controller);
@@ -138,6 +137,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     
     // --- 3. Screen Navigation Handlers ---
 
+    /**
+     * Loads the Regular Hours FXML and initializes the table state.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void showRegularHoursScreen(ActionEvent event) { 
         loadSubScreen("/managmentGUI/ActionsFXML/UpdateRegularHours.fxml"); 
@@ -145,12 +149,22 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         initializeEmptyDays(); 
     }
 
+    /**
+     * Loads the Special Hours FXML and configures the input fields.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void showSpecialHoursScreen(ActionEvent event) { 
         loadSubScreen("/managmentGUI/ActionsFXML/UpdateSpecialHours.fxml"); 
         setupSpecialHoursFields(); 
     }
     
+    /**
+     * Performs logout and returns the user to the login portal.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML
     public void clickLogout(ActionEvent event) {
         try {
@@ -171,6 +185,10 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
 
     // --- 4. Internal UI Component Setup ---
 
+    /**
+     * Prepares time selection combos and date constraints for special hours.
+     * @return None.
+     */
     private void setupSpecialHoursFields() { 
         if (comboSpecialOpen == null) return;
         ObservableList<String> hours = FXCollections.observableArrayList(); 
@@ -192,6 +210,10 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         dpSpecialDate.setValue(LocalDate.now()); 
     } 
 
+    /**
+     * Configures table columns and enables editable cells for hours.
+     * @return None.
+     */
     private void setupTable() { 
         if (tableHours == null) return;
         colDay.setCellValueFactory(new PropertyValueFactory<>("day")); 
@@ -205,6 +227,10 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         tableHours.setEditable(true); 
     } 
 
+    /**
+     * Populates the observable list with empty rows for each day.
+     * @return None.
+     */
     private void initializeEmptyDays() { 
         String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}; 
         scheduleData.clear(); 
@@ -215,6 +241,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
 
     // --- 5. Server Communication Logic ---
 
+    /**
+     * Packs the table data into a map and sends an update to the server.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void updateRegularHours(ActionEvent event) { 
         Map<String, TimeRange> updatedMap = new HashMap<>(); 
@@ -228,6 +259,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         client.handleMessageFromClientUI(message); 
     } 
 
+    /**
+     * Sends a specific special date override to the server.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void updateSpecialHours(ActionEvent event) { 
         if (dpSpecialDate == null || dpSpecialDate.getValue() == null) return;
@@ -240,6 +276,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         client.handleMessageFromClientUI(msg); 
     } 
     
+    /**
+     * Requests the removal of all special hours overrides from the system.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void deleteAllSpecialHours(ActionEvent event) { 
         Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION); 
@@ -260,10 +301,20 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
 
     // --- 6. Sub-Menu Navigation Handlers ---
 
+    /**
+     * Loads the subscriber registration FXML.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML void createNewSubscriber(ActionEvent event) { 
         loadSubScreen("/managmentGUI/ActionsFXML/CreateNewSubscriber.fxml"); 
     } 
     
+    /**
+     * Validates input and sends a registration request for a new subscriber.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void processCreateSubscriber(ActionEvent event) { 
         String phone = txtPhone.getText().trim(); 
@@ -284,6 +335,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         if (client != null) client.handleMessageFromClientUI(message); 
     } 
 
+    /**
+     * Fetches all registered subscribers and displays the list.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void viewSubscribersList(ActionEvent event) { 
         loadSubScreen("/managmentGUI/ActionsFXML/SubscribersList.fxml"); 
@@ -293,6 +349,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         client.handleMessageFromClientUI(message);
     }
     
+    /**
+     * Fetches all currently active reservations for staff review.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void viewActiveReservations(ActionEvent event) { 
         loadSubScreen("/managmentGUI/ActionsFXML/ActiveReservations.fxml"); 
@@ -307,6 +368,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
 
+    /**
+     * Fetches the list of visits currently in progress.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void viewCurrentDiners(ActionEvent event) { 
         loadSubScreen("/managmentGUI/ActionsFXML/CurrentDiners.fxml"); 
@@ -321,6 +387,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
 
+    /**
+     * Fetches the restaurant's active waiting list entries.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML 
     void viewWaitingList(ActionEvent event) { 
         loadSubScreen("/managmentGUI/ActionsFXML/WaitingList.fxml"); 
@@ -335,6 +406,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
 
+    /**
+     * Opens the Subscriber Portal while preserving the current staff session context.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML
     void clickCustomerPortal(ActionEvent event) {
         try {
@@ -343,8 +419,8 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
             Parent root = loader.load();
             Object nextController = loader.getController();
             if (nextController instanceof BaseMenuController) {
-            	((BaseMenuController) nextController).setOriginalUserType(userType);
-            	((BaseMenuController) nextController).setActingAsSubscriber(true);
+                ((BaseMenuController) nextController).setOriginalUserType(userType);
+                ((BaseMenuController) nextController).setActingAsSubscriber(true);
                 ((BaseMenuController) nextController).setClient(client, "Subscriber", userId);
                 
             }
@@ -358,6 +434,11 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
     
+    /**
+     * Loads the table management configuration screen.
+     * @param event The ActionEvent from the UI.
+     * @return None.
+     */
     @FXML
     public void showManageTablesScreen(ActionEvent event) {
         try {
@@ -379,6 +460,12 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
 
+    /**
+     * Processes server messages and routes data to the currently active sub-controller.
+     * Supports ServiceResponse, Restaurant hours, and various generic data lists.
+     * @param message The response object from the server.
+     * @return None.
+     */
     @Override 
     public void display(Object message) { 
         if (message instanceof ServiceResponse) { 
@@ -427,7 +514,6 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
                         ((CurrentDinersController) currentSubController).setTableData(visitsList);
                     }
                 }
-                // מקרה ג': רשימת ממתינים (מקומי)
                 else if (firstItem instanceof common.WaitingListEntry) {
                     @SuppressWarnings("unchecked")
                     ArrayList<common.WaitingListEntry> waitingList = (ArrayList<common.WaitingListEntry>) genericList;
@@ -436,7 +522,6 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
                         ((WaitingListController) currentSubController).setTableData(waitingList);
                     }
                 }
-                // מקרה ד': רשימת מנויים (GitHub)
                 else if (firstItem instanceof common.Subscriber) {
                     @SuppressWarnings("unchecked")
                     ArrayList<common.Subscriber> subList = (ArrayList<common.Subscriber>) genericList;
@@ -449,26 +534,51 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     } 
     
+    /**
+     * Appends a text message to the dashboard log area in a thread-safe manner.
+     * @param msg The message to display.
+     * @return None.
+     */
     protected void appendLog(String msg) { 
         if (txtLog != null) { 
             Platform.runLater(() -> txtLog.appendText("> " + msg + "\n")); 
         } 
     } 
 
+    /**
+     * Inner helper class to represent a row in the operating hours schedule table.
+     */
     public static class DayScheduleRow { 
         private String day; 
         private String openTime; 
         private String closeTime; 
+        
+        /**
+         * Constructor for schedule rows.
+         * @param day Name of the weekday.
+         * @param openTime Scheduled opening time.
+         * @param closeTime Scheduled closing time.
+         */
         public DayScheduleRow(String day, String openTime, String closeTime) { 
             this.day = day; this.openTime = openTime; this.closeTime = closeTime; 
         } 
+        /** @return Current day. */
         public String getDay() { return day; } 
+        /** @return Opening time. */
         public String getOpenTime() { return openTime; } 
+        /** @param ot New opening time. */
         public void setOpenTime(String ot) { this.openTime = ot; } 
+        /** @return Closing time. */
         public String getCloseTime() { return closeTime; } 
+        /** @param ct New closing time. */
         public void setCloseTime(String ct) { this.closeTime = ct; } 
     } 
     
+    /**
+     * Displays an informative dialog showing the restaurant's operational schedule.
+     * @param formattedHours The formatted text representing the hours.
+     * @return None.
+     */
     public void showWorkTimesAlert(String formattedHours) {
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle("Restaurant Operating Hours");

@@ -3,6 +3,7 @@ package clientGUI.Controllers.MenuControlls; // Defining the package for menu co
 import java.util.ArrayList; // Importing ArrayList for message construction
 import java.util.List; // Importing List interface for data handling
 import common.Reservation; // Importing the Reservation entity
+import client.ChatClient; // יבוא הלקוח - הוספתי כדי לוודא תקינות
 import clientGUI.Controllers.ICustomerActions; // Importing the customer actions interface
 import javafx.application.Platform; // Importing Platform for UI thread safety
 import javafx.collections.FXCollections; // Importing for observable list creation
@@ -14,277 +15,200 @@ import javafx.beans.binding.Bindings; // Importing for dynamic UI binding
 import javafx.stage.Stage; // Importing Stage for window management
 
 /**
- * Controller for the View Reservation screen.
- * Displays a list of active reservations and provides cancellation options.
+ * Controller class for the View Reservation screen in the Bistro system.
+ * Displays a list of active reservations and provides cancellation options with a confirmation flow.
  */
-public class ViewReservationController extends BaseMenuController implements ICustomerActions { // Start class definition
+public class ViewReservationController extends BaseMenuController implements ICustomerActions { 
 
     // FXML Table components for displaying reservation data
-    @FXML private TableView<Reservation> tableReservations; // Reference to the main table
-    @FXML private TableColumn<Reservation, Long> colCode; // Column for confirmation codes
-    @FXML private TableColumn<Reservation, String> colDate; // Column for reservation dates
-    @FXML private TableColumn<Reservation, Integer> colGuests; // Column for guest counts
-    @FXML private TableColumn<Reservation, Void> colAction; // Column for the cancel button
+    @FXML private TableView<Reservation> tableReservations; 
+    @FXML private TableColumn<Reservation, Long> colCode; 
+    @FXML private TableColumn<Reservation, String> colDate; 
+    @FXML private TableColumn<Reservation, Integer> colGuests; 
+    @FXML private TableColumn<Reservation, Void> colAction; 
 
     /**
-     * Triggered when the client is fully initialized.
+     * Triggered when the client is fully initialized. Requests active reservations for the user.
+     * @return None.
      */
-    @Override // Overriding method from BaseMenuController
-    public void onClientReady() { // Start of onClientReady method
-        // Log user context for debugging purposes
-        System.out.println("DEBUG: Entering screen. UserID: " + userId); // Printing debug info
+    @Override 
+    public void onClientReady() { 
+        System.out.println("DEBUG: Entering screen. UserID: " + userId); 
         
-        // Ensure client is present and userId is valid
-        if (client != null && userId != 0) { // Checking client and userId status
+        if (client != null && userId != 0) { 
+            client.setUI(this); 
             
-            // Register this controller to receive server responses
-            client.setUI(this); // Setting the UI listener
-            
-            // Execute UI updates safely on the JavaFX thread
-            Platform.runLater(() -> { // Start of Platform.runLater
-                
-                // Clear existing items from the table
-                tableReservations.getItems().clear(); // Clearing the list
-                
-                // Retrieve the current window stage
-                Stage stage = (Stage) tableReservations.getScene().getWindow(); // Getting stage
-                
-                // Set the window title as requested
-                stage.setTitle("Bistro - view & cancel"); // Updating title
-                
-            }); // End of Platform.runLater
+            Platform.runLater(() -> { 
+                tableReservations.getItems().clear(); 
+                Stage stage = (Stage) tableReservations.getScene().getWindow(); 
+                stage.setTitle("Bistro - view & cancel"); 
+            }); 
 
-            // Create the protocol message for the server
-            ArrayList<Object> message = new ArrayList<>(); // Initializing message list
+            ArrayList<Object> message = new ArrayList<>(); 
+            message.add("GET_ACTIVE_RESERVATIONS"); 
+            message.add(userId); 
             
-            // Add the specific fetch command
-            message.add("GET_ACTIVE_RESERVATIONS"); // Adding command
-            
-            // Add the current user ID to filter reservations
-            message.add(userId); // Adding userId payload
-            
-            // Send the request to the server
-            client.handleMessageFromClientUI(message); // Sending through client
-            
-        } // End of if check
-        
-    } // End of onClientReady method
+            client.handleMessageFromClientUI(message); 
+        } 
+    } 
 
     /**
-     * Initializes the table columns and applies visual styling.
+     * Initializes the table columns, applies visual styling, and sets up dynamic height binding.
+     * @return None.
      */
-    @FXML // FXML linkage
-    public void initialize() { // Start of initialize method
-        
-        // Map the Reservation fields to the corresponding TableColumns
-        colCode.setCellValueFactory(new PropertyValueFactory<>("confirmationCode")); // Mapping code
-        colDate.setCellValueFactory(new PropertyValueFactory<>("reservationDateTime")); // Mapping date
-        colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests")); // Mapping guests
+    @FXML 
+    public void initialize() { 
+        colCode.setCellValueFactory(new PropertyValueFactory<>("confirmationCode")); 
+        colDate.setCellValueFactory(new PropertyValueFactory<>("reservationDateTime")); 
+        colGuests.setCellValueFactory(new PropertyValueFactory<>("numberOfGuests")); 
 
-        // Set a fixed row height to ensure consistent look and prevent clipping
-        tableReservations.setFixedCellSize(75.0); // Setting size to 75.0
+        tableReservations.setFixedCellSize(75.0); 
         
-        // Define the visual style for the table component
-        tableReservations.setStyle( // Start of style setting
-            "-fx-background-radius: 20; " + // Rounding corners
-            "-fx-border-radius: 20; " + // Rounding borders
-            "-fx-border-color: #444444; " + // Setting border color
-            "-fx-border-width: 2;" // Setting border thickness
-        ); // End of style setting
+        tableReservations.setStyle( 
+            "-fx-background-radius: 20; " + 
+            "-fx-border-radius: 20; " + 
+            "-fx-border-color: #444444; " + 
+            "-fx-border-width: 2;" 
+        ); 
         
-        // Bind table height to the number of items to hide empty rows
-        tableReservations.prefHeightProperty().bind( // Start of binding
-            tableReservations.fixedCellSizeProperty().multiply(Bindings.size(tableReservations.getItems()).add(1.1)) // Calculation
-        ); // End of binding
+        tableReservations.prefHeightProperty().bind( 
+            tableReservations.fixedCellSizeProperty().multiply(Bindings.size(tableReservations.getItems()).add(1.1)) 
+        ); 
 
-        // Define a shared CSS string for column content styling
-        String cellStyle = "-fx-alignment: CENTER; -fx-text-fill: black; -fx-font-size: 16px; -fx-font-weight: bold;"; // Styling string
+        String cellStyle = "-fx-alignment: CENTER; -fx-text-fill: black; -fx-font-size: 16px; -fx-font-weight: bold;"; 
+        colCode.setStyle(cellStyle); 
+        colDate.setStyle(cellStyle); 
+        colGuests.setStyle(cellStyle); 
         
-        // Apply styling to data columns
-        colCode.setStyle(cellStyle); // Styling code column
-        colDate.setStyle(cellStyle); // Styling date column
-        colGuests.setStyle(cellStyle); // Styling guests column
-        
-        // Create a custom label to show when the list is empty
-        Label placeholderLabel = new Label("NO ACTIVE RESERVATIONS"); // Initializing label
+        Label placeholderLabel = new Label("NO ACTIVE RESERVATIONS"); 
+        placeholderLabel.setStyle( 
+            "-fx-text-fill: #3498db; " + 
+            "-fx-font-size: 28px; " + 
+            "-fx-font-weight: bold; " + 
+            "-fx-font-family: 'Segoe UI'; " + 
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);" 
+        ); 
 
-        // Set advanced aesthetic styling for the placeholder
-        placeholderLabel.setStyle( // Start of placeholder styling
-            "-fx-text-fill: #3498db; " + // Blue color
-            "-fx-font-size: 28px; " + // Large font
-            "-fx-font-weight: bold; " + // Bold text
-            "-fx-font-family: 'Segoe UI'; " + // Font family
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 10, 0, 0, 2);" // Drop shadow effect
-        ); // End of placeholder styling
-
-        // Assign the placeholder to the table
-        tableReservations.setPlaceholder(placeholderLabel); // Setting the placeholder
-        
-        // Initialize the custom cancel button logic
-        setupCancelButton(); // Calling helper method
-        
-    } // End of initialize method
+        tableReservations.setPlaceholder(placeholderLabel); 
+        setupCancelButton(); 
+    } 
 
     /**
-     * Creates a custom cell factory for the Action column.
+     * Configures the Action column to display a stylized "Cancel" button for each reservation.
+     * @return None.
      */
-    private void setupCancelButton() { // Start of setupCancelButton method
-        
-        // Center the content in the action column
-        colAction.setStyle("-fx-alignment: CENTER;"); // Setting alignment
-        
-        // Define how each cell in the action column should be rendered
-        colAction.setCellFactory(param -> new TableCell<>() { // Start of cell factory
+    private void setupCancelButton() { 
+        colAction.setStyle("-fx-alignment: CENTER;"); 
+        colAction.setCellFactory(param -> new TableCell<>() { 
             
-            // Initialize a stylized JavaFX button
-            private final Button btnCancel = new Button("Cancel"); // Creating button
+            private final Button btnCancel = new Button("Cancel"); 
             
-            { // Start of button configuration block
+            { 
+                btnCancel.setStyle( 
+                    "-fx-background-color: #e74c3c; " + 
+                    "-fx-text-fill: white; " + 
+                    "-fx-background-radius: 15; " + 
+                    "-fx-font-weight: bold; " + 
+                    "-fx-cursor: hand;" 
+                ); 
                 
-                // Apply red theme and interactive styling to the button
-                btnCancel.setStyle( // Start of button styling
-                    "-fx-background-color: #e74c3c; " + // Red background
-                    "-fx-text-fill: white; " + // White text
-                    "-fx-background-radius: 15; " + // Rounded corners
-                    "-fx-font-weight: bold; " + // Bold text
-                    "-fx-cursor: hand;" // Pointer cursor
-                ); // End of button styling
-                
-                // Set fixed dimensions for the button
-                btnCancel.setPrefHeight(35); // Height setting
-                btnCancel.setPrefWidth(100); // Width setting
+                btnCancel.setPrefHeight(35); 
+                btnCancel.setPrefWidth(100); 
 
-                // Define the action when the button is clicked
-                btnCancel.setOnAction(event -> { // Start of button action
-                    // Retrieve the specific reservation object for this row
-                    Reservation res = getTableView().getItems().get(getIndex()); // Getting item
-                    // Trigger the cancellation confirmation flow
-                    handleCancelAction(res); // Calling handler
-                }); // End of button action
-                
-            } // End of configuration block
+                btnCancel.setOnAction(event -> { 
+                    Reservation res = getTableView().getItems().get(getIndex()); 
+                    handleCancelAction(res); 
+                }); 
+            } 
 
-            @Override // Overriding updateItem for custom rendering
-            protected void updateItem(Void item, boolean empty) { // Start updateItem
-                super.updateItem(item, empty); // Calling parent
-                // Display the button only if the row is not empty
-                setGraphic(empty ? null : btnCancel); // Conditional rendering
-            } // End updateItem
-            
-        }); // End of cell factory
-        
-    } // End of setupCancelButton method
+            @Override 
+            protected void updateItem(Void item, boolean empty) { 
+                super.updateItem(item, empty); 
+                setGraphic(empty ? null : btnCancel); 
+            } 
+        }); 
+    } 
 
     /**
-     * Handles the cancellation logic with a confirmation dialog.
+     * Displays a confirmation alert and sends a cancellation request if confirmed.
+     * @param res The Reservation object to cancel.
+     * @return None.
      */
-    private void handleCancelAction(Reservation res) { // Start handleCancelAction method
-        
-        // Initialize a confirmation alert dialog
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION); // Creating alert
-        
-        // Set window and header text for clarity
-        confirmAlert.setTitle("Cancel Reservation"); // Setting title
-        confirmAlert.setHeaderText("Are you sure you want to cancel?"); // Setting header
+    private void handleCancelAction(Reservation res) { 
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION); 
+        confirmAlert.setTitle("Cancel Reservation"); 
+        confirmAlert.setHeaderText("Are you sure you want to cancel?"); 
 
-        // Display the dialog and wait for user response
-        confirmAlert.showAndWait().ifPresent(response -> { // Start response handling
-            
-            // Check if the user confirmed the action
-            if (response == ButtonType.OK) { // User clicked OK
-                
-                // Prepare the message for the server
-                ArrayList<Object> message = new ArrayList<>(); // Initializing list
-                
-                // Add the cancellation command
-                message.add("CANCEL_RESERVATION"); // Adding command
-                
-                // Provide the unique confirmation code for DB identification
-                message.add(res.getConfirmationCode()); // Adding code payload
-                
-                // Send request through client UI handler
-                client.handleMessageFromClientUI(message); // Transmitting
-                
-            } // End of OK check
-            
-        }); // End of response handling
-        
-    } // End of handleCancelAction method
+        confirmAlert.showAndWait().ifPresent(response -> { 
+            if (response == ButtonType.OK) { 
+                ArrayList<Object> message = new ArrayList<>(); 
+                message.add("CANCEL_RESERVATION"); 
+                message.add(res.getConfirmationCode()); 
+                client.handleMessageFromClientUI(message); 
+            } 
+        }); 
+    } 
 
     /**
-     * Handles responses from the server.
+     * Processes server responses (refreshing the table or showing success messages).
+     * @param message The server response (List of reservations or String signal).
+     * @return None.
      */
-    @Override // Overriding ChatIF display method
-    public void display(Object message) { // Start of display method
-        
-        // Check if the server sent a list (Initial load or refresh)
-        if (message instanceof List) { // Check for list instance
-            
-            // Update the table items on the UI thread
-            Platform.runLater(() -> { // Start runLater
-                // Convert to observable list and populate table
-                tableReservations.setItems(FXCollections.observableArrayList((List<Reservation>) message)); // Setting items
-                // Refresh table visuals
-                tableReservations.refresh(); // Refreshing
-            }); // End runLater
-            
-        } // End of List check
-        
-        // Check if the server sent a success notification for cancellation
-        else if (message instanceof String && ((String) message).equals("CANCEL_SUCCESS")) { // Check for success string
-            
-            // Show success message and refresh data on UI thread
-            Platform.runLater(() -> { // Start runLater
-                
-                // Create an information alert
-                Alert successAlert = new Alert(Alert.AlertType.INFORMATION); // Initializing alert
-                successAlert.setTitle("Success"); // Setting title
-                successAlert.setHeaderText(null); // No header
-                successAlert.setContentText("The reservation has been successfully canceled."); // Setting message
-                successAlert.showAndWait(); // Display and block
-
-                // Refresh the table by re-triggering the data fetch logic
-                onClientReady(); // Calling refresh method
-                
-            }); // End runLater
-            
-        } // End of success string check
-        
-    } // End of display method
+    @Override 
+    public void display(Object message) { 
+        if (message instanceof List) { 
+            Platform.runLater(() -> { 
+                tableReservations.setItems(FXCollections.observableArrayList((List<Reservation>) message)); 
+                tableReservations.refresh(); 
+            }); 
+        } 
+        else if (message instanceof String && ((String) message).equals("CANCEL_SUCCESS")) { 
+            Platform.runLater(() -> { 
+                Alert successAlert = new Alert(Alert.AlertType.INFORMATION); 
+                successAlert.setTitle("Success"); 
+                successAlert.setHeaderText(null); 
+                successAlert.setContentText("The reservation has been successfully canceled."); 
+                successAlert.showAndWait(); 
+                onClientReady(); 
+            }); 
+        } 
+    } 
 
     /**
-     * Navigates back to the relevant main menu.
+     * Navigates back to the relevant main menu based on the user's role.
+     * @param event The ActionEvent from the back button.
+     * @return None.
      */
-    @FXML // FXML linkage
-    void clickBack(ActionEvent event) { // Start clickBack method
-        
-        // Variable to store the destination path
-        String fxmlPath = ""; // Initialize path
-        
-        // Refactored: Using switch-case for role-based navigation logic
-        if (userType != null) { // Guard against null type
-            
-            switch (userType) { // Evaluate userType
-                
-                case "Subscriber": // Registered member case
-                    fxmlPath = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml"; // Set subscriber path
-                    break; // Exit switch
-                    
-                default: // Occasional or other user case
-                    fxmlPath = "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"; // Set occasional path
-                    break; // Exit switch
-                    
-            } // End of switch
-            
-        } // End of null guard
-            
-        // Use the BaseMenuController's navigateTo utility for scene transition
-        navigateTo(client, event, userType, userId, fxmlPath, "Bistro - Main Menu"); // Executing navigation
-        
-    } // End of clickBack method
+    @FXML 
+    void clickBack(ActionEvent event) { 
+        String fxmlPath = ""; 
+        if (userType != null) { 
+            switch (userType) { 
+                case "Subscriber": 
+                    fxmlPath = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml"; 
+                    break; 
+                default: 
+                    fxmlPath = "/clientGUI/fxmlFiles/OccasionalFXML/OccasionalMenuFrame.fxml"; 
+                    break; 
+            } 
+        } 
+        navigateTo(client, event, userType, userId, fxmlPath, "Bistro - Main Menu"); 
+    } 
 
-    // Interface requirement implementations (Stubs - logic preserved)
-    @Override public void viewOrderHistory(client.ChatClient client, int userId) {} // Empty implementation stub
-    @Override public void editPersonalDetails(client.ChatClient client, int userId) {} // Empty implementation stub
-    
-} // End of ViewReservationController class
+    // Interface requirement implementations (Stubs)
+    /**
+     * Interface stub for viewing order history.
+     * @param client The network client.
+     * @param userId The unique user identifier.
+     * @return None.
+     */
+    @Override public void viewOrderHistory(ChatClient client, int userId) {} 
+
+    /**
+     * Interface stub for editing personal details.
+     * @param client The network client.
+     * @param userId The unique user identifier.
+     * @return None.
+     */
+    @Override public void editPersonalDetails(ChatClient client, int userId) {} 
+}

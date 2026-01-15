@@ -19,10 +19,23 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 
-public class ManageReservationController extends BaseMenuController implements ChatIF{
+/**
+ * Controller class for the Manage Reservation screen at the physical Service Terminal.
+ * This class allows users to cancel active reservations, leave the waiting list, 
+ * or proceed to payment by providing their unique confirmation codes.
+ */
+public class ManageReservationController extends BaseMenuController implements ChatIF {
         
     @FXML private Button btnCancel, btnExitWaiting, btnPay, btnBack;
 
+    /**
+     * Injects the communication client and registers this controller as the active 
+     * UI for processing server responses.
+     * @param client   The active ChatClient instance.
+     * @param userType The role of the user (e.g., "Terminal").
+     * @param userId   The unique identification of the user.
+     * @return None.
+     */
     @Override
     public void setClient(ChatClient client, String userType, int userId) {
         super.setClient(client, userType, userId);
@@ -31,9 +44,15 @@ public class ManageReservationController extends BaseMenuController implements C
         }
     }
 
+    /**
+     * Initiates the reservation cancellation flow. Prompts the user for a confirmation 
+     * code via a dialog and transmits the request to the server.
+     * @param event The ActionEvent triggered by the cancel button.
+     * @return None.
+     */
     @FXML
     void onCancelReservation(ActionEvent event) {
-    	javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
+        javafx.scene.control.TextInputDialog dialog = new javafx.scene.control.TextInputDialog();
         dialog.setTitle("Cancel Reservation");
         dialog.setHeaderText("Reservation Cancellation");
         dialog.setContentText("Please enter your confirmation code:");
@@ -53,9 +72,15 @@ public class ManageReservationController extends BaseMenuController implements C
         });
     }
 
+    /**
+     * Processes the request to exit the waiting list. Prompts the user for their 
+     * waiting list code and sends the cancellation request to the server.
+     * @param event The ActionEvent triggered by the exit waiting list button.
+     * @return None.
+     */
     @FXML
     void onExitWaitingList(ActionEvent event) {	
-    	// Creating the input dialog for the confirmation code
+        // Creating the input dialog for the confirmation code
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Exit Waiting List");
         dialog.setHeaderText("Confirmation Code Required");
@@ -80,9 +105,15 @@ public class ManageReservationController extends BaseMenuController implements C
         });
     }
 
+    /**
+     * Navigates the user to the payment entry screen. Sets the context to "Terminal" 
+     * mode to ensure appropriate return navigation.
+     * @param event The ActionEvent triggered by the pay button.
+     * @return None.
+     */
     @FXML
     void onPayReservation(ActionEvent event) {
-    	try {
+        try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/MenuFXML/PayBillEntryFrame.fxml"));
             Parent root = loader.load();
 
@@ -101,10 +132,15 @@ public class ManageReservationController extends BaseMenuController implements C
         }
     }
 
+    /**
+     * Returns the user to the main Terminal Menu screen.
+     * @param event The ActionEvent triggered by the back button.
+     * @return None.
+     */
     @FXML
     void onBackClicked(ActionEvent event) {
-    	try {
-            // Load the Terminal Menu screen [cite: 2]
+        try {
+            // Load the Terminal Menu screen
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/Terminal/TerminalMenuFrame.fxml"));
             Parent root = loader.load();
 
@@ -124,7 +160,11 @@ public class ManageReservationController extends BaseMenuController implements C
     }
     
     /**
-     * Helper for standardized alerts.
+     * Internal utility method to display standardized JavaFX Alert dialogs.
+     * @param title   The title of the alert window.
+     * @param content The message body to be displayed.
+     * @param type    The AlertType defining the visual style (Success, Error, Warning).
+     * @return None.
      */
     private void showAlert(String title, String content, AlertType type) {
         Alert alert = new Alert(type);
@@ -134,9 +174,16 @@ public class ManageReservationController extends BaseMenuController implements C
         alert.showAndWait();
     }
     
+    /**
+     * Processes incoming string messages from the server on the JavaFX thread.
+     * Provides feedback popups based on the success or failure of cancellations.
+     * @param message The response object from the server.
+     * @return None.
+     */
+    
     @Override
     public void display(Object message) {
-    	if (message instanceof String) {
+        if (message instanceof String) {
             String response = (String) message;
 
             Platform.runLater(() -> {

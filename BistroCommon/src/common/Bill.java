@@ -3,98 +3,84 @@ package common; // Defining the package name where this class resides
 import java.io.Serializable; // Importing Serializable interface to allow object serialization
 
 /**
- * The Bill class represents a financial record of a transaction.
- * It implements Serializable to allow instances to be sent over a network or saved to disk.
+ * Represents a financial record of a transaction in the Bistro system.
+ * This class stores price details, discounts, and confirmation identifiers.
  */
 public class Bill implements Serializable {
 
-    // Unique version identifier for Serializable classes to ensure compatibility during deserialization
+    /** Unique version identifier for serialization compatibility. */
     private static final long serialVersionUID = 1L;
     
-    // Unique ID of the bill
+    /** Unique ID of the bill. */
     private long billId;
     
-    // Confirmation code associated with the transaction
+    /** Confirmation code associated with the transaction. */
     private long confirmationCode;
     
-    // The initial cost before any discounts are applied
+    /** The initial cost before any discounts are applied. */
     private double baseAmount;
     
-    // The percentage of discount to be subtracted from the base amount
+    /** The percentage of discount to be subtracted from the base amount. */
     private double discountPercent;
     
-    // The final price the customer needs to pay after calculations
+    /** The final price the customer needs to pay after calculations. */
     private double finalAmount;
 
     /**
-     * Constructor to initialize a new Bill object with all required details.
-     * * @param billId           The unique identifier for the bill
-     * @param confirmationCode The unique code confirming the transaction
-     * @param baseAmount       The original price
-     * @param discountPercent  The discount rate applied
-     * @param finalAmount      The total amount after discount
+     * Constructs a new Bill instance with complete transaction details.
+     * * @param billId           The unique identifier for the bill.
+     * @param confirmationCode The unique code confirming the transaction.
+     * @param baseAmount       The original price before discounts.
+     * @param discountPercent  The discount rate applied (in percentage).
+     * @param finalAmount      The total amount to be paid after discount.
      */
     public Bill(long billId, long confirmationCode, double baseAmount, double discountPercent, double finalAmount) {
-        // Assigning the provided bill ID to the class member
         this.billId = billId;
-        
-        // Assigning the provided confirmation code to the class member
         this.confirmationCode = confirmationCode;
-        
-        // Assigning the provided base amount to the class member
         this.baseAmount = baseAmount;
-        
-        // Assigning the provided discount percentage to the class member
         this.discountPercent = discountPercent;
-        
-        // Assigning the calculated final amount to the class member
         this.finalAmount = finalAmount;
     }
 
     // --- Getters Section ---
 
     /**
-     * Retrieves the Bill ID.
-     * @return long representation of the bill ID.
+     * Gets the unique identifier of the bill.
+     * * @return The bill ID as a long.
      */
     public long getBillId() { 
-        // Returning the value of billId
         return billId; 
     }
 
     /**
-     * Retrieves the Confirmation Code.
-     * @return long representation of the confirmation code.
+     * Gets the confirmation code linked to this bill's transaction.
+     * * @return The confirmation code as a long.
      */
     public long getConfirmationCode() { 
-        // Returning the value of confirmationCode
         return confirmationCode; 
     }
 
     /**
-     * Retrieves the Base Amount (before discount).
-     * @return double representation of the base amount.
+     * Gets the initial amount of the bill before any discounts.
+     * * @return The base amount as a double.
      */
     public double getBaseAmount() { 
-        // Returning the value of baseAmount
         return baseAmount; 
     }
 
     /**
-     * Retrieves the Discount Percentage.
-     * @return double representation of the discount percent.
+     * Gets the discount percentage applied to this bill.
+     * * @return The discount percent as a double.
      */
     public double getDiscountPercent() { 
-        // Returning the value of discountPercent
         return discountPercent; 
     }
 
     /**
-     * Retrieves the Final Amount (after discount).
-     * @return double representation of the final amount.
+     * Gets the final calculated amount that the customer is charged.
+     * * @return The final amount as a double.
      */
     public double getFinalAmount() { 
-        // Returning the value of finalAmount
         return finalAmount; 
     }
 }
