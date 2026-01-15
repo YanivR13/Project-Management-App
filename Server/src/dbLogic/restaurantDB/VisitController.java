@@ -210,7 +210,7 @@ public class VisitController {
                 if (rsRes.next()) {
                     // Priority match found: Update to NOTIFIED
                     updateStatus(conn, "reservation", "NOTIFIED", rsRes.getLong("confirmation_code"));
-                    serverLogic.scheduling.WaitingListScheduler.startNoShowTimer(rsRes.getLong("confirmation_code"), tableId);
+                    serverLogic.scheduling.VisitScheduler.startNoShowTimer(rsRes.getLong("confirmation_code"), tableId);
                     System.out.println("[VisitController] Priority reservation notified.");
                     return; 
                 }
@@ -299,52 +299,85 @@ public class VisitController {
             ps.executeUpdate();
         }
     }
-    
  
-public static java.util.ArrayList<Visit> getAllActiveDiners() {
-    java.util.ArrayList<Visit> activeDiners = new java.util.ArrayList<>();
     
-    // שימוש בשם הסכימה המפורש כפי שמופיע ב-Workbench שלך
-    String sql = "SELECT v.*, COALESCE(r.number_of_guests, w.number_of_guests) as guests " +
-            "FROM visit v " +
-            "LEFT JOIN reservation r ON v.confirmation_code = r.confirmation_code " +
-            "LEFT JOIN waiting_list_entry w ON v.confirmation_code = w.confirmation_code " +
-            "WHERE v.status = 'ACTIVE'";
-    
-    try (Connection conn = DBController.getInstance().getConnection();
-         PreparedStatement pstmt = conn.prepareStatement(sql);
-         ResultSet rs = pstmt.executeQuery()) {
+    public static java.util.ArrayList<Visit> getAllActiveDiners() {
+        java.util.ArrayList<Visit> activeDiners = new java.util.ArrayList<>();
+        
+        // שימוש בשם הסכימה המפורש כפי שמופיע ב-Workbench שלך
+        String sql = "SELECT v.*, COALESCE(r.number_of_guests, w.number_of_guests) as guests " +
+                "FROM visit v " +
+                "LEFT JOIN reservation r ON v.confirmation_code = r.confirmation_code " +
+                "LEFT JOIN waiting_list_entry w ON v.confirmation_code = w.confirmation_code " +
+                "WHERE v.status = 'ACTIVE'";
+        
+        try (Connection conn = DBController.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
 
-        while (rs.next()) {
-            try {
-                // המרת הסטטוס מה-DB ל-Enum של Java
-                String statusStr = rs.getString("status");
-                Visit.VisitStatus vStatus = Visit.VisitStatus.valueOf(statusStr);
+            while (rs.next()) {
+                try {
+                    // המרת הסטטוס מה-DB ל-Enum של Java
+                    String statusStr = rs.getString("status");
+                    Visit.VisitStatus vStatus = Visit.VisitStatus.valueOf(statusStr);
 
-                Visit v = new Visit(
-                    rs.getLong("confirmation_code"),
-                    rs.getInt("table_id"),
-                    rs.getInt("user_id"),
-                    rs.getLong("bill_id"),
-                    rs.getString("start_time"),
-                    vStatus
-                );
-                
-                v.setNumberOfGuests(rs.getInt("guests")); 
-                activeDiners.add(v);
-                
-                // הדפסה ל-Console של השרת לצורך בדיקה
-                System.out.println("DEBUG: Found active diner with code: " + v.getConfirmationCode());
-            } catch (IllegalArgumentException e) {
-                System.err.println("Enum Mapping Error: " + rs.getString("status") + " is not valid.");
+                    Visit v = new Visit(
+                        rs.getLong("confirmation_code"),
+                        rs.getInt("table_id"),
+                        rs.getInt("user_id"),
+                        rs.getLong("bill_id"),
+                        rs.getString("start_time"),
+                        vStatus
+                    );
+                    
+                    v.setNumberOfGuests(rs.getInt("guests")); 
+                    activeDiners.add(v);
+                    
+                    // הדפסה ל-Console של השרת לצורך בדיקה
+                    System.out.println("DEBUG: Found active diner with code: " + v.getConfirmationCode());
+                } catch (IllegalArgumentException e) {
+                    System.err.println("Enum Mapping Error: " + rs.getString("status") + " is not valid.");
+                }
             }
+        } catch (SQLException e) {
+            System.err.println("Database Execution Error: " + e.getMessage());
         }
-    } catch (SQLException e) {
-        System.err.println("Database Execution Error: " + e.getMessage());
+        
+        System.out.println("DEBUG: Server returning list with " + activeDiners.size() + " diners.");
+        return activeDiners;
     }
     
-    System.out.println("DEBUG: Server returning list with " + activeDiners.size() + " diners.");
-    return activeDiners;
-}
+    public static String getStatusByCode(long confirmationCode) throws Exception {
+        String sql = "SELECT status FROM reservation WHERE confirmation_code = ?";
+        
+        Connection conn = DBController.getInstance().getConnection();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, confirmationCode);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("status");
+                }
+            }
+        }
+        return null;
+    }
     
+    public static void updateStatus(
+            long confirmationCode,
+            String newStatus
+    ) throws Exception {
+
+        String sql =
+            "UPDATE reservation " +
+            "SET status = ?" +
+            "WHERE confirmation_code = ?";
+
+        Connection conn = DBController.getInstance().getConnection(); 
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newStatus);
+            ps.setLong(2, confirmationCode);
+            ps.executeUpdate();
+        }
+    }
+       
 }

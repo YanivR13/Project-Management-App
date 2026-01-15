@@ -89,6 +89,9 @@ public class ServerController extends AbstractServer {
                     // Waiting 1 minute between every check
                     Thread.sleep(60000); 
 
+                    //Send reminder to reservation
+                    UpdateManagementDBController.checkReservationReminders();
+                    
                     // Cancel of late reservation and waiting list trigger 
                     UpdateManagementDBController.cancelLateReservations();
                     
@@ -318,6 +321,16 @@ public class ServerController extends AbstractServer {
                         try { client.sendToClient("SERVER_ERROR"); } catch (IOException ioException) { ioException.printStackTrace(); } 
                     } 
                     break; 
+                    
+                case "GET_ALL_SUBSCRIBERS":
+                    ArrayList<common.Subscriber> subscribers = serverLogic.managmentLogic.SubscriberDBController.getAllSubscribers();
+                    try {
+                        client.sendToClient(subscribers);
+                        serverUI.appendLog("Sent " + subscribers.size() + " subscribers to client.");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
                     
                 case "CANCEL_WAITING_LIST_BY_CODE": 
                     try { 

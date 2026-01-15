@@ -47,7 +47,7 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     @FXML private ComboBox<String> comboSpecialOpen; // Dropdown for special opening time
     @FXML private ComboBox<String> comboSpecialClose; // Dropdown for special closing time
     
- // --- Fields for CreateNewSubscriber sub-screen ---
+    // --- Fields for CreateNewSubscriber sub-screen ---
     @FXML private TextField txtPhone; // Linked to fx:id="txtPhone" in the new FXML
     @FXML private TextField txtEmail; // Linked to fx:id="txtEmail" in the new FXML
 
@@ -73,31 +73,21 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
     
     /**
      * Sends a request to the server to fetch the current restaurant operating hours.
-     * This method is triggered by the "Show the updated work times" button in the FXML.
      */
-    @FXML // Annotation to link this method to the FXML button action
-    void showCurrentWorkTimes(ActionEvent event) { // Method signature triggered by the UI button click
-        
-        // --- 1. Protocol Construction ---
-        ArrayList<Object> message = new ArrayList<>(); // Create a list to hold the communication protocol components
-        message.add("GET_RESTAURANT_WORKTIMES"); // Add the specific command string that the ServerController's switch-case expects
-        
-        // --- 2. Local Feedback ---
-        appendLog("Requesting current work times from server..."); // Log the action to the dashboard's txtLog for user feedback
-        
-        // --- 3. Transmission ---
-        if (client != null) { // Defensive check to ensure the OCSF client is initialized and connected
-            client.handleMessageFromClientUI(message); // Send the protocol message to the server through the communication bridge
-        } // End of if block
-        else { // If the client reference is null
-            appendLog("Error: Client connection is not initialized."); // Inform the representative that the connection is missing
-        } // End of else block
-        
-    } // End of showCurrentWorkTimes method
+    @FXML 
+    void showCurrentWorkTimes(ActionEvent event) { 
+        ArrayList<Object> message = new ArrayList<>(); 
+        message.add("GET_RESTAURANT_WORKTIMES"); 
+        appendLog("Requesting current work times from server..."); 
+        if (client != null) { 
+            client.handleMessageFromClientUI(message); 
+        } else { 
+            appendLog("Error: Client connection is not initialized."); 
+        } 
+    }
 
     /**
      * Utility method to load FXML sub-screens into the central contentPane.
-     * Crucial: Sets the current class instance ('this') as the controller for all sub-screens.
      */
     private void loadSubScreen(String fxmlPath) {
         try {
@@ -110,28 +100,25 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
                 loader.setController(controller);
                 this.currentSubController = controller;
             }
-            
-         // טיפול במסך רשימת ההמתנה
+            // 2. טיפול במסך רשימת ההמתנה (מקומי)
             else if (fxmlPath.contains("WaitingList.fxml")) {
                 WaitingListController controller = new WaitingListController();
                 loader.setController(controller);
                 this.currentSubController = controller;
             }
-            
-            // --- כאן הוספנו את החלק החדש ---
-            // 2. טיפול במסך הסועדים הנוכחיים
+            // 3. טיפול במסך הסועדים הנוכחיים
             else if (fxmlPath.contains("CurrentDiners.fxml")) {
-                // יצירת הקונטרולר החדש ושיוכו ל-FXML
                 CurrentDinersController controller = new CurrentDinersController();
                 loader.setController(controller);
                 this.currentSubController = controller;
             }
-            
-            
-            // ------------------------------
-            
+            // 4. טיפול במסך רשימת מנויים (GitHub)
+            else if (fxmlPath.contains("SubscribersList.fxml")) {
+                SubscribersListController controller = new SubscribersListController();
+                loader.setController(controller);
+                this.currentSubController = controller;
+            }
             else {
-                // למסכים רגילים נשתמש ב-'this'
                 loader.setController(this);
                 this.currentSubController = null;
             }
@@ -149,300 +136,170 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
     
-    
-    
-    
-    
-    
-    
     // --- 3. Screen Navigation Handlers ---
 
-    @FXML // Link to FXML menu button
-    void showRegularHoursScreen(ActionEvent event) { // Start method
-        // Load the FXML layout for standard operational hours
-        loadSubScreen("/managmentGUI/ActionsFXML/UpdateRegularHours.fxml"); // Executing sub-screen load
-        // Re-initialize the table columns and behavior for the newly loaded screen
-        setupTable(); // Configuring table
-        // Populate the table with default day names and empty times
-        initializeEmptyDays(); // Setting defaults
-    } // End method
+    @FXML 
+    void showRegularHoursScreen(ActionEvent event) { 
+        loadSubScreen("/managmentGUI/ActionsFXML/UpdateRegularHours.fxml"); 
+        setupTable(); 
+        initializeEmptyDays(); 
+    }
 
-    @FXML // Link to FXML menu button
-    void showSpecialHoursScreen(ActionEvent event) { // Start method
-        // Load the FXML layout for date-specific schedule overrides
-        loadSubScreen("/managmentGUI/ActionsFXML/UpdateSpecialHours.fxml"); // Executing sub-screen load
-        // Populate the dropdowns and set date picker constraints
-        setupSpecialHoursFields(); // Configuring inputs
-    } // End method
+    @FXML 
+    void showSpecialHoursScreen(ActionEvent event) { 
+        loadSubScreen("/managmentGUI/ActionsFXML/UpdateSpecialHours.fxml"); 
+        setupSpecialHoursFields(); 
+    }
     
-    
-    /**
-     * Logs the representative out and returns to the primary login portal.
-     */
     @FXML
     public void clickLogout(ActionEvent event) {
         try {
-            FXMLLoader loader = new FXMLLoader(
-                getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml")
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/RemoteLoginFrame.fxml"));
             Parent root = loader.load();
-
             Object nextController = loader.getController();
-
             if (nextController instanceof BaseMenuController) {
                 ((BaseMenuController) nextController).setClient(client, null, 0);
             }
-
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.show();
-
         } catch (Exception e) {
             e.printStackTrace();
             appendLog("Error during logout: " + e.getMessage());
         }
     }
 
-
     // --- 4. Internal UI Component Setup ---
 
-    /**
-     * Populates time dropdowns and configures the DatePicker constraints.
-     */
-    private void setupSpecialHoursFields() { // Start method
-        // Guard Clause: Prevent initialization if FXML components haven't been injected yet
-        if (comboSpecialOpen == null) { // Start null check
-            return; // Exit method
-        } // End null check
+    private void setupSpecialHoursFields() { 
+        if (comboSpecialOpen == null) return;
+        ObservableList<String> hours = FXCollections.observableArrayList(); 
+        for (int i = 0; i < 24; i++) { 
+            hours.addAll(String.format("%02d:00", i), String.format("%02d:30", i)); 
+        } 
+        comboSpecialOpen.setItems(hours); 
+        comboSpecialClose.setItems(hours); 
+        comboSpecialOpen.setValue("09:00"); 
+        comboSpecialClose.setValue("22:00"); 
 
-        // Create a list of time intervals every 30 minutes for 24 hours
-        ObservableList<String> hours = FXCollections.observableArrayList(); // List initialization
-        for (int i = 0; i < 24; i++) { // Loop through hours
-            hours.addAll(String.format("%02d:00", i), String.format("%02d:30", i)); // Add 00 and 30 slots
-        } // End loop
-        
-        // Assign the generated time list to the dropdown components
-        comboSpecialOpen.setItems(hours); // Populating open combo
-        comboSpecialClose.setItems(hours); // Populating close combo
-        
-        // Set standard default values for convenience
-        comboSpecialOpen.setValue("09:00"); // Default open
-        comboSpecialClose.setValue("22:00"); // Default close
+        dpSpecialDate.setDayCellFactory(picker -> new DateCell() { 
+            @Override 
+            public void updateItem(LocalDate date, boolean empty) { 
+                super.updateItem(date, empty); 
+                setDisable(empty || date.isBefore(LocalDate.now()) || date.isAfter(LocalDate.now().plusDays(30))); 
+            } 
+        }); 
+        dpSpecialDate.setValue(LocalDate.now()); 
+    } 
 
-        // Configure the DatePicker to restrict dates to a 30-day future window
-        dpSpecialDate.setDayCellFactory(picker -> new DateCell() { // Start of cell factory
-            @Override // Overriding updateItem
-            public void updateItem(LocalDate date, boolean empty) { // Start updateItem
-                super.updateItem(date, empty); // Parent call
-                // Disable dates in the past or beyond the 30-day look-ahead limit
-                setDisable(empty || date.isBefore(LocalDate.now()) || date.isAfter(LocalDate.now().plusDays(30))); // Constraint logic
-            } // End updateItem
-        }); // End factory
-        
-        // Initialize the date picker to the current day
-        dpSpecialDate.setValue(LocalDate.now()); // Default date
-    } // End method
+    private void setupTable() { 
+        if (tableHours == null) return;
+        colDay.setCellValueFactory(new PropertyValueFactory<>("day")); 
+        colOpen.setCellValueFactory(new PropertyValueFactory<>("openTime")); 
+        colClose.setCellValueFactory(new PropertyValueFactory<>("closeTime")); 
+        colOpen.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn()); 
+        colClose.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn()); 
+        colOpen.setOnEditCommit(e -> e.getRowValue().setOpenTime(e.getNewValue())); 
+        colClose.setOnEditCommit(e -> e.getRowValue().setCloseTime(e.getNewValue())); 
+        tableHours.setItems(scheduleData); 
+        tableHours.setEditable(true); 
+    } 
 
-    /**
-     * Configures the TableView for inline editing of regular hours.
-     */
-    private void setupTable() { // Start method
-        // Guard Clause: Ensure the table component is injected
-        if (tableHours == null) { // Null check
-            return; // Exit
-        } // End check
-
-        // Map column references to the data properties in DayScheduleRow
-        colDay.setCellValueFactory(new PropertyValueFactory<>("day")); // Day mapping
-        colOpen.setCellValueFactory(new PropertyValueFactory<>("openTime")); // Open mapping
-        colClose.setCellValueFactory(new PropertyValueFactory<>("closeTime")); // Close mapping
-        
-        // Enable text-based cell editing for the time columns
-        colOpen.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn()); // Setting edit factory
-        colClose.setCellFactory(javafx.scene.control.cell.TextFieldTableCell.forTableColumn()); // Setting edit factory
-
-        // Commit logic: Update the internal data object when a user finishes editing a cell
-        colOpen.setOnEditCommit(e -> e.getRowValue().setOpenTime(e.getNewValue())); // Commit open time
-        colClose.setOnEditCommit(e -> e.getRowValue().setCloseTime(e.getNewValue())); // Commit close time
-
-        // Connect the table to the observable data list and enable editing mode
-        tableHours.setItems(scheduleData); // Linking data
-        tableHours.setEditable(true); // Enabling UI editing
-    } // End method
-
-    /**
-     * Populates the schedule list with a clean week starting from Sunday.
-     */
-    private void initializeEmptyDays() { // Start method
-        // Hardcoded array to ensure correct weekly order
-        String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}; // Data definition
-        // Clear previous entries
-        scheduleData.clear(); // List cleanup
-        // Iterate through days and create initial row objects with placeholder times
-        for (String day : days) { // Start loop
-            scheduleData.add(new DayScheduleRow(day, "00:00", "00:00")); // Add row to list
-        } // End loop
-    } // End method
+    private void initializeEmptyDays() { 
+        String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"}; 
+        scheduleData.clear(); 
+        for (String day : days) { 
+            scheduleData.add(new DayScheduleRow(day, "00:00", "00:00")); 
+        } 
+    } 
 
     // --- 5. Server Communication Logic ---
 
-    /**
-     * Collects data from the table and transmits a regular hours update to the server.
-     */
-    @FXML // Link to FXML update button
-    void updateRegularHours(ActionEvent event) { // Start method
-        // Convert the tabular list into a Map format compatible with the domain model
-        Map<String, TimeRange> updatedMap = new HashMap<>(); // Initialize map
-        for (DayScheduleRow row : scheduleData) { // Iterate through rows
-            updatedMap.put(row.getDay(), new TimeRange(row.getOpenTime(), row.getCloseTime())); // Map day to range
-        } // End conversion loop
-        
-        // Encapsulate the command and data in a protocol message
-        ArrayList<Object> message = new ArrayList<>(); // Initialize message
-        message.add("UPDATE_REGULAR_HOURS"); // Command header
-        message.add(1); // Hardcoded restaurant ID (per original logic)
-        message.add(updatedMap); // Updated data map
-        
-        // Send request to the server
-        client.handleMessageFromClientUI(message); // Transmitting
-    } // End method
+    @FXML 
+    void updateRegularHours(ActionEvent event) { 
+        Map<String, TimeRange> updatedMap = new HashMap<>(); 
+        for (DayScheduleRow row : scheduleData) { 
+            updatedMap.put(row.getDay(), new TimeRange(row.getOpenTime(), row.getCloseTime())); 
+        } 
+        ArrayList<Object> message = new ArrayList<>(); 
+        message.add("UPDATE_REGULAR_HOURS"); 
+        message.add(1); 
+        message.add(updatedMap); 
+        client.handleMessageFromClientUI(message); 
+    } 
 
-    /**
-     * Transmits a date-specific hours override to the server.
-     */
-    @FXML // Link to FXML update button
-    void updateSpecialHours(ActionEvent event) { // Start method
-        // Validation: Ensure a date is selected before sending
-        if (dpSpecialDate == null || dpSpecialDate.getValue() == null) { // Null check
-            return; // Exit
-        } // End check
-        
-        // Build the message list for the special hours protocol
-        ArrayList<Object> msg = new ArrayList<>(); // Initialize list
-        msg.add("UPDATE_SPECIAL_HOURS"); // Command header
-        msg.add(1); // Hardcoded restaurant ID
-        msg.add(dpSpecialDate.getValue()); // Target date
-        msg.add(comboSpecialOpen.getValue()); // New open time
-        msg.add(comboSpecialClose.getValue()); // New close time
-
-        // Send request to the server
-        client.handleMessageFromClientUI(msg); // Transmitting
-    } // End method
+    @FXML 
+    void updateSpecialHours(ActionEvent event) { 
+        if (dpSpecialDate == null || dpSpecialDate.getValue() == null) return;
+        ArrayList<Object> msg = new ArrayList<>(); 
+        msg.add("UPDATE_SPECIAL_HOURS"); 
+        msg.add(1); 
+        msg.add(dpSpecialDate.getValue()); 
+        msg.add(comboSpecialOpen.getValue()); 
+        msg.add(comboSpecialClose.getValue()); 
+        client.handleMessageFromClientUI(msg); 
+    } 
     
-    /**
-     * Sends a request to the server to wipe all special operating hours from the database.
-     * Includes a confirmation dialog to prevent accidental data loss.
-     */
-    @FXML // Link to the "Delete All Special Hours" button in the FXML
-    void deleteAllSpecialHours(ActionEvent event) { // Method triggered by the UI button
-        
-        // --- 1. User Confirmation Dialog ---
-        // Create a confirmation alert to ensure the user actually intends to delete everything
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION); // Initialize alert 
-        confirmAlert.setTitle("Confirm Mass Deletion"); // Set window title
-        confirmAlert.setHeaderText("Permanently Delete All Special Hours?"); // Set header text
-        confirmAlert.setContentText("This action will remove every special hour override currently saved. Are you sure?"); // Set body text
-        
-        // Display the alert and wait for the user to click a button (OK or Cancel)
-        java.util.Optional<ButtonType> result = confirmAlert.showAndWait(); // Capture user decision
-        
-        // Check if the user clicked the 'OK' button
-        if (result.isPresent() && result.get() == ButtonType.OK) { // Logic gate for deletion
-            
-            // --- 2. Protocol Construction ---
-            // Prepare the ArrayList protocol expected by the ServerController 
-            ArrayList<Object> message = new ArrayList<>(); // Initialize the message list
-            message.add("DELETE_ALL_SPECIAL_HOURS"); // Add the command string (to be implemented in server)
-            message.add(1); // Add the hardcoded restaurant ID as used in other update methods
-
-            // --- 3. Local Feedback & Transmission ---
-            appendLog("Requesting server to clear all special hour records..."); // Update local log
-            
-            if (client != null) { // Check if the OCSF client bridge is active
-                client.handleMessageFromClientUI(message); // Transmit the request to the server
-            } // End of inner if
-            
-        } else { // If the user clicked 'Cancel' or closed the alert
-            appendLog("Deletion canceled by user."); // Log the cancellation locally
-        } // End of outer if-else
-        
-    } // End of deleteAllSpecialHours method
+    @FXML 
+    void deleteAllSpecialHours(ActionEvent event) { 
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION); 
+        confirmAlert.setTitle("Confirm Mass Deletion"); 
+        confirmAlert.setHeaderText("Permanently Delete All Special Hours?"); 
+        confirmAlert.setContentText("Are you sure?"); 
+        java.util.Optional<ButtonType> result = confirmAlert.showAndWait(); 
+        if (result.isPresent() && result.get() == ButtonType.OK) { 
+            ArrayList<Object> message = new ArrayList<>(); 
+            message.add("DELETE_ALL_SPECIAL_HOURS"); 
+            message.add(1); 
+            appendLog("Requesting server to clear all special hour records..."); 
+            if (client != null) client.handleMessageFromClientUI(message); 
+        } else { 
+            appendLog("Deletion canceled by user."); 
+        } 
+    } 
 
     // --- 6. Sub-Menu Navigation Handlers ---
 
-    @FXML void createNewSubscriber(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/CreateNewSubscriber.fxml"); // Loading sub-view
-    } // End method
-    
-    /**
-     * Processes the creation of a new subscriber account.
-     * Performs GUI-level validation before transmitting data to the server.
-     */
-    @FXML // Annotation to link this method to the button in CreateNewSubscriber.fxml
-    void processCreateSubscriber(ActionEvent event) { // Start of the method
-        
-        // --- 1. Data Retrieval ---
-        // Extract text from the input fields and remove leading/trailing whitespace
-        String phone = txtPhone.getText().trim(); // Getting phone input
-        String email = txtEmail.getText().trim(); // Getting email input
-
-        // --- 2. GUI Validation: Phone Number ---
-        // Check if the phone consists of exactly 10 numeric digits using Regex
-        if (!phone.matches("\\d{10}")) { // If the phone is NOT exactly 10 digits
-            // Show an error alert to the representative
-            new Alert(Alert.AlertType.ERROR, "Invalid Phone: Must be exactly 10 digits (0-9).").show(); 
-            return; // Exit the method to prevent sending invalid data
-        }
-
-        // --- 3. GUI Validation: Email Address ---
-        // Check if the email contains at least one '@' symbol
-        if (!email.contains("@")) { // If the email is missing the '@' character
-            // Show an error alert to the representative
-            new Alert(Alert.AlertType.ERROR, "Invalid Email: Must contain an '@' symbol.").show();
-            return; // Exit the method
-        }
-
-        // --- 4. Protocol Construction ---
-        // If validation passes, prepare the standard ArrayList protocol for the server
-        ArrayList<Object> message = new ArrayList<>(); // Initialize the message list
-        message.add("CREATE_NEW_SUBSCRIBER"); // Add the unique command header
-        message.add(phone); // Add the validated phone number as the second element
-        message.add(email); // Add the validated email address as the third element
-
-        // --- 5. Transmission ---
-        // Log the attempt locally in the dashboard logger
-        appendLog("Sending registration request for phone: " + phone); 
-        
-        // Send the message to the server via the OCSF client bridge
-        if (client != null) { // Defensive check for active connection
-            client.handleMessageFromClientUI(message); // Transmit to server
-        } // End of if block
-        
-    } // End of processCreateSubscriber method
-
-    @FXML void viewSubscribersList(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/SubscribersList.fxml"); // Loading sub-view
-    } // End method
-
-    
-    
-    
-    
-    
-    
-    
+    @FXML void createNewSubscriber(ActionEvent event) { 
+        loadSubScreen("/managmentGUI/ActionsFXML/CreateNewSubscriber.fxml"); 
+    } 
     
     @FXML 
-    void viewActiveReservations(ActionEvent event) { // Triggered by menu
-        loadSubScreen("/managmentGUI/ActionsFXML/ActiveReservations.fxml"); 
+    void processCreateSubscriber(ActionEvent event) { 
+        String phone = txtPhone.getText().trim(); 
+        String email = txtEmail.getText().trim(); 
+        if (!phone.matches("\\d{10}")) { 
+            new Alert(Alert.AlertType.ERROR, "Invalid Phone: Must be 10 digits.").show(); 
+            return; 
+        }
+        if (!email.contains("@")) { 
+            new Alert(Alert.AlertType.ERROR, "Invalid Email.").show();
+            return; 
+        }
+        ArrayList<Object> message = new ArrayList<>(); 
+        message.add("CREATE_NEW_SUBSCRIBER"); 
+        message.add(phone); 
+        message.add(email); 
+        appendLog("Sending registration request for phone: " + phone); 
+        if (client != null) client.handleMessageFromClientUI(message); 
+    } 
 
-        // 2. שליחת הבקשה לשרת כדי לקבל את הנתונים לתוך המסך שנטען
+    @FXML 
+    void viewSubscribersList(ActionEvent event) { 
+        loadSubScreen("/managmentGUI/ActionsFXML/SubscribersList.fxml"); 
+        ArrayList<Object> message = new ArrayList<>();
+        message.add("GET_ALL_SUBSCRIBERS");
+        appendLog("System: Requesting subscriber list from server...");
+        client.handleMessageFromClientUI(message);
+    }
+    
+    @FXML 
+    void viewActiveReservations(ActionEvent event) { 
+        loadSubScreen("/managmentGUI/ActionsFXML/ActiveReservations.fxml"); 
         try {
             appendLog("System: Fetching all active reservations for staff view...");
-            
             ArrayList<Object> message = new ArrayList<>();
-            message.add("GET_ALL_ACTIVE_RESERVATIONS_STAFF"); // הפקודה שהגדרנו בשרת
-            
+            message.add("GET_ALL_ACTIVE_RESERVATIONS_STAFF"); 
             client.sendToServer(message); 
         } catch (IOException e) {
             appendLog("Error: Failed to send request to server.");
@@ -450,128 +307,70 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
 
-    
-   
-    
     @FXML 
     void viewCurrentDiners(ActionEvent event) { 
-        // 1. טעינת תת-המסך הגרפי (ה-FXML) לתוך הפאנל המרכזי
         loadSubScreen("/managmentGUI/ActionsFXML/CurrentDiners.fxml"); 
-
-        // 2. שליחת הבקשה לשרת לקבלת הנתונים
         try {
-            appendLog("System: Fetching list of active diners currently in the restaurant...");
-            
-            // יצירת פרוטוקול ההודעה כפי שהגדרנו ב-case בשרת
+            appendLog("System: Fetching active diners list...");
             ArrayList<Object> message = new ArrayList<>();
             message.add("GET_ACTIVE_DINERS_LIST"); 
-            
-            // שליחת ההודעה דרך הלקוח (הנציג) לשרת
-            if (client != null) {
-                client.handleMessageFromClientUI(message); 
-            }
+            if (client != null) client.handleMessageFromClientUI(message); 
         } catch (Exception e) {
-            appendLog("Error: Failed to send request for active diners.");
+            appendLog("Error: Failed to send request.");
             e.printStackTrace();
         }
     }
 
-    /**
-     * Allows staff members to access the customer-facing subscriber menu.
-     */
-  
-    
-    
-    
-    
     @FXML 
     void viewWaitingList(ActionEvent event) { 
-        // 1. טעינת תת-המסך הגרפי (ה-FXML)
         loadSubScreen("/managmentGUI/ActionsFXML/WaitingList.fxml"); 
-
-        // 2. שליחת הבקשה לשרת לקבלת נתוני רשימת ההמתנה
         try {
             appendLog("System: Requesting current waiting list from server...");
-            
             ArrayList<Object> message = new ArrayList<>();
-            message.add("GET_WAITING_LIST"); // הפקודה החדשה שנממש בשרת
-            
-            if (client != null) {
-                client.handleMessageFromClientUI(message); 
-            }
+            message.add("GET_WAITING_LIST"); 
+            if (client != null) client.handleMessageFromClientUI(message); 
         } catch (Exception e) {
             appendLog("Error: Failed to send request for waiting list.");
             e.printStackTrace();
         }
     }
 
-  
-    
     @FXML
     void clickCustomerPortal(ActionEvent event) {
         try {
-            // Load the Subscriber Menu frame directly
             String fxmlPath = "/clientGUI/fxmlFiles/SubscriberFXML/SubscriberMenuFrame.fxml";
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
             Parent root = loader.load();
-
-            // Inject session data into the Subscriber menu controller
             Object nextController = loader.getController();
             if (nextController instanceof BaseMenuController) {
                 ((BaseMenuController) nextController).setClient(client, "Subscriber", userId);
-                
-                ((BaseMenuController) nextController).setOriginalUserType(userType);   // save Manager / Representative
-                // Preserve original staff context and switch to Subscriber mode
+                ((BaseMenuController) nextController).setOriginalUserType(userType);
                 ((BaseMenuController) nextController).setActingAsSubscriber(true);
-                ((BaseMenuController) nextController).setClient(client, "Subscriber", userId);
             }
-
-            // Switch the current stage to the Subscriber Menu scene
             Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
             stage.setTitle("Bistro - Subscriber Menu");
             stage.setScene(new Scene(root));
             stage.show();
-
         } catch (IOException e) {
             appendLog("Navigation Error: " + e.getMessage());
             e.printStackTrace();
         }
     }
     
-    
-    /**
-     * Dynamically loads the Table Management sub-screen into the central content pane.
-     * This method initializes a dedicated controller for tables, ensuring separation 
-     * of concerns and preventing the main dashboard from becoming bloated.
-     * * @param event The action event triggered by the "Manage Tables" button.
-     */
     @FXML
     public void showManageTablesScreen(ActionEvent event) {
         try {
-        	// Clear previous content from the central container
             contentPane.getChildren().clear();
-            appendLog("Loading Tables Management (Dedicated Controller)...");
-
-            // Initialize the FXML loader for the specific management view
+            appendLog("Loading Tables Management...");
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/managmentGUI/ActionsFXML/ManageTables.fxml"));
-            
             Node node = loader.load();
-            
-            // Retrieve the newly created controller instance from the loader
             ManageTablesController childCtrl = loader.getController();
-            
-            // Inject the shared communication client and session data into the child controller
             childCtrl.setClient(this.client, this.userType, this.userId);
-            // Initialize the child controller (sets up tables, listeners, etc.) 
             childCtrl.onClientReady(); 
-
-            // Set layout constraints to ensure the sub-screen fills the entire content pane
             AnchorPane.setTopAnchor(node, 0.0);
             AnchorPane.setBottomAnchor(node, 0.0);
             AnchorPane.setLeftAnchor(node, 0.0);
             AnchorPane.setRightAnchor(node, 0.0);
-            
-            // Add the sub-screen node to the visual hierarchy
             contentPane.getChildren().add(node);
         } catch (IOException e) {
             appendLog("Error: " + e.getMessage());
@@ -579,26 +378,15 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
         }
     }
 
-    
-    
-    
-    
-    /**
-     * Processes server responses regarding operational updates and data requests.
-     * Updated to handle the results of new subscriber registration.
-     */
-    @Override // Overriding from ChatIF/BaseMenuController
+    @Override 
     public void display(Object message) { 
-        
-        // --- SCENARIO 1: Handling ServiceResponse (Update confirmations, errors, or IDs) ---
         if (message instanceof ServiceResponse) { 
             ServiceResponse response = (ServiceResponse) message; 
             Platform.runLater(() -> { 
                 if (response.getStatus() == ServiceResponse.ServiceStatus.UPDATE_SUCCESS) {
                     if (response.getData() instanceof Long) {
-                        Long newSubscriberId = (Long) response.getData();
-                        appendLog("SUCCESS: New Subscriber created! Generated ID: " + newSubscriberId); 
-                        new Alert(Alert.AlertType.INFORMATION, "Subscriber Created Successfully!\nID: " + newSubscriberId).show();
+                        appendLog("SUCCESS: Created ID: " + response.getData()); 
+                        new Alert(Alert.AlertType.INFORMATION, "Created Successfully! ID: " + response.getData()).show();
                     } else {
                         appendLog("Server Response: " + response.getStatus());
                         new Alert(Alert.AlertType.INFORMATION, "Success! System updated.").show(); 
@@ -610,128 +398,87 @@ public class RepresentativeDashboardController extends BaseMenuController { // C
                 }
             }); 
         } 
-        
-        // --- SCENARIO 2: Handling Restaurant object (Work times) ---
         else if (message instanceof Restaurant) { 
             Restaurant rest = (Restaurant) message; 
-            Platform.runLater(() -> { 
-                appendLog(rest.getFormattedOpeningHours()); 
-            });
+            Platform.runLater(() -> appendLog(rest.getFormattedOpeningHours()));
         }
-        
-        // --- SCENARIO 3 & 4: טיפול ברשימות (הזמנות או סועדים פעילים) ---
         else if (message instanceof ArrayList) { 
             ArrayList<?> genericList = (ArrayList<?>) message; 
             if (genericList.isEmpty()) {
                 Platform.runLater(() -> appendLog("SERVER DATA: Received an empty list."));
                 return;
             }
-
             Object firstItem = genericList.get(0);
-
             Platform.runLater(() -> { 
-                // מקרה א': רשימת הזמנות (Object[])
                 if (firstItem instanceof Object[]) {
                     @SuppressWarnings("unchecked")
-                    ArrayList<Object[]> reservationsList = (ArrayList<Object[]>) genericList; 
-                    appendLog("SERVER DATA: Received " + reservationsList.size() + " active reservations."); 
+                    ArrayList<Object[]> resList = (ArrayList<Object[]>) genericList; 
+                    appendLog("SERVER DATA: Received " + resList.size() + " active reservations."); 
                     if (currentSubController instanceof ActiveReservationsController) {
-                        ((ActiveReservationsController) currentSubController).setTableData(reservationsList);
-                        appendLog("Reservations table updated.");
+                        ((ActiveReservationsController) currentSubController).setTableData(resList);
                     }
                 } 
-                
-                // מקרה ב': רשימת סועדים פעילים (Visit) - הפיצ'ר החדש
                 else if (firstItem instanceof common.Visit) {
                     @SuppressWarnings("unchecked")
                     ArrayList<common.Visit> visitsList = (ArrayList<common.Visit>) genericList;
-                    
-                    // כפי שביקשת: רק הודעה כללית ללא מספר הסועדים הכולל
-                    appendLog("System: Displaying currently active diner groups in the restaurant.");
-
-                    // הזרקה לקונטרולר של טבלת הסועדים
+                    appendLog("System: Displaying currently active diner groups.");
                     if (currentSubController instanceof CurrentDinersController) {
                         ((CurrentDinersController) currentSubController).setTableData(visitsList);
                     }
                 }
-                
-             // מקרה ג': רשימת ממתינים (WaitingListEntry)
+                // מקרה ג': רשימת ממתינים (מקומי)
                 else if (firstItem instanceof common.WaitingListEntry) {
                     @SuppressWarnings("unchecked")
                     ArrayList<common.WaitingListEntry> waitingList = (ArrayList<common.WaitingListEntry>) genericList;
-                    
                     appendLog("System: Displaying the active waiting list.");
-
-                    // הזרקה לקונטרולר של טבלת הממתינים
                     if (currentSubController instanceof WaitingListController) {
                         ((WaitingListController) currentSubController).setTableData(waitingList);
                     }
                 }
+                // מקרה ד': רשימת מנויים (GitHub)
+                else if (firstItem instanceof common.Subscriber) {
+                    @SuppressWarnings("unchecked")
+                    ArrayList<common.Subscriber> subList = (ArrayList<common.Subscriber>) genericList;
+                    appendLog("System: Received subscriber data.");
+                    if (currentSubController instanceof SubscribersListController) {
+                        ((SubscribersListController) currentSubController).setTableData(subList);
+                    }
+                }
             }); 
         }
-    } // end of display
+    } 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    /**
-     * Thread-safe helper to update the UI log area.
-     */
-    protected void appendLog(String msg) { // Start method
-        // Verify component existence and redirect to the UI thread
-        if (txtLog != null) { // Null check
-            Platform.runLater(() -> txtLog.appendText("> " + msg + "\n")); // Appending text
-        } // End check
-    } // End method
+    protected void appendLog(String msg) { 
+        if (txtLog != null) { 
+            Platform.runLater(() -> txtLog.appendText("> " + msg + "\n")); 
+        } 
+    } 
 
-    /**
-     * Helper POJO for binding weekly schedule data to the TableView.
-     */
-    public static class DayScheduleRow { // Inner class start
-        private String day; // Day name
-        private String openTime; // Opening timestamp
-        private String closeTime; // Closing timestamp
-        
-        public DayScheduleRow(String day, String openTime, String closeTime) { // Constructor
-            this.day = day; // Initializing day
-            this.openTime = openTime; // Initializing open
-            this.closeTime = closeTime; // Initializing close
-        } // End constructor
-        
-        // Standard getters and setters for TableView property binding
-        public String getDay() { return day; } // Getter
-        public String getOpenTime() { return openTime; } // Getter
-        public void setOpenTime(String ot) { this.openTime = ot; } // Setter
-        public String getCloseTime() { return closeTime; } // Getter
-        public void setCloseTime(String ct) { this.closeTime = ct; } // Setter
-    } // Inner class end
+    public static class DayScheduleRow { 
+        private String day; 
+        private String openTime; 
+        private String closeTime; 
+        public DayScheduleRow(String day, String openTime, String closeTime) { 
+            this.day = day; this.openTime = openTime; this.closeTime = closeTime; 
+        } 
+        public String getDay() { return day; } 
+        public String getOpenTime() { return openTime; } 
+        public void setOpenTime(String ot) { this.openTime = ot; } 
+        public String getCloseTime() { return closeTime; } 
+        public void setCloseTime(String ct) { this.closeTime = ct; } 
+    } 
     
-    /**
-     * מתודה המציגה את שעות הפעילות בחלון חדש (Alert)
-     */
     public void showWorkTimesAlert(String formattedHours) {
         Alert alert = new Alert(AlertType.INFORMATION);
         alert.setTitle("Restaurant Operating Hours");
         alert.setHeaderText("Current Updated Schedule");
-
-        // יצירת TextArea להצגת הטקסט כדי לאפשר גלילה ועיצוב נקי
         TextArea textArea = new TextArea(formattedHours);
-        textArea.setEditable(false); // המשתמש לא יכול לערוך את הטקסט
-        textArea.setWrapText(true);  // גלישת טקסט אוטומטית
+        textArea.setEditable(false); 
+        textArea.setWrapText(true);  
         textArea.setPrefWidth(500);
         textArea.setPrefHeight(400);
-
-        // הגדרת גופן מונוספייס (כמו ב-Logger) כדי שהעיצוב יישמר
         textArea.setStyle("-fx-font-family: 'Courier New'; -fx-font-size: 13;");
-
-        // הטמעת ה-TextArea בתוך ה-Alert
         alert.getDialogPane().setContent(textArea);
         alert.showAndWait();
     }
-    
-} // End of RepresentativeDashboardController class
+}
