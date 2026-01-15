@@ -7,6 +7,7 @@ import MainControllers.DBController;
 import common.Visit;
 
 import java.util.ArrayList;
+import java.util.List;
 /**
  * VisitController handles the arrival logic and seating transactions at the Terminal.
  * Logic: Prioritizes NOTIFIED guests and ensures fair table allocation.
@@ -18,7 +19,7 @@ public class VisitController {
      * @param code The confirmation code entered by the customer.
      * @return Status message for the UI.
      */
-    public static String processTerminalArrival(long code) {
+    public synchronized static String processTerminalArrival(long code) {
         Connection conn = DBController.getInstance().getConnection();
         try {
             // 1. Search in confirmed reservations (Including Waiting and Notified statuses)
@@ -75,8 +76,8 @@ public class VisitController {
         Timestamp scheduledTs = rs.getTimestamp("reservation_datetime");
         long diffMinutes = Duration.between(scheduledTs.toLocalDateTime(), LocalDateTime.now()).toMinutes();
 
-        // Enforce the 20-minute early arrival window
-        if (diffMinutes < -20) {
+        // Enforce the 15-minute early arrival window
+        if (diffMinutes < -15) {
             return "TOO_EARLY";
         }
 
@@ -112,19 +113,41 @@ public class VisitController {
      * Protection Logic: Counts free tables vs guests already NOTIFIED to prevent 'stealing' tables.
      */
     private static boolean isSeatingSafe(Connection conn, int guests) throws SQLException {
-        // Count total available tables
-        ResultSet rsAvail = conn.prepareStatement("SELECT COUNT(*) FROM `table` WHERE is_available = 1 AND capacity >= " + guests).executeQuery();
-        int available = rsAvail.next() ? rsAvail.getInt(1) : 0;
+        List<Integer> tables = new ArrayList<>();
+        String sqlTables = "SELECT capacity FROM `table` WHERE is_available = 1 ORDER BY capacity ASC";
+        try (PreparedStatement ps = conn.prepareStatement(sqlTables);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) tables.add(rs.getInt("capacity"));
+        }
 
-        // Count all guests (Reservations/Walk-ins) currently in 'NOTIFIED' status
-        ResultSet rsNotified = conn.prepareStatement(
-            "SELECT (SELECT COUNT(*) FROM reservation WHERE status = 'NOTIFIED' AND number_of_guests >= " + guests + ") + " +
-            "(SELECT COUNT(*) FROM waiting_list_entry WHERE status = 'NOTIFIED' AND number_of_guests >= " + guests + ")"
-        ).executeQuery();
-        int notified = rsNotified.next() ? rsNotified.getInt(1) : 0;
+        List<Integer> groups = new ArrayList<>();
+        groups.add(guests); 
+        
+        String sqlGroups = 
+            "SELECT number_of_guests FROM reservation WHERE status = 'NOTIFIED' " +
+            "UNION ALL " +
+            "SELECT number_of_guests FROM waiting_list_entry WHERE status = 'NOTIFIED'";
+        
+        try (PreparedStatement ps = conn.prepareStatement(sqlGroups);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) groups.add(rs.getInt("number_of_guests"));
+        }
 
-        // Only safe if there is a surplus table available
-        return (available > notified);
+        groups.sort((a, b) -> b - a);
+
+        for (int groupSize : groups) {
+            boolean foundTable = false;
+            for (int i = 0; i < tables.size(); i++) {
+                if (tables.get(i) >= groupSize) {
+                    tables.remove(i); 
+                    foundTable = true;
+                    break;
+                }
+            }
+            if (!foundTable) return false;
+        }
+
+        return true;
     }
 
     /**
@@ -141,7 +164,7 @@ public class VisitController {
             updateStatus(conn, sourceTable, "ARRIVED", code);
 
             // 3. Occupy the table
-            updateTableAvailability(conn, tableId, "false");
+            updateTableAvailability(conn, tableId, false);
 
             // 4. Create Visit record
             insertVisitRecord(conn, code, tableId, userId, billId);
@@ -187,6 +210,7 @@ public class VisitController {
                 if (rsRes.next()) {
                     // Priority match found: Update to NOTIFIED
                     updateStatus(conn, "reservation", "NOTIFIED", rsRes.getLong("confirmation_code"));
+                    serverLogic.scheduling.WaitingListScheduler.startNoShowTimer(rsRes.getLong("confirmation_code"), tableId);
                     System.out.println("[VisitController] Priority reservation notified.");
                     return; 
                 }
@@ -244,10 +268,10 @@ public class VisitController {
         }
     }
 
-    private static void updateTableAvailability(Connection conn, int id, String isAvailable) throws SQLException {
+    private static void updateTableAvailability(Connection conn, int id, boolean isAvailable) throws SQLException {
         String sql = "UPDATE `table` SET is_available = ? WHERE table_id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-        	ps.setBoolean(1, false);
+        	ps.setBoolean(1, isAvailable);
             ps.setInt(2, id);
             ps.executeUpdate();
         }
@@ -281,7 +305,11 @@ public static java.util.ArrayList<Visit> getAllActiveDiners() {
     java.util.ArrayList<Visit> activeDiners = new java.util.ArrayList<>();
     
     // שימוש בשם הסכימה המפורש כפי שמופיע ב-Workbench שלך
-    String sql = "SELECT * FROM prototypedb.visit WHERE status = 'ACTIVE'";
+    String sql = "SELECT v.*, COALESCE(r.number_of_guests, w.number_of_guests) as guests " +
+            "FROM visit v " +
+            "LEFT JOIN reservation r ON v.confirmation_code = r.confirmation_code " +
+            "LEFT JOIN waiting_list_entry w ON v.confirmation_code = w.confirmation_code " +
+            "WHERE v.status = 'ACTIVE'";
     
     try (Connection conn = DBController.getInstance().getConnection();
          PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -302,7 +330,7 @@ public static java.util.ArrayList<Visit> getAllActiveDiners() {
                     vStatus
                 );
                 
-                v.setNumberOfGuests(0); 
+                v.setNumberOfGuests(rs.getInt("guests")); 
                 activeDiners.add(v);
                 
                 // הדפסה ל-Console של השרת לצורך בדיקה

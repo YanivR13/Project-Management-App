@@ -87,7 +87,7 @@ public class VisitUIController implements ChatIF {
             showAlert("Arrival Failed", "Invalid confirmation code or booking not confirmed.", AlertType.ERROR);
         } 
         else if (response.equals("TOO_EARLY")) {
-            showAlert("Too Early", "You arrived more than 20 minutes early. Please come back later.", AlertType.INFORMATION);
+            showAlert("Too Early", "You arrived more than 15 minutes early. Please come back later.", AlertType.INFORMATION);
         } 
         else if (response.equals("TABLE_NOT_READY_WAIT")) {
             showAlert("Welcome", "Your table is not ready yet. Please wait, we will notify you via SMS.", AlertType.INFORMATION);
