@@ -17,7 +17,10 @@ public class Visit implements Serializable { // Defining the Visit class which i
         ACTIVE,
         
         // The visit has concluded, payment is done, and the table is free
-        FINISHED
+        FINISHED,
+        
+        //The visit has come to an end - the customer need to pay
+        BILL_PENDING
     } // End of VisitStatus enumeration
 
     // Standard serial version UID for ensuring compatibility during OCSF network transmission

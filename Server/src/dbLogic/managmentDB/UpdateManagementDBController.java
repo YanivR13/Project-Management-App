@@ -243,38 +243,104 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
      * Fixed: Now checks 'visit' table for actual 'start_time' instead of reservation time.
      */
     public static void checkStayDurationAlerts() {
-        // השאילתה המעודכנת: בודקת בטבלת visit לפי start_time
-        // הצטרפנו (JOIN) לטבלת reservation רק כדי שנוכל להציג את ה-user_id בהתראה אם תרצה
-        String sql = "SELECT v.table_id, v.user_id, v.start_time, v.confirmation_code " +
-                     "FROM visit v " +
-                     "WHERE v.status = 'ARRIVED' " + // הנחה: 'ARRIVED' הוא הסטטוס ב-visit כשהם יושבים
-                     "AND TIMESTAMPDIFF(MINUTE, v.start_time, NOW()) >= 120";
+        // שלב 1: שליפת לקוחות שיושבים מעל שעתיים ועדיין בסטטוס ARRIVED
+        String selectSql = "SELECT v.table_id, v.user_id, v.confirmation_code " +
+                           "FROM visit v " +
+                           "WHERE v.status = 'ARRIVED' " + 
+                           "AND TIMESTAMPDIFF(MINUTE, v.start_time, NOW()) >= 120";
 
-        // Singleton
         Connection conn = DBController.getInstance().getConnection();
 
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             ResultSet rs = stmt.executeQuery(selectSql)) {
          
             while (rs.next()) {
                 int tableId = rs.getInt("table_id");
                 int userId = rs.getInt("user_id");
-                String startTime = rs.getString("start_time");
                 String confCode = rs.getString("confirmation_code");
 
-                // הדפסת התראה ללוג של השרת
-             // יצירת הודעת התראה ללוגר
-                String alertMsg = String.format("[STAY ALERT] Table %d (User %d) has exceeded 2 hours. (Started: %s)", 
-                                                tableId, userId, startTime);
-                
-                // שליחה ללוגר ב-Server UI
+                // שלב 2: כתיבת הודעה ללוג השרת (כאילו נשלחה הודעה ללקוח)
+                String alertMsg = String.format("[STAY ALERT] Table %d (User %d) reached 2 hours. Status updated to BILL_PENDING.", 
+                                                tableId, userId);
                 ServerController.log(alertMsg);
-                
-                // כאן תוכל להוסיף לוגיקה נוספת, כמו שליחת התראה למלצר או למנהל
+
+                // שלב 3: עדכון הסטטוס ב-DB כדי שלא נחזור על הפעולה בדקה הבאה
+                updateVisitStatus(confCode, "BILL_PENDING");
             }
         } catch (SQLException e) { 
-            System.err.println("Error checking stay durations: " + e.getMessage());
-            e.printStackTrace(); 
+            ServerController.log("Error in stay duration automation: " + e.getMessage());
+        }
+    }
+
+    /**
+    * Updates the visit status in the database.
+    * * @param confCode  The unique confirmation code for the visit.
+    * @param newStatus The new status to be applied (e.g., 'BILL_PENDING').
+    */
+    private static void updateVisitStatus(String confCode, String newStatus) {
+        String updateSql = "UPDATE visit SET status = ? WHERE confirmation_code = ?";
+        try (PreparedStatement pstmt = DBController.getInstance().getConnection().prepareStatement(updateSql)) {
+            pstmt.setString(1, newStatus);
+            pstmt.setString(2, confCode);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Failed to update status for code " + confCode + ": " + e.getMessage());
+        }
+    }
+    
+    
+    /**
+     * Automated method to monitor diner stay duration.
+     * This method fetches all visits currently in 'ARRIVED' status where the start_time 
+     * exceeds 120 minutes from the current time. 
+     * For each violation, an alert is logged to the Server UI, and the visit status 
+     * is updated to 'BILL_PENDING' to ensure the notification is sent only once.
+     */
+    public static void checkReservationReminders() {
+        // שאילתה: שולפת הזמנות בסטטוס ACTIVE שהמועד שלהן הוא בעוד שעתיים או פחות
+        // CONCAT מחבר את התאריך והשעה למחרוזת אחת לצורך השוואה מול NOW()
+        String selectSql = "SELECT r.reservation_id, r.user_id, r.reservation_time " +
+                           "FROM reservation r " +
+                           "WHERE r.status = 'ACTIVE' " + 
+                           "AND TIMESTAMPDIFF(MINUTE, NOW(), STR_TO_DATE(CONCAT(r.reservation_date, ' ', r.reservation_time), '%Y-%m-%d %H:%i:%s')) <= 120 " +
+                           "AND TIMESTAMPDIFF(MINUTE, NOW(), STR_TO_DATE(CONCAT(r.reservation_date, ' ', r.reservation_time), '%Y-%m-%d %H:%i:%s')) > 0";
+
+        Connection conn = DBController.getInstance().getConnection();
+
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(selectSql)) {
+         
+            while (rs.next()) {
+                int resId = rs.getInt("reservation_id");
+                int userId = rs.getInt("user_id");
+                String resTime = rs.getString("reservation_time");
+
+                // שלב 2: כתיבת הודעה ללוג השרת (כדי שתראה שזה עבד)
+                String alertMsg = String.format("[REMINDER] Reminder sent to User %d for Reservation #%d (Time: %s). Status updated to NOTIFIED.", 
+                                                userId, resId, resTime);
+                ServerController.log(alertMsg);
+
+                // שלב 3: עדכון הסטטוס ל-NOTIFIED כדי שהשאילתה לא תשלוף אותה שוב בדקה הבאה
+                updateReservationStatus(resId, "NOTIFIED");
+            }
+        } catch (SQLException e) { 
+            ServerController.log("Error in reservation reminder: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Updates the reservation status in the database.
+     * * @param resId     The unique ID of the reservation.
+     * @param newStatus The new status to be applied (e.g., 'NOTIFIED').
+     */
+    private static void updateReservationStatus(int resId, String newStatus) {
+        String updateSql = "UPDATE reservation SET status = ? WHERE reservation_id = ?";
+        try (PreparedStatement pstmt = DBController.getInstance().getConnection().prepareStatement(updateSql)) {
+            pstmt.setString(1, newStatus);
+            pstmt.setInt(2, resId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Failed to update reservation status: " + e.getMessage());
         }
     }
 

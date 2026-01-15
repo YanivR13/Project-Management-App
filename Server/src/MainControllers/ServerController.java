@@ -88,6 +88,9 @@ public class ServerController extends AbstractServer {
                     // Waiting 1 minute between every check
                     Thread.sleep(60000); 
 
+                    //Send reminder to reservation
+                    UpdateManagementDBController.checkReservationReminders();
+                    
                     // Cancel of late reservation and waiting list trigger 
                     UpdateManagementDBController.cancelLateReservations();
                     
