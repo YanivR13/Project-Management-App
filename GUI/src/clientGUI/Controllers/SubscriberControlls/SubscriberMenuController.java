@@ -28,7 +28,8 @@ public class SubscriberMenuController extends BaseMenuController implements ICus
     @FXML private Button btnPayBill; 
     @FXML private Button btnViewRes; 
     @FXML private Button btnExitWait; 
-    @FXML private Button btnHistory; 
+    @FXML private Button btnReservationHistory;
+    @FXML private Button btnVisitHistory; 
     @FXML private Button btnEditProfile; 
     @FXML private Button btnLogout; 
     @FXML private Button btnBack;   
@@ -104,9 +105,29 @@ public class SubscriberMenuController extends BaseMenuController implements ICus
      * @return None.
      */
     @FXML 
-    void clickHistory(ActionEvent event) { 
+    void clickReservationHistory(ActionEvent event) { 
         viewOrderHistory(client, userId); 
     } 
+    /**
+     * Opens the Visit History window.
+     * @param event The ActionEvent triggered by the button click.
+     * @return None.
+     */
+    @FXML
+    void clickVisitHistory(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/clientGUI/fxmlFiles/SubscriberFXML/VisitHistoryFrame.fxml"));
+            Parent root = loader.load();
+
+            VisitHistoryController controller = loader.getController();
+            controller.setClient(client);
+            controller.loadVisitsForUser(userId);
+
+            showNewWindow(root, "Visit History");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     
     /**
      * Opens the Profile Editing window.

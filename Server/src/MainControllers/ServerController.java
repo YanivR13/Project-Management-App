@@ -279,6 +279,23 @@ public class ServerController extends AbstractServer {
                 case "REGISTER_OCCASIONAL": 
                     new OccasionalRegistrationHandler().handle(messageList, client); 
                     break; 
+                    
+                case "GET_VISITS_HISTORY":
+                    try {
+                        int userId = (int) messageList.get(1);
+                        
+                        serverLogic.menuLogic.DBVisitHistoryController db = new serverLogic.menuLogic.DBVisitHistoryController();
+                        ArrayList<common.Visit> visits = (ArrayList<common.Visit>) db.getVisitsForUser(userId);
+
+                        ArrayList<Object> response = new ArrayList<>();
+                        response.add("VISIT_HISTORY");
+                        response.add(visits);
+
+                        client.sendToClient(response);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
                                         
                 case "GET_ALL_TABLES":
                     List<common.Table> allTables = dbLogic.restaurantDB.TableDBController.getAllTables();

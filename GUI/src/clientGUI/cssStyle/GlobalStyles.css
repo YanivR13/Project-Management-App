@@ -99,7 +99,7 @@
 
 .btn-pay { 
     -fx-background-color: #f1c40f; 
-    -fx-text-fill: #2c3e50; /* טקסט כהה לניגודיות טובה על צהוב */
+    -fx-text-fill: white;
 }
 
 .btn-pay:hover { 
