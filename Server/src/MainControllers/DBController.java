@@ -81,7 +81,7 @@ public class DBController {
         conn = DriverManager.getConnection(
             "jdbc:mysql://localhost:3306/prototypedb?allowLoadLocalInfile=true&serverTimezone=Asia/Jerusalem&useSSL=false&allowPublicKeyRetrieval=true",
             "root",
-            "Ya212104483"
+            "Ss5157110!"
 
         );}
 

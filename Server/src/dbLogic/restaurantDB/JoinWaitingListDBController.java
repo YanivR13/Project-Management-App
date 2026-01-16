@@ -12,21 +12,21 @@ import java.util.Locale;
 import MainControllers.DBController;
 
 /**
- * Handles DB operations related to the waiting_list_entry table.
+ * Handles database operations related to the waiting_list_entry table.
  * Provides utilities for inserting entries, updating status,
  * and querying waiting list and restaurant availability data.
  */
 public class JoinWaitingListDBController {
 
-    /**
+	/**
      * Inserts a new entry into the waiting list table.
-     * This method is used when no immediate table is available.
+     * Used when no immediate table is available for the guest.
      *
-     * @param confirmationCode Unique confirmation code
-     * @param userId           User ID
-     * @param numberOfGuests   Number of guests
-     * @param status           Entry status (WAITING / ARRIVED)
-     * @throws SQLException if a DB error occurs
+     * @param confirmationCode The unique long code assigned to this waiting list entry.
+     * @param userId           The ID of the user (subscriber or guest).
+     * @param numberOfGuests   The party size.
+     * @param status           The initial status (e.g., 'WAITING' or 'ARRIVED').
+     * @throws SQLException If a database access error occurs.
      */
     public static void insertWaitingListEntry(
             long confirmationCode,
@@ -53,12 +53,11 @@ public class JoinWaitingListDBController {
     }
 
     /**
-     * Updates the status of an existing waiting list entry.
-     * Also records the notification time for tracking purposes.
+     * Updates the status of an existing waiting list entry and records the notification time.
      *
-     * @param confirmationCode Unique confirmation code
-     * @param newStatus        New status value
-     * @throws Exception if a DB error occurs
+     * @param confirmationCode The unique identifier for the entry.
+     * @param newStatus        The new status string (e.g., 'NOTIFIED', 'CANCELLED').
+     * @throws Exception If a database error occurs or the connection fails.
      */
     public static void updateStatus(
             long confirmationCode,
@@ -79,12 +78,11 @@ public class JoinWaitingListDBController {
     }
 
     /**
-     * Retrieves the current status of a waiting list entry
-     * based on its confirmation code.
+     * Retrieves the current status of a waiting list entry.
      *
-     * @param confirmationCode Unique confirmation code
-     * @return The current status string, or null if not found
-     * @throws Exception if a DB error occurs
+     * @param confirmationCode The unique identifier for the entry.
+     * @return A String representing the current status, or null if no entry is found.
+     * @throws Exception If a database access error occurs.
      */
     public static String getStatusByCode(long confirmationCode) throws Exception {
         String sql = "SELECT status FROM waiting_list_entry WHERE confirmation_code = ?";
@@ -102,13 +100,11 @@ public class JoinWaitingListDBController {
     }
 
     /**
-     * Checks whether a given user already has an active
-     * waiting list entry (WAITING or ARRIVED).
-     * Used to prevent duplicate active entries.
+     * Retrieves the current status of a waiting list entry.
      *
-     * @param userId User identifier
-     * @return true if the user already appears as active, false otherwise
-     * @throws SQLException if a DB error occurs
+     * @param confirmationCode The unique identifier for the entry.
+     * @return A String representing the current status, or null if no entry is found.
+     * @throws Exception If a database access error occurs.
      */
     public static boolean isUserAlreadyActive(int userId) throws SQLException {
         String sql =
@@ -128,12 +124,11 @@ public class JoinWaitingListDBController {
     }
 
     /**
-     * Determines whether the restaurant is currently open.
-     * The check prioritizes special hours for the current date.
-     * If no special hours exist, regular weekly hours are used.
+     * Determines if the restaurant is currently open based on special or regular hours.
+     * Special hours take precedence over regular weekly hours.
      *
-     * @return true if the restaurant is open at the current time, false otherwise
-     * @throws Exception if a DB error occurs
+     * @return true if the current time falls within the restaurant's operating hours, false otherwise.
+     * @throws Exception If a database error occurs during the check.
      */
     public static boolean isRestaurantOpenNow() throws Exception {
 
@@ -194,11 +189,11 @@ public class JoinWaitingListDBController {
     }
     
     /**
-     * Checks whether the waiting list currently contains any active WAITING entries.
-     * Used to prevent immediate entry when other guests are already waiting.
+     * Checks if there are any guests currently with a 'WAITING' status.
+     * Used to maintain the order of the queue and prevent skipping.
      *
-     * @return true if the waiting list is not empty, false otherwise
-     * @throws SQLException if a DB error occurs
+     * @return true if there is at least one active waiting entry, false otherwise.
+     * @throws SQLException If a database error occurs.
      */
     public static boolean hasWaitingGuests() throws SQLException {
 

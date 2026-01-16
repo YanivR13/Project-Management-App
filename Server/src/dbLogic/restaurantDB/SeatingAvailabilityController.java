@@ -10,18 +10,19 @@ import dbLogic.restaurantDB.TableDBController;
 
 /**
  * Provides capacity-based availability checks for immediate seating.
- * Determines whether adding new guests would conflict with future reservations.
+ * Determines whether adding new guests would conflict with future reservations
+ * or guests already notified from the waiting list.
  */
 public class SeatingAvailabilityController {
 
-    /**
+	/**
      * Determines whether incoming guests can be seated immediately
-     * without exceeding the restaurant's total capacity when considering
-     * future active reservations in a fixed time window.
+     * without exceeding the restaurant's total capacity, taking into account
+     * active reservations and notified waiting list entries within the next 2 hours.
      *
-     * @param incomingGuests Number of guests attempting to enter immediately
-     * @param now             Current timestamp
-     * @return true if seating is possible without conflicts, false otherwise
+     * @param incomingGuests Number of guests attempting to enter now.
+     * @param now            The current timestamp.
+     * @return true if there is enough capacity to seat the guests, false otherwise.
      */
     public static boolean canSeatWithFutureReservations(int incomingGuests, LocalDateTime now) 
     {
@@ -45,13 +46,14 @@ public class SeatingAvailabilityController {
     }
 
     /**
-     * Retrieves the total number of guests from ACTIVE reservations
-     * within a given future time window.
-     * This method aggregates reservation data to support capacity checks.
+     * Retrieves the total number of guests from ACTIVE reservations, 
+     * guests waiting at the restaurant, and notified waiting list entries 
+     * within a specific time window.
      *
-     * @param start Start of the time window
-     * @param end   End of the time window
-     * @return Total number of guests reserved in the given interval
+     * @param start The start of the time window (usually 'now').
+     * @param end   The end of the time window (usually 'now' + 2 hours).
+     * @return The aggregated total number of guests expected to occupy seats.
+     * @throws RuntimeException If a database error occurs during the query.
      */
     public static int getFutureReservedGuests(
             LocalDateTime start,

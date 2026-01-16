@@ -7,28 +7,37 @@ import MainControllers.ServerController;
 import common.WaitingListEntry;
 import serverLogic.scheduling.WaitingListScheduler;
 
+/**
+ * WaitingListController handles the logic for managing the restaurant's waiting list queue.
+ * It coordinates the process of notifying waiting guests when tables become available,
+ * ensuring fair allocation based on entry time (FIFO) and future reservation conflicts.
+ */
 public class WaitingListController {
 
+	/**
+     * Triggered whenever a table in the restaurant is freed.
+     * This method searches the waiting list for the first suitable party (FIFO) 
+     * that can fit at the table without conflicting with upcoming reservations.
+     *
+     * @param tableId The unique identifier of the table that has just become available.
+     * @throws Exception Although caught internally, this method handles complex logic involving 
+     * several database controllers and scheduled tasks.
+     */
 	public static void handleTableFreed(int tableId) {
         try {
-            // 1. קיבולת השולחן שהתפנה
             int tableCapacity = TableDBController.getTableCapacity(tableId);
 
-            // 2. שליפת רשימת ההמתנה לפי סדר כניסה (FIFO)
             List<WaitingListEntry> waitingList =
             		VisitDBController.getWaitingEntriesOrderedByEntryTime();
 
-            // 3. מעבר על התור
             for (WaitingListEntry entry : waitingList) {
 
                 int guests = entry.getNumberOfGuests();
 
-                // 3a. בדיקה אם השולחן בכלל מתאים
                 if (guests > tableCapacity) {
-                    continue; // לא מתאים – נמשיך לבא בתור
+                    continue; 
                 }
 
-                // 3b. בדיקה מול הזמנות עתידיות
                 boolean canSeat =
                     SeatingAvailabilityController
                         .canSeatWithFutureReservations(
@@ -37,13 +46,11 @@ public class WaitingListController {
                         );
 
                 if (canSeat) {
-                    // 4. מצאנו מועמד – מעדכנים ל-NOTIFIED
                     JoinWaitingListDBController.updateStatus(
                         entry.getConfirmationCode(),
                         "NOTIFIED"
                     );
 
-                    // כאן בעתיד: שליחת SMS / Email + טיימר 15 דקות
                     ServerController.log(
                     	    "[WAITING LIST] Notification sent to customer. " +
                     	    "confirmationCode=" + entry.getConfirmationCode() +
@@ -55,11 +62,10 @@ public class WaitingListController {
                             tableId
                         );
                     
-                    return; // חשוב: עוצרים אחרי הראשון שמתאים
+                    return; 
                 }
             }
 
-            // אם לא מצאנו אף אחד – לא עושים כלום
 
         } catch (Exception e) {
             e.printStackTrace();

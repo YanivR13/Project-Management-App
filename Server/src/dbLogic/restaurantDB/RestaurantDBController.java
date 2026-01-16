@@ -16,8 +16,13 @@ import MainControllers.DBController; // Importing the singleton database control
  */
 public class RestaurantDBController { // Start of the RestaurantDBController class
 
-    /**
+	/**
      * Performs a deep load of a restaurant's data based on its unique ID.
+     * This includes basic info, physical table counts, and both regular and special operating hours.
+     *
+     * @param restaurantId The unique identifier of the restaurant to load.
+     * @return A fully populated {@link Restaurant} object if found, or null if no restaurant exists with the given ID.
+     * @throws SQLException If a database access error occurs during any phase of the loading process.
      */
     public static Restaurant loadFullRestaurantData(int restaurantId) throws SQLException { // Start of the loading method
         

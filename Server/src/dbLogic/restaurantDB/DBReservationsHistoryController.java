@@ -16,12 +16,15 @@ import common.Reservation.ReservationStatus; // Importing reservation status enu
  */
 public class DBReservationsHistoryController {
 
-    /**
-     * Retrieves all reservations associated with a given user ID.
-     * Results are ordered by reservation date (most recent first).
+	/**
+     * Retrieves all reservations associated with a given user ID from the database.
+     * The results are sorted by the reservation date and time in descending order (most recent first).
      *
-     * @param userId The unique identifier of the subscriber.
-     * @return A list of Reservation objects representing the user's history.
+     * @param userId The unique identifier of the subscriber whose history is being fetched.
+     * @return A List of {@link Reservation} objects representing the user's complete history. 
+     * Returns an empty list if no records are found or if an error occurs.
+     * @throws Exception Although exceptions are caught internally, this method interacts with the 
+     * database and handles SQL-related issues.
      */
     public List<Reservation> getReservationsForUser(int userId) {
 

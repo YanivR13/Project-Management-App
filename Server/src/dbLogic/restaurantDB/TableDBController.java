@@ -12,21 +12,18 @@ import MainControllers.DBController;
 
 /**
  * Database access controller for restaurant table management.
- * 
- * This class centralizes all database operations related to tables,
+ * * This class centralizes all database operations related to tables,
  * including availability queries, capacity calculations, and table state updates.
  */
 public class TableDBController {
 
-    /**
-     * Retrieves a list of available table IDs that can accommodate
-     * the given number of guests.
+	/**
+     * Retrieves a list of available table IDs that can accommodate the given number of guests.
+     * The result is ordered by table capacity in ascending order to enable a "Best-Fit" strategy.
      *
-     * The result is ordered by table capacity in ascending order,
-     * enabling a best-fit seating strategy (smallest suitable table first).
-     *
-     * @param numberOfGuests Required seating capacity
-     * @return List of candidate table IDs sorted by capacity
+     * @param numberOfGuests The minimum required seating capacity.
+     * @return A List of candidate table IDs that are currently available.
+     * @throws SQLException If a database error occurs.
      */
     public static List<Integer> getCandidateTables(int numberOfGuests) {
 
@@ -57,10 +54,9 @@ public class TableDBController {
     }
 
     /**
-     * Calculates the total seating capacity of the restaurant
-     * by summing the capacity of all tables.
+     * Calculates the total maximum seating capacity of the restaurant by summing all table capacities.
      *
-     * @return Total restaurant seating capacity
+     * @return The total restaurant seating capacity.
      */
     public static int getRestaurantMaxCapacity() {
 
@@ -82,13 +78,11 @@ public class TableDBController {
     }
 
     /**
-     * Calculates the total seating capacity currently occupied
-     * by unavailable tables (is_available = 0).
+     * Calculates the total seating capacity currently occupied by unavailable tables.
+     * This represents capacity taken by active diner visits.
      *
-     * This represents capacity already taken by active visits.
-     *
-     * @return Total occupied seating capacity
-     * @throws SQLException if a database error occurs
+     * @return Total occupied seating capacity.
+     * @throws SQLException If a database error occurs.
      */
     public static int getUnavailableCapacity() throws SQLException {
 
@@ -110,11 +104,11 @@ public class TableDBController {
     }
 
     /**
-     * Marks a specific table as unavailable.
+     * Marks a specific table as unavailable in the database.
      * Used when a table is assigned to an active visit.
      *
-     * @param tableId ID of the table to mark as unavailable
-     * @throws Exception if a database error occurs
+     * @param tableId The ID of the table to update.
+     * @throws Exception If a database error occurs.
      */
     public static void setTableUnavailable(int tableId) throws Exception {
 
@@ -134,9 +128,9 @@ public class TableDBController {
     /**
      * Retrieves the seating capacity of a specific table.
      *
-     * @param tableId Table identifier
-     * @return Seating capacity of the table
-     * @throws SQLException if the table does not exist
+     * @param tableId The unique identifier of the table.
+     * @return The seating capacity.
+     * @throws SQLException If the table does not exist or a DB error occurs.
      */
     public static int getTableCapacity(int tableId) throws SQLException {
 
@@ -158,11 +152,9 @@ public class TableDBController {
     }
 
     /**
-     * Retrieves all tables currently stored in the system.
-     * Each table includes its ID, seating capacity,
-     * and availability status.
+     * Retrieves all tables stored in the system, including capacity and availability status.
      *
-     * @return List of all tables ordered by table ID
+     * @return A List of all {@link common.Table} objects.
      */
     public static List<common.Table> getAllTables() {
 
@@ -190,11 +182,9 @@ public class TableDBController {
     }
 
     /**
-     * Generates the next available positive table ID.
-     * Ensures table IDs always start from 1,
-     * even if a reserved archive table (-1) exists.
+     * Determines the next available positive table ID to ensure uniqueness.
      *
-     * @return Next available table ID
+     * @return The next available table ID.
      */
     private static int getNextTableId() {
 
@@ -217,12 +207,12 @@ public class TableDBController {
     }
 
     /**
-     * Adds a new table to the system with the given seating capacity.
-     * After a successful insertion, the waiting list logic is triggered
-     * to attempt seating waiting guests.
+     * Adds a new table to the restaurant using a transaction.
+     * Updates both the 'table' entity table and the 'restaurant_table' mapping table.
      *
-     * @param capacity Number of seats for the new table
-     * @return true if the table was added successfully, false otherwise
+     * @param capacity Seating capacity of the new table.
+     * @return true if added successfully, false otherwise.
+     * @throws SQLException Internal transaction handling.
      */
     public static boolean addNewTable(int capacity) {
     	
@@ -273,12 +263,12 @@ public class TableDBController {
     }
 
     /**
-     * Deletes a table from the system using a transactional process.
-     * Existing visit records are reassigned to a dummy archive table (-1)
-     * to preserve historical data and avoid foreign key violations.
+     * Deletes a table from the system.
+     * Reassigns existing visits to an archive table (-1) to maintain referential integrity.
      *
-     * @param tableId ID of the table to delete
-     * @return true if deletion succeeded, false otherwise
+     * @param tableId The ID of the table to remove.
+     * @return true if deletion and cache refresh succeeded, false otherwise.
+     * @throws SQLException Internal transaction handling.
      */
     public static boolean deleteTable(int tableId) {
 
@@ -331,9 +321,9 @@ public class TableDBController {
     /**
      * Updates the seating capacity of an existing table.
      *
-     * @param tableId ID of the table to update
-     * @param newCapacity New seating capacity
-     * @return true if updated successfully, false otherwise
+     * @param tableId     The ID of the table to update.
+     * @param newCapacity The new capacity value.
+     * @return true if the update was successful, false otherwise.
      */
     public static boolean updateTableCapacity(int tableId, int newCapacity) {
 

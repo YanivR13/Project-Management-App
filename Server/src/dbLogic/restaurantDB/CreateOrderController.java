@@ -25,6 +25,11 @@ public class CreateOrderController { // Start of CreateOrderController class def
 
     /**
      * Entry point for processing a new reservation request from the Client.
+     * Validates operating hours, checks availability, and provides suggestions if full.
+     *
+     * @param res The Reservation object containing requested date, time, and guest count.
+     * @return A ServiceResponse indicating SUCCESS (with confirmation code), SUGGESTION, FULL, or ERROR.
+     * @throws Exception if parsing or internal logic fails (caught internally).
      */
     public static ServiceResponse processNewReservation(Reservation res) { // Start of processNewReservation method
         
@@ -136,7 +141,13 @@ public class CreateOrderController { // Start of CreateOrderController class def
     } // End of processNewReservation method
 
     /**
-     * Finds the smallest available table that can accommodate the party size.
+     * Finds the smallest available table size that can accommodate the party size.
+     * Uses a "Best Fit" logic by sorting available capacities.
+     *
+     * @param restaurant The restaurant instance containing the physical inventory.
+     * @param dt The requested date and time for the reservation.
+     * @param requestedSize The number of guests in the party.
+     * @return The capacity of the allocated table size, or -1 if no table is available.
      */
     private static int findAvailableTableSize(Restaurant restaurant, LocalDateTime dt, int requestedSize) { // Start method
         // Retrieve a copy of the physical table inventory from the restaurant entity
@@ -169,6 +180,12 @@ public class CreateOrderController { // Start of CreateOrderController class def
 
     /**
      * Queries the database to count existing reservations that overlap with the requested slot.
+     * A slot is considered occupied if another reservation exists within a +/- 2-hour window.
+     *
+     * @param dt The requested date and time.
+     * @param capacity The table capacity being checked.
+     * @return The count of currently occupied tables of that size.
+     * @throws SQLException If a database access error occurs (caught internally).
      */
     private static int getReservedTablesCount(LocalDateTime dt, int capacity) { // Start method
         
@@ -203,7 +220,12 @@ public class CreateOrderController { // Start of CreateOrderController class def
     } // End of getReservedTablesCount method
 
     /**
-     * Records a new reservation in the database.
+     * Persists a new reservation record in the database and retrieves the confirmation code.
+     *
+     * @param res The Reservation DTO containing customer and booking details.
+     * @param finalTableSize The actual table capacity allocated for this booking.
+     * @return The generated confirmation code (Long), or null if the operation fails.
+     * @throws SQLException If a database access error occurs (caught internally).
      */
     private static Long saveNewReservation(Reservation res, int finalTableSize) { // Start method
         

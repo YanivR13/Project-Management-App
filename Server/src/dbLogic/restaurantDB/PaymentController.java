@@ -18,8 +18,10 @@ public class PaymentController {
 	
 	/**
      * Retrieves active visit details based on a confirmation code.
-     * * @param code The unique confirmation code for the visit.
-     * @return A Visit object if found and active, null otherwise.
+     *
+     * @param code The unique confirmation code for the visit.
+     * @return A {@link Visit} object if an active visit is found, null otherwise.
+     * @throws SQLException caught internally, logs error to stderr.
      */
 	public static Visit getVisitDetails(long code) {
 		// Query to find an active visit by its confirmation code
@@ -52,9 +54,14 @@ public class PaymentController {
 	/**
      * Finalizes the payment process by updating the bill, closing the visit, 
      * and releasing the table back to available status.
-     * Use of a Transaction ensures all updates succeed or none at all.
-     * * @param bill The bill object containing final amounts and IDs.
-     * @return true if the transaction was successful, false otherwise.
+     * <p>
+     * This method uses a SQL Transaction (commit/rollback) to ensure that all 
+     * database updates succeed together or none at all.
+     * </p>
+     *
+     * @param bill The {@link Bill} object containing final amounts, IDs, and confirmation code.
+     * @return true if the transaction was successfully committed, false if it failed or was rolled back.
+     * @throws SQLException caught internally, handles transaction rollback on failure.
      */
 	public static boolean finalizePayment(Bill bill) {
         Connection conn = DBController.getInstance().getConnection();
@@ -139,6 +146,17 @@ public class PaymentController {
             return false;
         }
     }
+	
+	/**
+     * Retrieves visit details and checks if the visiting user is a registered subscriber.
+     * This is used to determine if a discount should be applied to the bill.
+     *
+     * @param code The unique confirmation code for the visit.
+     * @return An {@link ArrayList} containing:
+     * index 0: The {@link Visit} object,
+     * index 1: A {@link Boolean} (true if the user is a subscriber).
+     * Returns null if the visit is not found.
+     */
 	public static ArrayList<Object> getVisitWithSubscriberStatus(long code) {
 	    Visit v = getVisitDetails(code); 
 	    if (v == null) return null;
