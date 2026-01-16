@@ -11,10 +11,15 @@ import MainControllers.DBController;
 
 public class CardReaderDBController {
 
-    /**
-     * פונקציה 1: אימות מנוי ובדיקת סטטוס הזמנה פעילה.
-     * מחברת בין subscriber ל-reservation דרך user_id.
-     */
+	/**
+	 * Validates whether a subscriber has an active reservation in the system.
+	 * This method queries the database by joining the 'reservation' and 'subscriber' 
+	 * tables to check for an 'ACTIVE' status associated with the given subscriber ID.
+	 *
+	 * @param id The unique identifier of the subscriber to be validated.
+	 * @return {@code true} if at least one active reservation is found for the subscriber; 
+	 * {@code false} otherwise or if a database error occurs.
+	 */
     public boolean validateSubscriber(String id) {
         String query = "SELECT r.status FROM reservation r " +
                        "JOIN subscriber s ON r.user_id = s.user_id " +
@@ -38,7 +43,13 @@ public class CardReaderDBController {
     }
 
     /**
-     * פונקציה 2: שליפת קודים אבודים מטבלת ה-reservation.
+     * Retrieves a list of active reservation confirmation codes associated with a given ID.
+     * The method searches for matches in both the subscriber ID and the user ID fields 
+     * to ensure all relevant active reservations are identified.
+     *
+     * @param id The identifier used to search for the subscriber or user (e.g., subscriber_id or user_id).
+     * @return A {@code List<String>} containing the active confirmation codes. 
+     * Returns an empty list if no active reservations are found or if a database error occurs.
      */
     public List<String> getLostConfirmationCodes(String id) {
         List<String> activeCodes = new ArrayList<>();
@@ -64,9 +75,21 @@ public class CardReaderDBController {
     
     
     /**
-     * פונקציה 3: אימות קוד הגעה ועדכון סטטוס ל-COMPLETED בטבלת reservation.
+     * Verifies a reservation confirmation code for a specific subscriber and updates 
+     * the reservation status to 'COMPLETED' upon successful validation.
+     * <p>
+     * This method first checks if an active reservation exists for the given code 
+     * and subscriber ID. If found, it proceeds to update the reservation's status 
+     * in the database.
+     * </p>
+     *
+     * @param code         The confirmation code to be verified.
+     * @param subscriberID The unique ID of the subscriber associated with the reservation.
+     * @return A {@code String} message indicating the result: 
+     * "Success" if the code is valid and updated, 
+     * "Error" if the code is invalid/expired, 
+     * or a "Database Error" message if an exception occurs.
      */
-    //abc
     public String verifyConfirmationCode(String code, String subscriberID) {
         // שאילתה לבדיקת קיום הקוד עבור המנוי הספציפי
         String checkQuery = "SELECT r.confirmation_code FROM reservation r " +

@@ -10,11 +10,19 @@ import java.sql.*; // Importing standard Java SQL classes for JDBC interaction
  */
 public class DBSubscriberConnection implements ILoginDatabase { // Beginning of class definition implementing ILoginDatabase
 
-    /**
-     * Validates a subscriber based on their unique Subscriber ID.
-     * @param subID The numeric identification of the subscriber.
-     * @return The unique 'user_id' (int) if valid; -1 otherwise.
-     */
+	/**
+	 * Verifies a subscriber's identity and checks for authorized roles within the system.
+	 * <p>
+	 * This method searches the {@code subscriber} table for a matching ID and ensures 
+	 * the user has one of the following valid statuses: 'subscriber', 'manager', 
+	 * or 'representative'. If a match is found, it retrieves the internal user ID.
+	 * </p>
+	 *
+	 * @param subID The unique numeric identifier of the subscriber.
+	 * @return The associated {@code user_id} if the subscriber is found and holds an 
+	 * authorized role; returns {@code -1} if the ID is invalid, the status is 
+	 * unauthorized, or a database error occurs.
+	 */
     @Override // Indicating that this method overrides an interface definition
     public int verifySubscriber(long subID) { // Start of verifySubscriber method
         
@@ -55,10 +63,20 @@ public class DBSubscriberConnection implements ILoginDatabase { // Beginning of 
         
     } // End of verifySubscriber method
     
+    
+    
     /**
-     * Retrieves the status of a subscriber by their internal user ID.
-     * @param userId The internal user identifier.
-     * @return The status string if found; null otherwise.
+     * Retrieves the specific status or role associated with a given user ID.
+     * <p>
+     * This method searches the {@code subscriber} table for a record matching the 
+     * provided user identifier. It is primarily used to identify whether a user 
+     * is a regular subscriber, a manager, or a representative.
+     * </p>
+     *
+     * @param userId The unique internal identifier of the user to be verified.
+     * @return A {@code String} representing the user's status (e.g., 'subscriber', 
+     * 'manager', 'representative') if a matching record is found; returns 
+     * {@code null} if no status is found or if a database error occurs.
      */
     public String verifyStatus(int userId) { // Start of verifyStatus method
 
@@ -95,8 +113,17 @@ public class DBSubscriberConnection implements ILoginDatabase { // Beginning of 
 
 
     /**
-     * Interface Implementation: Occasional customer verification.
-     * @return always -1 as this class is Subscriber-specific.
+     * Verifies the identity of an occasional customer (guest) in the system.
+     * <p>
+     * <b>Note:</b> This specific implementation does not support guest/occasional 
+     * customer verification. It acts as a placeholder or a restricted connector 
+     * and consistently returns a failure code.
+     * </p>
+     *
+     * @param username    The unique username provided by the occasional customer.
+     * @param contactInfo The contact information (phone or email) provided by the customer.
+     * @return Always returns {@code -1} to indicate that verification is not 
+     * supported by this connector.
      */
     @Override // Implementing interface method
     public int verifyOccasional(String username, String contactInfo) { // Start of verifyOccasional method
@@ -106,9 +133,21 @@ public class DBSubscriberConnection implements ILoginDatabase { // Beginning of 
         
     } // End of verifyOccasional method
 
+    
+    
     /**
-     * Interface Implementation: Occasional customer registration.
-     * @return always false as this class is Subscriber-specific.
+     * Attempts to register a new occasional customer (guest) in the system.
+     * <p>
+     * <b>Note:</b> This specific implementation does not support guest registration. 
+     * It serves as a placeholder or a restricted version of the registration logic 
+     * and consistently returns {@code false} to indicate failure.
+     * </p>
+     *
+     * @param username The desired username for the occasional customer.
+     * @param phone    The customer's phone number.
+     * @param email    The customer's email address.
+     * @return Always returns {@code false} to indicate that registration 
+     * is not supported in this specific connector.
      */
     @Override // Implementing interface method
     public boolean registerOccasional(String username, String phone, String email) { // Start of registerOccasional method

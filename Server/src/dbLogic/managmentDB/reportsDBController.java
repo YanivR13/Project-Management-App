@@ -13,9 +13,25 @@ import MainControllers.DBController;
 
 public class reportsDBController {
 
-    /**
-     * שליפת נתוני איחורים וזמנים לפי חודש
-     */
+	/**
+	 * Generates a statistical time report for a specified month.
+	 * <p>
+	 * This method retrieves data regarding visit delays (difference between reservation and start time)
+	 * and visit durations (difference between start time and payment). The results are grouped by 
+	 * date and hour of arrival/departure.
+	 * </p>
+	 * * @param monthStr A string representing the month, either as a numeric value ("1"-"12") 
+	 * or a full month name (e.g., "January").
+	 * @return A {@code List<Map<String, Object>>} where each map represents a report row containing:
+	 * <ul>
+	 * <li>"date": The date of the visits.</li>
+	 * <li>"delay": Average delay in minutes.</li>
+	 * <li>"duration": Average visit duration in minutes.</li>
+	 * <li>"arr_hour": The hour of arrival.</li>
+	 * <li>"dep_hour": The hour of departure.</li>
+	 * </ul>
+	 * @throws Exception If there is a database access error or an issue parsing the month.
+	 */
 	public static List<Map<String, Object>> getTimeReportData(String monthStr) throws Exception {
 	    List<Map<String, Object>> reportList = new ArrayList<>();
 	    
@@ -61,6 +77,25 @@ public class reportsDBController {
 	    return reportList;
 	}
 	
+	
+	/**
+	 * Retrieves daily statistics for reservations and waiting list entries for a given month.
+	 * <p>
+	 * This method aggregates data by combining (UNION ALL) records from both the 'reservation' 
+	 * and 'waiting_list_entry' tables. It provides a daily count of how many reservations 
+	 * were made versus how many customers were placed on the waiting list.
+	 * </p>
+	 *
+	 * @param monthStr A string representing the month, either as a numeric value ("1"-"12") 
+	 * or a full month name (e.g., "January").
+	 * @return A {@code List<Map<String, Object>>} containing daily report entries. Each map includes:
+	 * <ul>
+	 * <li>"date": The specific date of the activity.</li>
+	 * <li>"reservations": Total number of reservations for that day.</li>
+	 * <li>"waiting": Total number of waiting list entries for that day.</li>
+	 * </ul>
+	 * @throws Exception If a database access error occurs or the month string cannot be parsed.
+	 */
 	public static List<Map<String, Object>> getSubReportData(String monthStr) throws Exception {
 	    List<Map<String, Object>> reportList = new ArrayList<>();
 	    
@@ -104,7 +139,18 @@ public class reportsDBController {
 	    }
 	    return reportList;
 	}
-	
+	/**
+	 * Determines the appropriate calendar year for a report based on the selected month
+	 * relative to the current date.
+	 * <p>
+	 * If the selected month is greater than the current month, the method assumes 
+	 * the report refers to the previous year (e.g., in January 2026, selecting 
+	 * December will return 2025). Otherwise, it returns the current year.
+	 * </p>
+	 *
+	 * @param selectedMonth The month number (1-12) for which the report is requested.
+	 * @return The calculated year (either the current year or the previous year).
+	 */
 	private static int resolveReportYear(int selectedMonth) {
 	    int currentYear = LocalDate.now().getYear();
 	    int currentMonth = LocalDate.now().getMonthValue();

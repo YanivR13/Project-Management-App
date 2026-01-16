@@ -10,9 +10,21 @@ import java.sql.*; // Importing standard SQL classes for JDBC
  */
 public class DBOccasionalConnection implements ILoginDatabase { // Class start
 
-    /**
-     * Authenticates an occasional customer by verifying their username and contact details.
-     */
+	/**
+	 * Verifies the credentials of an occasional customer and retrieves their user ID.
+	 * <p>
+	 * This method performs a JOIN operation between the {@code occasional_customer} and 
+	 * {@code user} tables. It checks if the provided username matches and if the 
+	 * provided contact information corresponds to either the phone number or the email 
+	 * stored in the system.
+	 * </p>
+	 *
+	 * @param username The unique username of the occasional customer.
+	 * @param contact  The contact information provided, which can be either a phone 
+	 * number or an email address.
+	 * @return The unique {@code user_id} associated with the customer if found; 
+	 * returns {@code -1} if no matching record exists or if a database error occurs.
+	 */
     @Override // Implementing method from ILoginDatabase interface
     public int verifyOccasional(String username, String contact) { // Method start
         // Retrieve the shared database connection from the singleton instance
@@ -49,8 +61,24 @@ public class DBOccasionalConnection implements ILoginDatabase { // Class start
         return -1; // Default failure return
     } // End of verifyOccasional method
 
+    
+    
     /**
-     * Updates the username for an existing occasional customer with strict validation.
+     * Resets the username for an occasional customer identified by their contact information.
+     * <p>
+     * This method follows a three-step validation and update process:
+     * <ol>
+     * <li><b>Identification:</b> Retrieves the internal user ID using the provided phone number or email from the {@code user} table.</li>
+     * <li><b>Uniqueness Check:</b> Verifies that the proposed new username is not already assigned to another record in the {@code occasional_customer} table.</li>
+     * <li><b>Execution:</b> Updates the {@code username} field for the corresponding user ID.</li>
+     * </ol>
+     * </p>
+     *
+     * @param contact     The phone number or email address used to locate the user's record.
+     * @param newUsername The new username to be assigned to the customer.
+     * @return A status message: {@code "RESET_USERNAME_SUCCESS"} if the update was successful, 
+     * or a descriptive error message starting with {@code "ERROR:"} if identification 
+     * failed, the username is taken, or a database error occurred.
      */
     public String resetUsername(String contact, String newUsername) { // Method start
         // Retrieve the database connection
@@ -106,8 +134,28 @@ public class DBOccasionalConnection implements ILoginDatabase { // Class start
         } // End of main try-catch
     } // End of resetUsername method
 
+    
+    
     /**
-     * Handles guest registration using atomic transactions.
+     * Registers a new occasional customer by creating a user profile and linking it to a username.
+     * <p>
+     * This method follows a strict four-phase transactional process:
+     * <ol>
+     * <li><b>Validation:</b> Ensures both the username and contact information (phone or email) 
+     * do not already exist in the database.</li>
+     * <li><b>User Creation:</b> Inserts the contact info into the {@code user} table. It automatically 
+     * detects if the contact string is an email (contains '@') or a phone number.</li>
+     * <li><b>Linkage:</b> Maps the newly generated user ID to the provided username in the 
+     * {@code occasional_customer} table.</li>
+     * <li><b>Finalization:</b> Commits the transaction if all steps succeed, or performs a rollback 
+     * if any error occurs.</li>
+     * </ol>
+     * </p>
+     *
+     * @param username The unique username for the new occasional customer.
+     * @param contact  The contact info, which can be either a phone number or an email address.
+     * @return A {@code String} indicating the result: {@code "REGISTRATION_SUCCESS"} on success, 
+     * or an {@code "ERROR: ..."} message explaining the failure (e.g., duplicate data or DB error).
      */
     public String registerNewOccasional(String username, String contact) { // Method start
         // Retrieve the database connection
@@ -193,7 +241,20 @@ public class DBOccasionalConnection implements ILoginDatabase { // Class start
     // --- Interface Compatibility Layer ---
 
     /**
-     * Implementation for the ILoginDatabase interface registration logic.
+     * Registers an occasional customer by selecting an available contact method and 
+     * invoking the internal registration process.
+     * <p>
+     * This method determines which contact information to use by prioritizing the 
+     * phone number. If the phone number is {@code null} or empty, it defaults to the 
+     * email address. The selected contact is then passed to 
+     * {@link #registerNewOccasional(String, String)}.
+     * </p>
+     *
+     * @param username The unique username for the new occasional customer.
+     * @param phone    The phone number provided by the customer (can be {@code null} or empty).
+     * @param email    The email address provided by the customer (fallback if phone is unavailable).
+     * @return {@code true} if the registration was successful; 
+     * {@code false} if it failed (e.g., username already exists or database error).
      */
     @Override // Overriding method from interface
     public boolean registerOccasional(String username, String phone, String email) { // Method start
@@ -204,7 +265,16 @@ public class DBOccasionalConnection implements ILoginDatabase { // Class start
     } // End method
 
     /**
-     * Interface stub: Subscriber verification is not handled by this Occasional-specific class.
+     * Verifies a subscriber's identity based on their unique subscriber ID.
+     * <p>
+     * <b>Note:</b> This specific implementation does not support subscriber verification. 
+     * It serves as a placeholder or a restricted version of the login process, 
+     * consistently returning a failure code.
+     * </p>
+     *
+     * @param subID The unique long integer identifying the subscriber.
+     * @return Always returns {@code -1} to indicate that subscriber verification 
+     * is not supported in this context.
      */
     @Override // Implementing interface member
     public int verifySubscriber(long subID) { // Method start

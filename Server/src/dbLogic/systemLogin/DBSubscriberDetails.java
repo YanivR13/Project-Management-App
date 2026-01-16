@@ -14,15 +14,26 @@ import MainControllers.DBController; // Importing the singleton database control
  */
 public class DBSubscriberDetails { // Start of DBSubscriberDetails class definition
 
-    /**
-     * Updates subscriber personal details in the database.
-     * Logic: Updates 'subscriber' table for username and 'user' table for contact info.
-     * * @param userId   The unique identifier of the user
-     * @param username The new username string (can be null/empty)
-     * @param phone    The new phone number string (can be null/empty)
-     * @param email    The new email address string (can be null/empty)
-     * @return true if at least one database row was updated, false otherwise.
-     */
+	/**
+	 * Updates the profile details of a subscriber, including their username and contact information.
+	 * <p>
+	 * This method performs updates across two separate tables:
+	 * <ol>
+	 * <li>Updates the {@code username} in the {@code subscriber} table if a valid string is provided.</li>
+	 * <li>Dynamically constructs an SQL query to update the {@code phone_number} and/or {@code email} 
+	 * in the {@code user} table based on which fields are non-empty.</li>
+	 * </ol>
+	 * The method tracks if any changes were successfully committed to either table using a 
+	 * cumulative boolean flag.
+	 * </p>
+	 *
+	 * @param userId   The unique internal identifier of the user to be updated.
+	 * @param username The new username (optional; skipped if null or blank).
+	 * @param phone    The new phone number (optional; skipped if null or blank).
+	 * @param email    The new email address (optional; skipped if null or blank).
+	 * @return {@code true} if at least one field in either table was successfully updated; 
+	 * {@code false} if no changes were made or if a database error occurred.
+	 */
     public boolean updateSubscriberDetails(int userId, String username, String phone, String email) { // Method start
         
         // Flag to track if any update operation successfully modified a row

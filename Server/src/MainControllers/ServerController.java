@@ -54,6 +54,19 @@ public class ServerController extends AbstractServer {
         serverInstance = this;
     } 
 
+    /**
+     * Hook method called when the server successfully starts listening for connections.
+     * <p>
+     * This method handles the critical startup sequence of the backend system:
+     * <ol>
+     * <li><b>Database Connectivity:</b> Establishes the initial connection to the MySQL server via {@code DBController}.</li>
+     * <li><b>Data Hydration:</b> Loads essential restaurant metadata (Inventory and Hours) into RAM using {@code RestaurantManager}.</li>
+     * <li><b>Automation Engine:</b> Launches the background automation thread to monitor business rules (e.g., late arrivals, stay duration).</li>
+     * </ol>
+     * Status updates and potential failures are logged directly to the {@code serverUI}.
+     * </p>
+     */
+    
  @Override 
      protected void serverStarted() { 
          serverUI.appendLog("Server started."); 
@@ -79,9 +92,22 @@ public class ServerController extends AbstractServer {
          } 
      } 
 
-    /**
-     * Function helper to start thread
-     */
+ /**
+  * Initializes and starts a background daemon thread responsible for periodic system maintenance.
+  * <p>
+  * This automation engine runs in an infinite loop with a 60-second sleep interval. 
+  * During each cycle, it triggers the following business logic sequences:
+  * <ol>
+  * <li><b>Reservation Reminders:</b> Sends notifications for upcoming bookings.</li>
+  * <li><b>Auto-Cancellations:</b> Marks late arrivals as 'NOSHOW' and potentially triggers 
+  * waiting list updates.</li>
+  * <li><b>Stay Monitoring:</b> Updates status for tables that have exceeded the 
+  * maximum stay duration (e.g., 120 minutes).</li>
+  * </ol>
+  * The thread is marked as a <b>daemon</b>, ensuring it terminates automatically 
+  * when the main server process is shut down.
+  * </p>
+  */
     private void startAutomationThread() {
         Thread automationThread = new Thread(() -> {
             while (true) {
@@ -109,7 +135,19 @@ public class ServerController extends AbstractServer {
         automationThread.setDaemon(true); // Ensures thread stops when server is closed 
         automationThread.start();
     } 
-
+    /**
+     * Hook method called when the server stops listening for connections.
+     * <p>
+     * This method ensures a graceful shutdown of the backend infrastructure by:
+     * <ol>
+     * <li>Logging the server stop event to the user interface.</li>
+     * <li>Attempting to close the active database connection via {@code DBController} to 
+     * release system-level resources and network ports.</li>
+     * </ol>
+     * If the database connection cannot be closed cleanly, the error is logged to 
+     * the UI and the stack trace is printed for debugging.
+     * </p>
+     */
     @Override 
     protected void serverStopped() { 
         serverUI.appendLog("Server has stopped."); 
@@ -121,24 +159,83 @@ public class ServerController extends AbstractServer {
             e.printStackTrace(); 
         } 
     } 
-
+    /**
+     * Hook method called each time a new client connection is established.
+     * <p>
+     * This method captures the technical details of the incoming connection, specifically 
+     * extracting the client's IP address. This information is then logged to the 
+     * {@code serverUI} to provide the administrator with real-time visibility into 
+     * active network traffic.
+     * </p>
+     *
+     * @param client The {@code ConnectionToClient} object representing the 
+     * newly connected client.
+     */
     @Override 
     protected void clientConnected(ConnectionToClient client) { 
         String ip = client.getInetAddress().getHostAddress(); 
         serverUI.appendLog("Client connected: IP = " + ip); 
     } 
 
+    
+    /**
+     * Hook method called when a client is disconnected from the server.
+     * <p>
+     * This method is triggered automatically by the server framework whenever a 
+     * connection is closed, whether intentionally by the client or due to a 
+     * network timeout. It logs the event to the {@code serverUI}, providing the 
+     * administrator with information about which client instance has left the session.
+     * </p>
+     *
+     * @param client The {@code ConnectionToClient} object representing the 
+     * connection that was just terminated.
+     */
     @Override 
     protected void clientDisconnected(ConnectionToClient client) { 
         serverUI.appendLog("Client disconnected: " + client); 
     }
     
+    
+    /**
+     * Provides a global logging utility to send messages to the server's user interface.
+     * <p>
+     * This static method leverages the {@code serverInstance} to access the 
+     * {@code serverUI}. It includes safety checks to ensure that both the server 
+     * instance and the UI components are initialized before attempting to append 
+     * the log, preventing {@code NullPointerException} in headless or 
+     * uninitialized states.
+     * </p>
+     *
+     * @param msg The log message string to be displayed on the server console.
+     */
     public static void log(String msg) {
         if (serverInstance != null && serverInstance.serverUI != null) {
             serverInstance.serverUI.appendLog(msg);
         }
     }
 
+    
+    
+    /**
+     * Central message dispatcher that processes and routes all incoming client requests.
+     * <p>
+     * This method acts as the primary entry point for client-server communication. It enforces 
+     * a communication protocol based on an {@code ArrayList<Object>}, where the first 
+     * element is a {@code String} command.
+     * </p>
+     * <p><b>Key Responsibilities:</b></p>
+     * <ul>
+     * <li><b>Protocol Validation:</b> Verifies that the incoming message is a non-empty {@code ArrayList}.</li>
+     * <li><b>Command Routing:</b> Uses a {@code switch} statement to delegate tasks to specialized 
+     * Handlers (e.g., {@code CardReaderHandler}, {@code SubscriberLoginHandler}) or direct 
+     * DB controllers.</li>
+     * <li><b>Response Handling:</b> Sends results back to the client using {@code client.sendToClient()}.</li>
+     * <li><b>Error Logging:</b> Records unknown commands or malformed protocols to the {@code serverUI}.</li>
+     * </ul>
+     *
+     * @param msg    The message received from the client. Expected to be an {@code ArrayList<Object>}.
+     * @param client The connection object representing the specific client who sent the message.
+     */
     @Override 
     protected void handleMessageFromClient(Object msg, ConnectionToClient client) { 
                 

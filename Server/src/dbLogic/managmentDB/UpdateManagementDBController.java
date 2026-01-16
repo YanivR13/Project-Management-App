@@ -20,10 +20,26 @@ import dbLogic.restaurantDB.WaitingListController;
  */
 public class UpdateManagementDBController { // Start of the UpdateManagementDBController class
 
-    /**
-     * Updates or inserts regular operating hours for a restaurant.
-     * Uses a transaction to ensure all days are updated together.
-     */
+	/**
+	 * Updates the regular operating hours for a specific restaurant across multiple days.
+	 * <p>
+	 * This method performs a transactional update to ensure data integrity. For each day provided
+	 * in the map, it:
+	 * <ol>
+	 * <li>Ensures the specific time range exists in the {@code time_range} table.</li>
+	 * <li>Retrieves the unique ID for that time range.</li>
+	 * <li>Performs an "Upsert" (Insert or Update) into the {@code restaurant_regular_hours} table.</li>
+	 * </ol>
+	 * If any part of the process fails, the entire transaction is rolled back to maintain 
+	 * database consistency.
+	 * </p>
+	 *
+	 * @param restaurantId The unique identifier of the restaurant to update.
+	 * @param newHours     A {@code Map} where keys are days of the week (e.g., "Monday") 
+	 * and values are {@code TimeRange} objects containing start and end times.
+	 * @return {@code true} if the operation was successful and committed; 
+	 * {@code false} if a database error occurred and changes were rolled back.
+	 */
     public static boolean updateRegularHours(int restaurantId, Map<String, TimeRange> newHours) { // Start method
         // Retrieve the active database connection from the singleton controller
         Connection conn = DBController.getInstance().getConnection(); // Get connection
@@ -103,7 +119,24 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     } // End of updateRegularHours method
 
     /**
-     * Updates or inserts special operating hours for a specific date.
+     * Updates or inserts special operating hours for a restaurant on a specific date.
+     * <p>
+     * This method ensures that special hours (e.g., for holidays or one-time events) are 
+     * recorded in the database. It uses a transactional approach to:
+     * <ol>
+     * <li>Retrieve or create a unique ID for the given time range using a helper method.</li>
+     * <li>Perform an "Upsert" operation on the {@code restaurant_special_hours} table.</li>
+     * </ol>
+     * If any database error occurs during the process, all changes are rolled back to 
+     * maintain data consistency.
+     * </p>
+     *
+     * @param restaurantId The unique identifier of the restaurant.
+     * @param date         The specific {@code LocalDate} for which the special hours apply.
+     * @param open         The opening time as a string (e.g., "08:00").
+     * @param close        The closing time as a string (e.g., "22:00").
+     * @return {@code true} if the update was successfully committed; 
+     * {@code false} if a database error occurred or the transaction was rolled back.
      */
     public static boolean updateSpecialHours(int restaurantId, LocalDate date, String open, String close) { // Start method
         // Retrieve the database connection
@@ -158,7 +191,22 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     } // End of updateSpecialHours method
 
     /**
-     * Helper method to find an existing time range ID or create a new one if missing.
+     * Retrieves the unique identifier for a specific time range, creating it if it does not exist.
+     * <p>
+     * This helper method performs a two-step operation:
+     * <ol>
+     * <li>Attempts to find an existing record in the {@code time_range} table that matches 
+     * the provided opening and closing times.</li>
+     * <li>If no record is found, it inserts a new time range into the table and retrieves 
+     * the automatically generated primary key.</li>
+     * </ol>
+     * </p>
+     *
+     * @param open  The opening time string (e.g., "HH:mm").
+     * @param close The closing time string (e.g., "HH:mm").
+     * @return The {@code time_range_id} of the existing or newly created range; 
+     * returns -1 if the operation fails.
+     * @throws SQLException If a database access error occurs during the lookup or insertion.
      */
     private static int getOrCreateTimeRange(String open, String close) throws SQLException { // Start method
         // Access the connection
@@ -192,10 +240,18 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     } // End of getOrCreateTimeRange method
     
     /**
-     * Deletes all special operating hour overrides for a specific restaurant.
-     * This effectively resets the restaurant to follow only its regular weekly schedule.
-     * * @param restaurantId The unique ID of the restaurant.
-     * @return true if the deletion was successful and committed; false otherwise.
+     * Deletes all special operating hours associated with a specific restaurant.
+     * <p>
+     * This method removes every record in the {@code restaurant_special_hours} table 
+     * that matches the given restaurant ID. The operation is wrapped in a transaction 
+     * to ensure that the deletion is atomic; if a database error occurs, the 
+     * transaction is rolled back.
+     * </p>
+     *
+     * @param restaurantId The unique identifier of the restaurant whose special hours 
+     * should be removed.
+     * @return {@code true} if the records were successfully deleted and the transaction 
+     * committed; {@code false} if a database error occurred.
      */
     public static boolean deleteAllSpecialHours(int restaurantId) { // Start of the method
         // Retrieve the active database connection from the singleton controller
@@ -240,8 +296,14 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     } // End of deleteAllSpecialHours method
 
     /**
-     * Alert when a guest has stayed for more than 2 hours.
-     * Fixed: Now checks 'visit' table for actual 'start_time' instead of reservation time.
+     * Monitors and manages visits that have exceeded the maximum allowed stay duration.
+     * <p>
+     * This method queries the database for all 'ACTIVE' visits that started more than 120 minutes ago.
+     * For each overdue visit, it attempts to transition the status to 'BILL_PENDING' using 
+     * {@link #updateVisitStatus(long, String)}. If the update is successful, an alert is 
+     * logged to the server console.
+     * </p>
+     * * <p><b>Threshold:</b> 120 minutes (2 hours).</p>
      */
     public static void checkStayDurationAlerts() {
 
@@ -279,11 +341,17 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
 
 
     /**
-     * Updates the status of a visit in the database.
-     * The update is applied only if the visit is currently in ACTIVE status.
-     * @param confCode  The unique confirmation code identifying the visit.
-     * @param newStatus The new status to set for the visit (e.g., 'BILL_PENDING').
-     * @return true if the visit status was successfully updated, false otherwise.
+     * Updates the status of an active visit in the database.
+     * <p>
+     * This method attempts to change the status of a visit identified by its 
+     * confirmation code, provided that the current status is 'ACTIVE'.
+     * It returns {@code true} only if exactly one record was updated.
+     * </p>
+     *
+     * @param confCode  The unique confirmation code associated with the visit.
+     * @param newStatus The new status to assign to the visit (e.g., 'BILL_PENDING', 'COMPLETED').
+     * @return {@code true} if the update was successful and one row was affected; 
+     * {@code false} if the visit was not found, was not 'ACTIVE', or if a database error occurred.
      */
     private static boolean updateVisitStatus(long confCode, String newStatus) {
 
@@ -306,11 +374,18 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
 
     
     /**
-     * Automated task to send pre-arrival reminders for upcoming reservations.
-     * This method scans the 'reservation' table for 'ACTIVE' status records 
-     * where the 'reservation_datetime' is within the next 2 hours.
-     * Upon detection, a reminder is logged to the Server UI, and the status 
-     * is updated to 'NOTIFIED' to prevent duplicate notifications in the next cycle.
+     * Checks for upcoming reservations and logs reminders for those scheduled within 
+     * the next two hours.
+     * <p>
+     * This method queries the {@code reservation} table for records with an 'ACTIVE' 
+     * status where the time difference between the current time and the reservation 
+     * datetime is between 0 and 120 minutes. For each eligible reservation, it:
+     * <ol>
+     * <li>Logs a reminder message to the {@code ServerController}.</li>
+     * <li>Updates the reservation status to 'NOTIFIED' via {@link #updateReservationStatus(String, String)} 
+     * to ensure reminders are not sent multiple times.</li>
+     * </ol>
+     * </p>
      */
     public static void checkReservationReminders() {
         // השאילתה המעודכנת:
@@ -345,11 +420,15 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
         }
     }
 
-    
     /**
-     * Updates the status of a specific reservation in the database.
-     * * @param confCode  The unique confirmation code for the reservation.
-     * @param newStatus The new status to be assigned (e.g., 'NOTIFIED').
+     * Updates the status of a reservation in the database based on its confirmation code.
+     * <p>
+     * This method is typically used to transition a reservation between different lifecycle 
+     * states, such as moving from 'ACTIVE' to 'NOTIFIED' or 'COMPLETED'.
+     * </p>
+     *
+     * @param confCode  The unique confirmation code identifying the reservation to be updated.
+     * @param newStatus The new status string to be applied to the reservation record.
      */
     private static void updateReservationStatus(String confCode, String newStatus) {
         // עדכון לפי confirmation_code כפי שמופיע בטבלה שצילמת
@@ -364,13 +443,15 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     }
 
     /**
-     * Auto cancel reservations if the guest is 15 minutes late.
-     * If a reservation is canceled, it triggers the Waiting List logic.
-     */
-    /**
-     * Auto cancel reservations if the guest is 15 minutes late.
-     * A guest is considered late if they have an ACTIVE reservation 
-     * but no corresponding entry in the 'visit' table after 15 minutes.
+     * Automatically cancels active reservations where the customer failed to arrive within 
+     * the permitted grace period.
+     * <p>
+     * This method identifies reservations that are still marked as 'ACTIVE' but have exceeded 
+     * their scheduled time by more than 15 minutes without a corresponding entry in the 
+     * {@code visit} table (meaning the customer never checked in). Such reservations 
+     * are updated to a 'NOSHOW' status.
+     * </p>
+     * <p><b>Grace Period:</b> 15 minutes.</p>
      */
     public static void cancelLateReservations() {
         // שאילתה שמוצאת הזמנות שזמנן עבר ואין להן ביקור תואם בטבלת visit
@@ -407,10 +488,24 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     }
     
     /**
-     * Creates a new subscriber in the system using an atomic SQL transaction.
-     * @param phone The 10-digit phone number.
-     * @param email The customer's email.
-     * @return A Long (the new subscriber_id) if successful, or a String error message if a duplicate exists.
+     * Registers a new subscriber in the system by creating records in both 'user' and 'subscriber' tables.
+     * <p>
+     * This method follows an atomic transactional process:
+     * <ol>
+     * <li>Checks if the provided phone number already exists in the system to prevent duplicates.</li>
+     * <li>Inserts basic contact information into the {@code user} table and retrieves the generated user ID.</li>
+     * <li>Generates a unique 6-digit subscriber ID and creates a corresponding entry in the {@code subscriber} table.</li>
+     * </ol>
+     * If any step fails, the transaction is rolled back to maintain database integrity.
+     * </p>
+     *
+     * @param phone The phone number of the new subscriber (used as a unique identifier check).
+     * @param email The email address of the new subscriber.
+     * @return An {@code Object} which is either:
+     * <ul>
+     * <li>A {@code Long} representing the newly generated subscriber ID upon success.</li>
+     * <li>A {@code String} containing an error message if the phone exists or a database error occurs.</li>
+     * </ul>
      */
     public static Object createNewSubscriber(String phone, String email) { // Method start
         // Get connection from the singleton controller
@@ -483,9 +578,16 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     } // End method
     
     /**
-     * Fetches all waiting list entries that are in 'WAITING' or 'NOTIFIED' status.
-     * This method is used by the GetWaitingListHandler to provide data for the staff dashboard.
-     * * @return ArrayList of WaitingListEntry objects filtered by status.
+     * Retrieves all active waiting list entries from the database.
+     * <p>
+     * This method queries the {@code waiting_list_entry} table to fetch records with a 
+     * status of either 'WAITING' or 'NOTIFIED'. Each row in the result set is mapped 
+     * to a {@code WaitingListEntry} object and added to the returned list.
+     * </p>
+     *
+     * @return An {@code ArrayList<common.WaitingListEntry>} containing the retrieved 
+     * waiting list entries. Returns an empty list if no matching records are found 
+     * or if a database error occurs.
      */
     public static ArrayList<common.WaitingListEntry> getWaitingListEntries() {
         ArrayList<common.WaitingListEntry> list = new ArrayList<>();
