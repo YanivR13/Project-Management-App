@@ -346,10 +346,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
                 int tableId = rs.getInt("table_id");
                 int userId = rs.getInt("user_id");
 
-                String alertMsg = String.format(
-                    "[STAY ALERT] Table %d (User %d) has exceeded 2 hours. Visit %d requires attention.",
-                    tableId, userId, confCode
-                );
+                String alertMsg = String.format("[STAY ALERT] Table %d (User %d) has exceeded 2 hours. Visit %d requires attention.",tableId, userId, confCode);
 
                 ServerController.log(alertMsg);
 
@@ -444,10 +441,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
                     int userId = rs.getInt("user_id");
                     String fullDateTime = rs.getString("reservation_datetime");
 
-                    String alertMsg = String.format(
-                        "[REMINDER] Notification for User %d (Code: %s) for reservation at %s.",
-                        userId, confCode, fullDateTime
-                    );
+                    String alertMsg = String.format("[REMINDER] Notification for User %d (Code: %s) for reservation at %s.",userId, confCode, fullDateTime);
 
                     ServerController.log(alertMsg);
 
