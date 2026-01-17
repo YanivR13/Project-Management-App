@@ -329,6 +329,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
             "WHERE v.status = 'ACTIVE' " +
             "AND TIMESTAMPDIFF(MINUTE, v.start_time, NOW()) >= 120";
 
+
         Connection conn = DBController.getInstance().getConnection();
 
         try (Statement stmt = conn.createStatement();
@@ -422,7 +423,7 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
                 "SELECT r.confirmation_code, r.user_id, r.reservation_datetime " +
                 "FROM reservation r " +
                 "WHERE r.status = 'ACTIVE' " +
-                "AND TIMESTAMPDIFF(MINUTE, NOW(), r.reservation_datetime) >= 120";
+                "AND TIMESTAMPDIFF(MINUTE, NOW(), r.reservation_datetime) <= 120";
 
             Connection conn = DBController.getInstance().getConnection();
 
