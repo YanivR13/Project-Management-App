@@ -9,6 +9,9 @@ import java.time.LocalDate; // Importing LocalDate for modern date handling
 import java.util.ArrayList;
 import java.util.Date; // Importing Date for legacy support if needed
 import java.util.Map; // Importing Map for storing day-to-range associations
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import MainControllers.DBController; // Importing the singleton DB controller
 import MainControllers.ServerController;
 import common.TimeRange; // Importing the TimeRange domain model
@@ -19,6 +22,12 @@ import dbLogic.restaurantDB.WaitingListController;
  * This class handles regular and special operating hours updates using SQL transactions.
  */
 public class UpdateManagementDBController { // Start of the UpdateManagementDBController class
+	
+	// Tracks reservations that already received a "2 hours before arrival" reminder
+    private static final Set<String> notifiedReservations = ConcurrentHashMap.newKeySet();
+    // Tracks visits that already received a "2 hours after start" alert
+    private static final Set<Long> notifiedVisits = ConcurrentHashMap.newKeySet();
+
 
 	/**
 	 * Updates the regular operating hours for a specific restaurant across multiple days.
@@ -296,15 +305,22 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
     } // End of deleteAllSpecialHours method
 
     /**
-     * Monitors and manages visits that have exceeded the maximum allowed stay duration.
-     * <p>
-     * This method queries the database for all 'ACTIVE' visits that started more than 120 minutes ago.
-     * For each overdue visit, it attempts to transition the status to 'BILL_PENDING' using 
-     * {@link #updateVisitStatus(long, String)}. If the update is successful, an alert is 
-     * logged to the server console.
-     * </p>
-     * * <p><b>Threshold:</b> 120 minutes (2 hours).</p>
-     */
+    * Checks for active visits that have been ongoing for at least
+    * two hours and logs a single alert for each such visit.
+    * <p>
+    * The method queries the {@code visit} table for records with
+    * status {@code 'ACTIVE'} whose start time occurred {@code 120}
+    * minutes or more in the past. For each eligible visit, an alert
+    * message is logged to the server.
+    * </p>
+    * <p>
+    * To prevent repeated alerts, an in-memory tracking mechanism
+    * ({@code notifiedVisits}) is used to ensure that each visit
+    * triggers the alert only once during the server runtime.
+    * </p>
+    *
+    * <p><b>Threshold:</b> 120 minutes (2 hours after visit start).</p>
+    */
     public static void checkStayDurationAlerts() {
 
         String selectSql =
@@ -320,24 +336,32 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
 
             while (rs.next()) {
 
-                int tableId = rs.getInt("table_id");
-                int userId = rs.getInt("user_id");
                 long confCode = rs.getLong("confirmation_code");
 
-                // קודם עדכון סטטוס
-                boolean updated = updateVisitStatus(confCode, "BILL_PENDING");
-
-                // רק אם באמת עודכן – נכתוב התראה
-                if (updated) {
-                    String alertMsg = String.format("[STAY ALERT] Table %d (User %d) exceeded 2 hours. Visit %d moved to BILL_PENDING.",tableId, userId, confCode);
-                    ServerController.log(alertMsg);
+                // אם כבר שלחנו התראה – מדלגים
+                if (notifiedVisits.contains(confCode)) {
+                    continue;
                 }
+
+                int tableId = rs.getInt("table_id");
+                int userId = rs.getInt("user_id");
+
+                String alertMsg = String.format(
+                    "[STAY ALERT] Table %d (User %d) has exceeded 2 hours. Visit %d requires attention.",
+                    tableId, userId, confCode
+                );
+
+                ServerController.log(alertMsg);
+
+                // סימון בזיכרון – לא נשלח שוב
+                notifiedVisits.add(confCode);
             }
 
         } catch (SQLException e) {
             ServerController.log("Error in stay duration automation: " + e.getMessage());
         }
     }
+
 
 
     /**
@@ -374,50 +398,66 @@ public class UpdateManagementDBController { // Start of the UpdateManagementDBCo
 
     
     /**
-     * Checks for upcoming reservations and logs reminders for those scheduled within 
-     * the next two hours.
+     * Checks for active reservations that are scheduled to occur
+     * at least two hours from the current time and logs a reminder
+     * for each eligible reservation.
+     *
      * <p>
-     * This method queries the {@code reservation} table for records with an 'ACTIVE' 
-     * status where the time difference between the current time and the reservation 
-     * datetime is between 0 and 120 minutes. For each eligible reservation, it:
-     * <ol>
-     * <li>Logs a reminder message to the {@code ServerController}.</li>
-     * <li>Updates the reservation status to 'NOTIFIED' via {@link #updateReservationStatus(String, String)} 
-     * to ensure reminders are not sent multiple times.</li>
-     * </ol>
+     * The method queries the {@code reservation} table for records
+     * with status {@code 'ACTIVE'} whose reservation time is
+     * {@code 120} minutes or more in the future. To prevent duplicate
+     * reminders, an in-memory tracking mechanism
+     * ({@code notifiedReservations}) is used to ensure that each
+     * reservation is logged only once during the server runtime.
+     * </p>
+     *
+     * <p>
+     * This approach avoids missed reminders caused by strict time
+     * windows while preventing repeated notifications without
+     * modifying the database state.
      * </p>
      */
     public static void checkReservationReminders() {
         // השאילתה המעודכנת:
         // 1. משתמשת ב-reservation_datetime המאוחד
         // 2. בודקת הפרש דקות בין עכשיו לבין זמן ההזמנה
-        String selectSql = "SELECT r.confirmation_code, r.user_id, r.reservation_datetime " +
-                           "FROM reservation r " +
-                           "WHERE r.status = 'ACTIVE' " + 
-                           "AND TIMESTAMPDIFF(MINUTE, NOW(), r.reservation_datetime) <= 120 " +
-                           "AND TIMESTAMPDIFF(MINUTE, NOW(), r.reservation_datetime) > 0";
+        String selectSql =
+                "SELECT r.confirmation_code, r.user_id, r.reservation_datetime " +
+                "FROM reservation r " +
+                "WHERE r.status = 'ACTIVE' " +
+                "AND TIMESTAMPDIFF(MINUTE, NOW(), r.reservation_datetime) >= 120";
 
-        Connection conn = DBController.getInstance().getConnection();
+            Connection conn = DBController.getInstance().getConnection();
 
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(selectSql)) {
-         
-            while (rs.next()) {
-                String confCode = rs.getString("confirmation_code"); 
-                int userId = rs.getInt("user_id");
-                String fullDateTime = rs.getString("reservation_datetime");
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(selectSql)) {
 
-                // הדפסת הודעה לסרבר לוג
-                String alertMsg = String.format("[REMINDER] Notification for User %d (Code: %s) for reservation at %s.", 
-                                                userId, confCode, fullDateTime);
-                ServerController.log(alertMsg);
+                while (rs.next()) {
 
-                // עדכון סטטוס ל-NOTIFIED כדי שלא נשלח שוב
-                updateReservationStatus(confCode, "NOTIFIED");
+                    String confCode = rs.getString("confirmation_code");
+
+                    // אם כבר שלחנו התראה – מדלגים
+                    if (notifiedReservations.contains(confCode)) {
+                        continue;
+                    }
+
+                    int userId = rs.getInt("user_id");
+                    String fullDateTime = rs.getString("reservation_datetime");
+
+                    String alertMsg = String.format(
+                        "[REMINDER] Notification for User %d (Code: %s) for reservation at %s.",
+                        userId, confCode, fullDateTime
+                    );
+
+                    ServerController.log(alertMsg);
+
+                    // סימון בזיכרון – לא נשלח שוב
+                    notifiedReservations.add(confCode);
+                }
+
+            } catch (SQLException e) {
+                ServerController.log("Error in reservation reminder: " + e.getMessage());
             }
-        } catch (SQLException e) { 
-            ServerController.log("Error in reservation reminder: " + e.getMessage());
-        }
     }
 
     /**
