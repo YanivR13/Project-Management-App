@@ -74,21 +74,22 @@ public class TerminalLoginController implements ChatIF { // Start of TerminalLog
                 // Casting to the refactored SubscriberLoginController
                 SubscriberLoginController subController = (SubscriberLoginController) controller; // Performing cast
                 
-                // FIXED: Providing (client, userType, userId). Using -1 as ID is not yet known.
-                subController.setClient(client, "Subscriber", -1); // Injecting session into the Pipe
-                
                 // Preserving Eden's logic: Marking the origin as a physical Terminal
                 subController.setLoginSource(LoginSource.TERMINAL); // Setting terminal source
                 
+                // Providing (client, userType, userId). Using -1 as ID is not yet known.
+                subController.setClient(client, "Subscriber", -1); // Injecting session into the Pipe
+                            
             } else { // If navigating to the Occasional (Guest) login screen
                 // Casting to the refactored OccasionalLoginController
                 OccasionalLoginController occController = (OccasionalLoginController) controller; // Performing cast
                 
+                // Preserving Eden's logic: Marking the origin as a physical Terminal
+                occController.setLoginSource(LoginSource.TERMINAL); // Setting terminal source
+                
                 // FIXED: Providing (client, userType, userId). Using -1 as ID is not yet known.
                 occController.setClient(client, "Occasional", -1); // Injecting session into the Pipe
                 
-                // Preserving Eden's logic: Marking the origin as a physical Terminal
-                occController.setLoginSource(LoginSource.TERMINAL); // Setting terminal source
             } // End of injection branching
 
             // Step 4: Configure the window (Stage) and assign the new scene

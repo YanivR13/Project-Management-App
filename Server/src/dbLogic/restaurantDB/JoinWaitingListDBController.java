@@ -4,7 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.TextStyle;
+import java.util.Locale;
 
 import MainControllers.DBController;
 
@@ -156,24 +159,38 @@ public class JoinWaitingListDBController {
         }
 
         // --- Fallback to regular weekly opening hours ---
-        String regularSql =
-            "SELECT tr.open_time, tr.close_time " +
-            "FROM restaurant_regular_hours rrh " +
-            "JOIN time_range tr ON rrh.time_range_id = tr.time_range_id " +
-            "WHERE rrh.day_of_week = DAYOFWEEK(CURDATE())";
+        String dayName = LocalDate.now()
+        	    .getDayOfWeek()
+        	    .getDisplayName(TextStyle.FULL, Locale.ENGLISH);
 
-        try (PreparedStatement ps = conn.prepareStatement(regularSql);
-             ResultSet rs = ps.executeQuery()) {
+        	String regularSql =
+        	    "SELECT tr.open_time, tr.close_time " +
+        	    "FROM restaurant_regular_hours rrh " +
+        	    "JOIN time_range tr ON rrh.time_range_id = tr.time_range_id " +
+        	    "WHERE rrh.day_of_week = ?";
 
-            if (!rs.next()) {
-                return false;
-            }
+        	try (PreparedStatement ps = conn.prepareStatement(regularSql)) {
 
-            LocalTime open = rs.getTime("open_time").toLocalTime();
-            LocalTime close = rs.getTime("close_time").toLocalTime();
+        	    ps.setString(1, dayName);
 
-            return !now.isBefore(open) && !now.isAfter(close);
-        }
+        	    try (ResultSet rs = ps.executeQuery()) {
+
+        	        if (!rs.next()) {
+        	            return false;
+        	        }
+
+        	        LocalTime open = rs.getTime("open_time").toLocalTime();
+        	        LocalTime close = rs.getTime("close_time").toLocalTime();
+
+        	        // Closed day
+        	        if (open.equals(close)) {
+        	            return false;
+        	        }
+
+        	        return !now.isBefore(open) && !now.isAfter(close);
+        	    }
+        	}
+
     }
     
     /**

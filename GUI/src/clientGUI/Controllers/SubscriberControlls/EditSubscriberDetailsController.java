@@ -87,6 +87,41 @@ public class EditSubscriberDetailsController implements ChatIF { // Class start 
         String username = txtUsername.getText().trim(); // Get username text
         String phone = txtPhone.getText().trim(); // Get phone text
         String email = txtEmail.getText().trim(); // Get email text
+        
+     // --- Input Validation ---
+
+     // Username: max 10 characters
+     if (!username.isEmpty() && username.length() > 10) {
+         showAlert(
+             "Invalid Username",
+             "Username must contain up to 10 characters.",
+             Alert.AlertType.WARNING
+         );
+         return;
+     }
+
+     // Phone: exactly 10 digits
+     if (!phone.isEmpty()) {
+         if (!phone.matches("\\d{10}")) {
+             showAlert(
+                 "Invalid Phone Number",
+                 "Phone number must contain exactly 10 digits.",
+                 Alert.AlertType.WARNING
+             );
+             return;
+         }
+     }
+
+     // Email: must contain '@'
+     if (!email.isEmpty() && !email.contains("@")) {
+         showAlert(
+             "Invalid Email",
+             "Email address must contain '@'.",
+             Alert.AlertType.WARNING
+         );
+         return;
+     }
+
 
         // Guard Clause: If all fields are empty, no update is necessary
         boolean isAllEmpty = (username.isEmpty() && phone.isEmpty() && email.isEmpty()); // Logic check
